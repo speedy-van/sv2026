@@ -1,0 +1,86 @@
+export const fonts = {
+  display: 'Bricolage Grotesque',
+  body: 'Manrope',
+} as const;
+
+export const textStyles = {
+  'display.xl': {
+    fontFamily: 'display',
+    fontSize: 'clamp(2.5rem, 1.6rem + 3.8vw, 4.5rem)',
+    fontWeight: 800,
+    lineHeight: 1.02,
+    letterSpacing: '-0.025em',
+  },
+  'display.lg': {
+    fontFamily: 'display',
+    fontSize: 'clamp(2rem, 1.45rem + 2.4vw, 3.25rem)',
+    fontWeight: 750,
+    lineHeight: 1.06,
+    letterSpacing: '-0.02em',
+  },
+  'heading.lg': {
+    fontFamily: 'display',
+    fontSize: 'clamp(1.625rem, 1.35rem + 1.1vw, 2.25rem)',
+    fontWeight: 700,
+    lineHeight: 1.12,
+    letterSpacing: '-0.015em',
+  },
+  'heading.md': {
+    fontFamily: 'display',
+    fontSize: 'clamp(1.3125rem, 1.17rem + 0.5vw, 1.625rem)',
+    fontWeight: 700,
+    lineHeight: 1.2,
+    letterSpacing: '-0.01em',
+  },
+  'heading.sm': {
+    fontFamily: 'body',
+    fontSize: 'clamp(1.125rem, 1.07rem + 0.2vw, 1.25rem)',
+    fontWeight: 700,
+    lineHeight: 1.3,
+    letterSpacing: '0',
+  },
+  'body.lg': {
+    fontFamily: 'body',
+    fontSize: '1.125rem',
+    fontWeight: 450,
+    lineHeight: 1.6,
+    letterSpacing: '0',
+  },
+  'body.md': {
+    fontFamily: 'body',
+    fontSize: '1rem',
+    fontWeight: 450,
+    lineHeight: 1.6,
+    letterSpacing: '0',
+  },
+  'body.sm': {
+    fontFamily: 'body',
+    fontSize: '0.875rem',
+    fontWeight: 500,
+    lineHeight: 1.5,
+    letterSpacing: '0.005em',
+  },
+  label: {
+    fontFamily: 'body',
+    fontSize: '0.875rem',
+    fontWeight: 650,
+    lineHeight: 1.3,
+    letterSpacing: '0.01em',
+  },
+  'price.hero': {
+    fontFamily: 'display',
+    fontSize: 'clamp(3.5rem, 2.85rem + 2.8vw, 5rem)',
+    fontVariantNumeric: 'tabular-nums',
+    fontWeight: 800,
+    lineHeight: 1,
+    letterSpacing: '-0.03em',
+  },
+  'price.md': {
+    fontFamily: 'display',
+    fontSize: 'clamp(1.25rem, 1.14rem + 0.45vw, 1.5rem)',
+    fontVariantNumeric: 'tabular-nums',
+    fontWeight: 750,
+    lineHeight: 1.1,
+    letterSpacing: '-0.01em',
+  },
+} as const;

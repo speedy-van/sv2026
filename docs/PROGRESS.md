@@ -36,7 +36,17 @@ _Verify (2026-10-12):_ `npm run test:pricing` passed: 4 files, 26 tests, all 8 g
 
 ## Phase 3 — Contracts & tokens
 _Plan:_
-- [ ] Error codes + envelope · [ ] money + time helpers · [ ] address/postcode/service-area utils · [ ] flat-notation parser · [ ] booking state machine + stage paths (05 §12) · [ ] settings schemas · [ ] every API schema (05) · [ ] tokens (colour, type, space, radii, shadows, motion)
+- [x] Add `zod` as the shared contracts validation dependency and keep package scripts unchanged.
+- [x] Build `@sv/contracts` core primitives: error codes/envelope, API success/pagination helpers, money helpers and Europe/London time/date helpers.
+- [x] Build address utilities: UK postcode normalisation/validation, Scottish postcode-area detection/service-area helper and Glasgow/Edinburgh flat-notation parser.
+- [x] Implement the booking state machine from `05-api.md` §12 with exhaustive transition helpers, stage paths and driver stage movement rules.
+- [x] Implement settings schemas for every `Setting.key` listed in `03-database.md` §5, plus private/public settings parsing.
+- [x] Implement all Phase 3 API contract schemas from `05-api.md`: core DTOs, public endpoints, booking creation, staff auth/self, admin, driver, webhooks/cron and stream events.
+- [x] Build `@sv/tokens` exports for colour scales/semantic tokens, typography, spacing, breakpoints, radii, shadows and motion, with Chakra and React Native mappings.
+- [x] Replace shell tests with contract unit tests for exhaustive transitions, postcode/service-area and flat parser cases from `06-booking-flow.md` §4.3, plus schema/token smoke tests.
+- [x] Run `npm run verify` until green, update progress, record any deviations/questions, then commit.
+
+_Verify (2026-10-12):_ `npm run verify` passed across lint, typecheck, test and build. Contract unit tests passed: exhaustive booking and dispatch transition tables, service stage paths, postcode/service-area helpers, every flat-notation row and negatives from `06-booking-flow.md` §4.3, core schema checks and settings validation. Token tests passed for brand colour, semantic, typography, layout and motion exports.
 
 ## Phase 4 — Database
 _Plan:_
