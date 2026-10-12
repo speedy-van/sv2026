@@ -1,0 +1,222 @@
+slug,name,council_area,region,postcode_area,tier,island,ferry
+glasgow,Glasgow,Glasgow City,glasgow-and-clyde,G,1,N,NO
+paisley,Paisley,Renfrewshire,glasgow-and-clyde,PA,2,N,NO
+renfrew,Renfrew,Renfrewshire,glasgow-and-clyde,PA,2,N,NO
+johnstone,Johnstone,Renfrewshire,glasgow-and-clyde,PA,2,N,NO
+erskine,Erskine,Renfrewshire,glasgow-and-clyde,PA,2,N,NO
+linwood,Linwood,Renfrewshire,glasgow-and-clyde,PA,3,N,NO
+bishopton,Bishopton,Renfrewshire,glasgow-and-clyde,PA,3,N,NO
+bridge-of-weir,Bridge of Weir,Renfrewshire,glasgow-and-clyde,PA,3,N,NO
+houston,Houston,Renfrewshire,glasgow-and-clyde,PA,3,N,NO
+greenock,Greenock,Inverclyde,glasgow-and-clyde,PA,2,N,NO
+port-glasgow,Port Glasgow,Inverclyde,glasgow-and-clyde,PA,3,N,NO
+gourock,Gourock,Inverclyde,glasgow-and-clyde,PA,3,N,NO
+kilmacolm,Kilmacolm,Inverclyde,glasgow-and-clyde,PA,3,N,NO
+clydebank,Clydebank,West Dunbartonshire,glasgow-and-clyde,G,2,N,NO
+dumbarton,Dumbarton,West Dunbartonshire,glasgow-and-clyde,G,2,N,NO
+alexandria,Alexandria,West Dunbartonshire,glasgow-and-clyde,G,3,N,NO
+bearsden,Bearsden,East Dunbartonshire,glasgow-and-clyde,G,2,N,NO
+milngavie,Milngavie,East Dunbartonshire,glasgow-and-clyde,G,3,N,NO
+bishopbriggs,Bishopbriggs,East Dunbartonshire,glasgow-and-clyde,G,2,N,NO
+kirkintilloch,Kirkintilloch,East Dunbartonshire,glasgow-and-clyde,G,2,N,NO
+lenzie,Lenzie,East Dunbartonshire,glasgow-and-clyde,G,3,N,NO
+newton-mearns,Newton Mearns,East Renfrewshire,glasgow-and-clyde,G,2,N,NO
+giffnock,Giffnock,East Renfrewshire,glasgow-and-clyde,G,3,N,NO
+clarkston,Clarkston,East Renfrewshire,glasgow-and-clyde,G,3,N,NO
+barrhead,Barrhead,East Renfrewshire,glasgow-and-clyde,G,2,N,NO
+east-kilbride,East Kilbride,South Lanarkshire,lanarkshire,G,2,N,NO
+hamilton,Hamilton,South Lanarkshire,lanarkshire,ML,2,N,NO
+rutherglen,Rutherglen,South Lanarkshire,lanarkshire,G,2,N,NO
+cambuslang,Cambuslang,South Lanarkshire,lanarkshire,G,2,N,NO
+blantyre,Blantyre,South Lanarkshire,lanarkshire,G,2,N,NO
+larkhall,Larkhall,South Lanarkshire,lanarkshire,ML,2,N,NO
+carluke,Carluke,South Lanarkshire,lanarkshire,ML,3,N,NO
+lanark,Lanark,South Lanarkshire,lanarkshire,ML,3,N,NO
+uddingston,Uddingston,South Lanarkshire,lanarkshire,G,3,N,NO
+bothwell,Bothwell,South Lanarkshire,lanarkshire,G,3,N,NO
+strathaven,Strathaven,South Lanarkshire,lanarkshire,ML,3,N,NO
+lesmahagow,Lesmahagow,South Lanarkshire,lanarkshire,ML,3,N,NO
+biggar,Biggar,South Lanarkshire,lanarkshire,ML,3,N,NO
+cumbernauld,Cumbernauld,North Lanarkshire,lanarkshire,G,2,N,NO
+coatbridge,Coatbridge,North Lanarkshire,lanarkshire,ML,2,N,NO
+airdrie,Airdrie,North Lanarkshire,lanarkshire,ML,2,N,NO
+motherwell,Motherwell,North Lanarkshire,lanarkshire,ML,2,N,NO
+wishaw,Wishaw,North Lanarkshire,lanarkshire,ML,2,N,NO
+bellshill,Bellshill,North Lanarkshire,lanarkshire,ML,2,N,NO
+kilsyth,Kilsyth,North Lanarkshire,lanarkshire,G,3,N,NO
+shotts,Shotts,North Lanarkshire,lanarkshire,ML,3,N,NO
+moodiesburn,Moodiesburn,North Lanarkshire,lanarkshire,G,3,N,NO
+stepps,Stepps,North Lanarkshire,lanarkshire,G,3,N,NO
+edinburgh,Edinburgh,City of Edinburgh,edinburgh-and-lothians,EH,1,N,NO
+south-queensferry,South Queensferry,City of Edinburgh,edinburgh-and-lothians,EH,3,N,NO
+balerno,Balerno,City of Edinburgh,edinburgh-and-lothians,EH,3,N,NO
+musselburgh,Musselburgh,East Lothian,edinburgh-and-lothians,EH,2,N,NO
+haddington,Haddington,East Lothian,edinburgh-and-lothians,EH,3,N,NO
+tranent,Tranent,East Lothian,edinburgh-and-lothians,EH,3,N,NO
+north-berwick,North Berwick,East Lothian,edinburgh-and-lothians,EH,3,N,NO
+prestonpans,Prestonpans,East Lothian,edinburgh-and-lothians,EH,3,N,NO
+dunbar,Dunbar,East Lothian,edinburgh-and-lothians,EH,3,N,NO
+dalkeith,Dalkeith,Midlothian,edinburgh-and-lothians,EH,2,N,NO
+penicuik,Penicuik,Midlothian,edinburgh-and-lothians,EH,2,N,NO
+bonnyrigg,Bonnyrigg,Midlothian,edinburgh-and-lothians,EH,2,N,NO
+loanhead,Loanhead,Midlothian,edinburgh-and-lothians,EH,3,N,NO
+gorebridge,Gorebridge,Midlothian,edinburgh-and-lothians,EH,3,N,NO
+mayfield,Mayfield,Midlothian,edinburgh-and-lothians,EH,3,N,NO
+livingston,Livingston,West Lothian,edinburgh-and-lothians,EH,2,N,NO
+bathgate,Bathgate,West Lothian,edinburgh-and-lothians,EH,2,N,NO
+broxburn,Broxburn,West Lothian,edinburgh-and-lothians,EH,2,N,NO
+linlithgow,Linlithgow,West Lothian,edinburgh-and-lothians,EH,3,N,NO
+whitburn,Whitburn,West Lothian,edinburgh-and-lothians,EH,3,N,NO
+armadale,Armadale,West Lothian,edinburgh-and-lothians,EH,3,N,NO
+blackburn,Blackburn,West Lothian,edinburgh-and-lothians,EH,3,N,NO
+east-calder,East Calder,West Lothian,edinburgh-and-lothians,EH,3,N,NO
+uphall,Uphall,West Lothian,edinburgh-and-lothians,EH,3,N,NO
+west-calder,West Calder,West Lothian,edinburgh-and-lothians,EH,3,N,NO
+stirling,Stirling,Stirling,forth-valley,FK,1,N,NO
+dunblane,Dunblane,Stirling,forth-valley,FK,3,N,NO
+bridge-of-allan,Bridge of Allan,Stirling,forth-valley,FK,3,N,NO
+callander,Callander,Stirling,forth-valley,FK,3,N,NO
+bannockburn,Bannockburn,Stirling,forth-valley,FK,3,N,NO
+falkirk,Falkirk,Falkirk,forth-valley,FK,2,N,NO
+grangemouth,Grangemouth,Falkirk,forth-valley,FK,2,N,NO
+larbert,Larbert,Falkirk,forth-valley,FK,3,N,NO
+stenhousemuir,Stenhousemuir,Falkirk,forth-valley,FK,3,N,NO
+boness,Bo'ness,Falkirk,forth-valley,EH,3,N,NO
+denny,Denny,Falkirk,forth-valley,FK,3,N,NO
+polmont,Polmont,Falkirk,forth-valley,FK,3,N,NO
+alloa,Alloa,Clackmannanshire,forth-valley,FK,2,N,NO
+tillicoultry,Tillicoultry,Clackmannanshire,forth-valley,FK,3,N,NO
+alva,Alva,Clackmannanshire,forth-valley,FK,3,N,NO
+dollar,Dollar,Clackmannanshire,forth-valley,FK,3,N,NO
+tullibody,Tullibody,Clackmannanshire,forth-valley,FK,3,N,NO
+dunfermline,Dunfermline,Fife,fife,KY,1,N,NO
+kirkcaldy,Kirkcaldy,Fife,fife,KY,2,N,NO
+glenrothes,Glenrothes,Fife,fife,KY,2,N,NO
+st-andrews,St Andrews,Fife,fife,KY,2,N,NO
+cowdenbeath,Cowdenbeath,Fife,fife,KY,3,N,NO
+rosyth,Rosyth,Fife,fife,KY,3,N,NO
+leven,Leven,Fife,fife,KY,3,N,NO
+methil,Methil,Fife,fife,KY,3,N,NO
+cupar,Cupar,Fife,fife,KY,3,N,NO
+inverkeithing,Inverkeithing,Fife,fife,KY,3,N,NO
+dalgety-bay,Dalgety Bay,Fife,fife,KY,3,N,NO
+burntisland,Burntisland,Fife,fife,KY,3,N,NO
+lochgelly,Lochgelly,Fife,fife,KY,3,N,NO
+tayport,Tayport,Fife,fife,DD,3,N,NO
+anstruther,Anstruther,Fife,fife,KY,3,N,NO
+kelty,Kelty,Fife,fife,KY,3,N,NO
+dundee,Dundee,Dundee City,tayside,DD,1,N,NO
+perth,Perth,Perth and Kinross,tayside,PH,1,N,NO
+blairgowrie,Blairgowrie,Perth and Kinross,tayside,PH,3,N,NO
+crieff,Crieff,Perth and Kinross,tayside,PH,3,N,NO
+kinross,Kinross,Perth and Kinross,tayside,KY,3,N,NO
+auchterarder,Auchterarder,Perth and Kinross,tayside,PH,3,N,NO
+pitlochry,Pitlochry,Perth and Kinross,tayside,PH,3,N,NO
+aberfeldy,Aberfeldy,Perth and Kinross,tayside,PH,3,N,NO
+scone,Scone,Perth and Kinross,tayside,PH,3,N,NO
+coupar-angus,Coupar Angus,Perth and Kinross,tayside,PH,3,N,NO
+arbroath,Arbroath,Angus,tayside,DD,2,N,NO
+forfar,Forfar,Angus,tayside,DD,3,N,NO
+montrose,Montrose,Angus,tayside,DD,3,N,NO
+carnoustie,Carnoustie,Angus,tayside,DD,3,N,NO
+brechin,Brechin,Angus,tayside,DD,3,N,NO
+kirriemuir,Kirriemuir,Angus,tayside,DD,3,N,NO
+monifieth,Monifieth,Angus,tayside,DD,3,N,NO
+aberdeen,Aberdeen,Aberdeen City,north-east,AB,1,N,NO
+peterhead,Peterhead,Aberdeenshire,north-east,AB,2,N,NO
+fraserburgh,Fraserburgh,Aberdeenshire,north-east,AB,2,N,NO
+inverurie,Inverurie,Aberdeenshire,north-east,AB,2,N,NO
+westhill,Westhill,Aberdeenshire,north-east,AB,3,N,NO
+stonehaven,Stonehaven,Aberdeenshire,north-east,AB,3,N,NO
+ellon,Ellon,Aberdeenshire,north-east,AB,3,N,NO
+portlethen,Portlethen,Aberdeenshire,north-east,AB,3,N,NO
+banchory,Banchory,Aberdeenshire,north-east,AB,3,N,NO
+turriff,Turriff,Aberdeenshire,north-east,AB,3,N,NO
+huntly,Huntly,Aberdeenshire,north-east,AB,3,N,NO
+kintore,Kintore,Aberdeenshire,north-east,AB,3,N,NO
+banff,Banff,Aberdeenshire,north-east,AB,3,N,NO
+macduff,Macduff,Aberdeenshire,north-east,AB,3,N,NO
+laurencekirk,Laurencekirk,Aberdeenshire,north-east,AB,3,N,NO
+aboyne,Aboyne,Aberdeenshire,north-east,AB,3,N,NO
+ballater,Ballater,Aberdeenshire,north-east,AB,3,N,NO
+mintlaw,Mintlaw,Aberdeenshire,north-east,AB,3,N,NO
+oldmeldrum,Oldmeldrum,Aberdeenshire,north-east,AB,3,N,NO
+elgin,Elgin,Moray,north-east,IV,2,N,NO
+forres,Forres,Moray,north-east,IV,3,N,NO
+buckie,Buckie,Moray,north-east,AB,3,N,NO
+lossiemouth,Lossiemouth,Moray,north-east,IV,3,N,NO
+keith,Keith,Moray,north-east,AB,3,N,NO
+inverness,Inverness,Highland,highlands,IV,1,N,NO
+fort-william,Fort William,Highland,highlands,PH,2,N,NO
+nairn,Nairn,Highland,highlands,IV,3,N,NO
+thurso,Thurso,Highland,highlands,KW,3,N,NO
+wick,Wick,Highland,highlands,KW,3,N,NO
+alness,Alness,Highland,highlands,IV,3,N,NO
+dingwall,Dingwall,Highland,highlands,IV,3,N,NO
+invergordon,Invergordon,Highland,highlands,IV,3,N,NO
+aviemore,Aviemore,Highland,highlands,PH,3,N,NO
+tain,Tain,Highland,highlands,IV,3,N,NO
+portree,Portree,Highland,highlands,IV,3,Y,NO
+broadford,Broadford,Highland,highlands,IV,3,Y,NO
+kingussie,Kingussie,Highland,highlands,PH,3,N,NO
+grantown-on-spey,Grantown-on-Spey,Highland,highlands,PH,3,N,NO
+ullapool,Ullapool,Highland,highlands,IV,3,N,NO
+dornoch,Dornoch,Highland,highlands,IV,3,N,NO
+golspie,Golspie,Highland,highlands,KW,3,N,NO
+kyle-of-lochalsh,Kyle of Lochalsh,Highland,highlands,IV,3,N,NO
+muir-of-ord,Muir of Ord,Highland,highlands,IV,3,N,NO
+beauly,Beauly,Highland,highlands,IV,3,N,NO
+helensburgh,Helensburgh,Argyll and Bute,argyll-and-bute,G,2,N,NO
+oban,Oban,Argyll and Bute,argyll-and-bute,PA,3,N,NO
+dunoon,Dunoon,Argyll and Bute,argyll-and-bute,PA,3,N,CHECK
+campbeltown,Campbeltown,Argyll and Bute,argyll-and-bute,PA,3,N,NO
+lochgilphead,Lochgilphead,Argyll and Bute,argyll-and-bute,PA,3,N,NO
+inveraray,Inveraray,Argyll and Bute,argyll-and-bute,PA,3,N,NO
+rothesay,Rothesay,Argyll and Bute,argyll-and-bute,PA,3,Y,YES
+tobermory,Tobermory,Argyll and Bute,argyll-and-bute,PA,3,Y,YES
+ayr,Ayr,South Ayrshire,ayrshire-and-arran,KA,2,N,NO
+prestwick,Prestwick,South Ayrshire,ayrshire-and-arran,KA,3,N,NO
+troon,Troon,South Ayrshire,ayrshire-and-arran,KA,3,N,NO
+girvan,Girvan,South Ayrshire,ayrshire-and-arran,KA,3,N,NO
+maybole,Maybole,South Ayrshire,ayrshire-and-arran,KA,3,N,NO
+kilmarnock,Kilmarnock,East Ayrshire,ayrshire-and-arran,KA,2,N,NO
+cumnock,Cumnock,East Ayrshire,ayrshire-and-arran,KA,3,N,NO
+stewarton,Stewarton,East Ayrshire,ayrshire-and-arran,KA,3,N,NO
+galston,Galston,East Ayrshire,ayrshire-and-arran,KA,3,N,NO
+irvine,Irvine,North Ayrshire,ayrshire-and-arran,KA,2,N,NO
+kilwinning,Kilwinning,North Ayrshire,ayrshire-and-arran,KA,2,N,NO
+saltcoats,Saltcoats,North Ayrshire,ayrshire-and-arran,KA,3,N,NO
+ardrossan,Ardrossan,North Ayrshire,ayrshire-and-arran,KA,3,N,NO
+largs,Largs,North Ayrshire,ayrshire-and-arran,KA,3,N,NO
+stevenston,Stevenston,North Ayrshire,ayrshire-and-arran,KA,3,N,NO
+kilbirnie,Kilbirnie,North Ayrshire,ayrshire-and-arran,KA,3,N,NO
+dalry,Dalry,North Ayrshire,ayrshire-and-arran,KA,3,N,NO
+beith,Beith,North Ayrshire,ayrshire-and-arran,KA,3,N,NO
+west-kilbride,West Kilbride,North Ayrshire,ayrshire-and-arran,KA,3,N,NO
+brodick,Brodick,North Ayrshire,ayrshire-and-arran,KA,3,Y,YES
+dumfries,Dumfries,Dumfries and Galloway,south-of-scotland,DG,2,N,NO
+stranraer,Stranraer,Dumfries and Galloway,south-of-scotland,DG,3,N,NO
+annan,Annan,Dumfries and Galloway,south-of-scotland,DG,3,N,NO
+lockerbie,Lockerbie,Dumfries and Galloway,south-of-scotland,DG,3,N,NO
+castle-douglas,Castle Douglas,Dumfries and Galloway,south-of-scotland,DG,3,N,NO
+dalbeattie,Dalbeattie,Dumfries and Galloway,south-of-scotland,DG,3,N,NO
+newton-stewart,Newton Stewart,Dumfries and Galloway,south-of-scotland,DG,3,N,NO
+kirkcudbright,Kirkcudbright,Dumfries and Galloway,south-of-scotland,DG,3,N,NO
+gretna,Gretna,Dumfries and Galloway,south-of-scotland,DG,3,N,NO
+moffat,Moffat,Dumfries and Galloway,south-of-scotland,DG,3,N,NO
+langholm,Langholm,Dumfries and Galloway,south-of-scotland,DG,3,N,NO
+galashiels,Galashiels,Scottish Borders,south-of-scotland,TD,2,N,NO
+hawick,Hawick,Scottish Borders,south-of-scotland,TD,2,N,NO
+peebles,Peebles,Scottish Borders,south-of-scotland,EH,3,N,NO
+kelso,Kelso,Scottish Borders,south-of-scotland,TD,3,N,NO
+selkirk,Selkirk,Scottish Borders,south-of-scotland,TD,3,N,NO
+jedburgh,Jedburgh,Scottish Borders,south-of-scotland,TD,3,N,NO
+eyemouth,Eyemouth,Scottish Borders,south-of-scotland,TD,3,N,NO
+melrose,Melrose,Scottish Borders,south-of-scotland,TD,3,N,NO
+duns,Duns,Scottish Borders,south-of-scotland,TD,3,N,NO
+innerleithen,Innerleithen,Scottish Borders,south-of-scotland,EH,3,N,NO
+coldstream,Coldstream,Scottish Borders,south-of-scotland,TD,3,N,NO
+stornoway,Stornoway,Na h-Eileanan Siar,islands,HS,3,Y,YES
+kirkwall,Kirkwall,Orkney Islands,islands,KW,3,Y,YES
+stromness,Stromness,Orkney Islands,islands,KW,3,Y,YES
+lerwick,Lerwick,Shetland Islands,islands,ZE,3,Y,YES

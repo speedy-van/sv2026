@@ -1,0 +1,109 @@
+slug,name,category,volume_m3,popular,aliases,sort_order
+sofa-2-seater,Sofa (2-seater),living-room,1.00,1,settee|couch,10
+sofa-3-seater,Sofa (3-seater),living-room,1.40,1,settee|couch,20
+sofa-corner,Corner sofa,living-room,2.30,0,l-shaped sofa|sectional,30
+sofa-bed,Sofa bed,living-room,1.40,0,futon,40
+armchair,Armchair,living-room,0.60,1,chair|easy chair,50
+recliner,Recliner chair,living-room,0.70,0,reclining chair,60
+footstool,Footstool or pouffe,living-room,0.15,0,ottoman|pouf,70
+coffee-table,Coffee table,living-room,0.30,1,,80
+side-table,Side table,living-room,0.15,0,end table|lamp table,90
+tv-small,TV (up to 50 inch),living-room,0.20,1,television,100
+tv-large,TV (over 50 inch),living-room,0.35,0,television,110
+tv-unit,TV stand or unit,living-room,0.40,0,media unit,120
+bookcase-small,Bookcase (small),living-room,0.40,0,shelving|shelves,130
+bookcase-large,Bookcase (large),living-room,0.85,0,shelving|shelves,140
+display-cabinet,Display cabinet,living-room,0.85,0,glass cabinet|dresser,150
+sideboard,Sideboard,living-room,1.00,0,buffet,160
+floor-lamp,Floor lamp,living-room,0.15,0,standard lamp,170
+rug,Rug (rolled),living-room,0.15,0,carpet,180
+mirror-large,Mirror (large),living-room,0.15,0,,190
+picture,Picture or artwork,living-room,0.05,0,painting|frame,200
+speakers,Speakers (pair),living-room,0.10,0,hifi,210
+bed-single,Single bed (frame and mattress),bedroom,1.00,0,,10
+bed-double,Double bed (frame and mattress),bedroom,1.70,1,,20
+bed-king,King size bed (frame and mattress),bedroom,2.00,0,,30
+bed-superking,Super king bed (frame and mattress),bedroom,2.30,0,,40
+bunk-bed,Bunk bed,bedroom,1.70,0,,50
+mattress-single,Single mattress only,bedroom,0.40,0,,60
+mattress-double,Double mattress only,bedroom,0.70,0,,70
+mattress-king,King size mattress only,bedroom,0.85,0,,80
+divan-base-double,Divan base (double),bedroom,0.85,0,,90
+headboard,Headboard,bedroom,0.15,0,,100
+wardrobe-single,Wardrobe (single),bedroom,0.85,0,,110
+wardrobe-double,Wardrobe (double),bedroom,1.30,1,,120
+wardrobe-triple,Wardrobe (triple),bedroom,1.85,0,,130
+chest-of-drawers,Chest of drawers,bedroom,0.55,1,drawers,140
+bedside-table,Bedside table,bedroom,0.15,1,nightstand,150
+dressing-table,Dressing table,bedroom,0.55,0,vanity,160
+blanket-box,Ottoman or blanket box,bedroom,0.30,0,storage box,170
+dining-table-small,Dining table (2 to 4 seats),dining,0.55,1,kitchen table,10
+dining-table-large,Dining table (6 to 8 seats),dining,1.00,0,kitchen table,20
+dining-chair,Dining chair,dining,0.15,1,kitchen chair,30
+bar-stool,Bar stool,dining,0.10,0,stool,40
+bench,Bench,dining,0.30,0,,50
+fridge-undercounter,Fridge (under-counter),kitchen-appliances,0.40,0,,10
+fridge-freezer,Fridge freezer (tall),kitchen-appliances,0.85,1,fridge,20
+fridge-american,American fridge freezer,kitchen-appliances,1.40,0,fridge,30
+chest-freezer,Chest freezer,kitchen-appliances,0.70,0,freezer,40
+washing-machine,Washing machine,kitchen-appliances,0.40,1,washer,50
+tumble-dryer,Tumble dryer,kitchen-appliances,0.40,0,dryer,60
+dishwasher,Dishwasher,kitchen-appliances,0.40,0,,70
+cooker,Cooker (freestanding),kitchen-appliances,0.55,0,oven|range,80
+microwave,Microwave,kitchen-appliances,0.10,0,,90
+box-small,Small box,boxes-bags,0.04,0,carton,10
+box-medium,Medium box,boxes-bags,0.08,1,carton,20
+box-large,Large box,boxes-bags,0.13,1,carton,30
+box-wardrobe,Wardrobe box,boxes-bags,0.30,0,hanging box,40
+suitcase,Suitcase,boxes-bags,0.10,0,luggage,50
+bag-holdall,Holdall or bag,boxes-bags,0.05,0,bag|duffel,60
+bag-black,Black bag (soft items),boxes-bags,0.05,0,bin bag|bin liner,70
+tub-storage,Plastic storage tub,boxes-bags,0.07,0,crate,80
+desk-office,Desk,office,0.70,1,office desk,10
+desk-corner,Corner desk,office,1.00,0,,20
+chair-office,Office chair,office,0.30,0,desk chair,30
+cabinet-filing-2,Filing cabinet (2-drawer),office,0.30,0,,40
+cabinet-filing-4,Filing cabinet (4-drawer),office,0.55,0,,50
+workstation,Computer and monitors (per desk),office,0.15,0,pc|monitor,60
+printer-desktop,Printer (desktop),office,0.10,0,,70
+printer-office,"Printer (office, floor-standing)",office,0.70,0,copier|photocopier,80
+cupboard-office,Office storage cupboard,office,1.10,0,stationery cupboard,90
+meeting-table,Meeting table,office,1.10,0,boardroom table,100
+whiteboard,Whiteboard,office,0.15,0,,110
+box-archive,Archive box,office,0.05,0,file box,120
+garden-table,Garden table,garden,0.55,0,patio table,10
+garden-chair,Garden chair,garden,0.15,0,patio chair,20
+garden-bench,Garden bench,garden,0.40,0,,30
+lawn-mower,Lawn mower,garden,0.30,0,mower,40
+bbq,Barbecue,garden,0.40,0,grill,50
+bicycle,Bicycle,garden,0.40,0,bike,60
+parasol,Parasol,garden,0.10,0,umbrella,70
+plant-pot-large,Plant pot (large),garden,0.15,0,planter,80
+tools-garden,Garden tools (bundle),garden,0.15,0,tools,90
+pram,Pram or pushchair,kids,0.20,0,buggy|stroller,10
+cot,Cot,kids,0.40,0,crib,20
+highchair,Highchair,kids,0.15,0,,30
+toy-box,Toy box,kids,0.20,0,,40
+changing-table,Changing table,kids,0.40,0,,50
+treadmill,Treadmill,leisure,1.00,0,running machine,10
+exercise-bike,Exercise bike,leisure,0.40,0,spin bike,20
+rowing-machine,Rowing machine,leisure,0.55,0,rower,30
+weights-bench,Weights bench,leisure,0.40,0,,40
+golf-bag,Golf bag,leisure,0.15,0,golf clubs,50
+keyboard-instrument,Electric keyboard,leisure,0.30,0,keyboard,60
+guitar,Guitar (in case),leisure,0.10,0,,70
+drum-kit,Drum kit,leisure,0.70,0,drums,80
+amplifier,Amplifier,leisure,0.10,0,amp,90
+vacuum,Vacuum cleaner,other,0.10,0,hoover,10
+ironing-board,Ironing board,other,0.10,0,,20
+clothes-rail,Clothes rail,other,0.30,0,,30
+heater-fan,Fan or heater,other,0.10,0,,40
+ladder,Ladder,other,0.15,0,step ladder,50
+shoe-rack,Shoe rack,other,0.15,0,,60
+coat-stand,Coat stand,other,0.10,0,,70
+pet-crate,Pet crate,other,0.20,0,dog crate|cage,80
+fish-tank,Fish tank (empty),other,0.30,0,aquarium,90
+bathroom-cabinet,Bathroom cabinet,other,0.15,0,,100
+laundry-basket,Laundry basket,other,0.10,0,,110
+flatpack-small,Flat-pack box (small),other,0.15,0,ikea box,120
+flatpack-large,Flat-pack box (large),other,0.40,0,ikea box,130

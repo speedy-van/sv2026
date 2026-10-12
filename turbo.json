@@ -1,0 +1,35 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "tasks": {
+    "lint": {
+      "outputs": []
+    },
+    "typecheck": {
+      "outputs": []
+    },
+    "test": {
+      "dependsOn": [],
+      "outputs": []
+    },
+    "build": {
+      "dependsOn": [],
+      "outputs": []
+    },
+    "@sv/web#build": {
+      "dependsOn": [],
+      "outputs": [
+        ".next/**",
+        "!.next/cache/**"
+      ]
+    },
+    "e2e": {
+      "dependsOn": [
+        "build"
+      ],
+      "outputs": [
+        "playwright-report/**",
+        "test-results/**"
+      ]
+    }
+  }
+}

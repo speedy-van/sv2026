@@ -1,0 +1,610 @@
+{
+  "note": "Typical contents. Customers always see and can edit the list. Volumes come from items-catalogue.csv.",
+  "presets": [
+    {
+      "slug": "studio",
+      "name": "Studio flat",
+      "sortOrder": 10,
+      "items": [
+        {
+          "itemSlug": "sofa-2-seater",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "bed-double",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "wardrobe-double",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "chest-of-drawers",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "tv-small",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "tv-unit",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "dining-table-small",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "dining-chair",
+          "quantity": 2
+        },
+        {
+          "itemSlug": "fridge-undercounter",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "washing-machine",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "box-medium",
+          "quantity": 10
+        },
+        {
+          "itemSlug": "box-large",
+          "quantity": 4
+        },
+        {
+          "itemSlug": "bag-black",
+          "quantity": 3
+        },
+        {
+          "itemSlug": "suitcase",
+          "quantity": 2
+        }
+      ]
+    },
+    {
+      "slug": "1-bed",
+      "name": "1 bedroom",
+      "sortOrder": 20,
+      "items": [
+        {
+          "itemSlug": "sofa-3-seater",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "armchair",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "coffee-table",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "tv-small",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "tv-unit",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "bookcase-small",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "bed-double",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "wardrobe-double",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "chest-of-drawers",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "bedside-table",
+          "quantity": 2
+        },
+        {
+          "itemSlug": "dining-table-small",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "dining-chair",
+          "quantity": 4
+        },
+        {
+          "itemSlug": "fridge-freezer",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "washing-machine",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "box-medium",
+          "quantity": 15
+        },
+        {
+          "itemSlug": "box-large",
+          "quantity": 6
+        },
+        {
+          "itemSlug": "bag-black",
+          "quantity": 4
+        },
+        {
+          "itemSlug": "suitcase",
+          "quantity": 2
+        }
+      ]
+    },
+    {
+      "slug": "2-bed",
+      "name": "2 bedrooms",
+      "sortOrder": 30,
+      "items": [
+        {
+          "itemSlug": "sofa-3-seater",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "sofa-2-seater",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "coffee-table",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "tv-large",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "tv-unit",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "bookcase-large",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "bed-double",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "bed-single",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "wardrobe-double",
+          "quantity": 2
+        },
+        {
+          "itemSlug": "chest-of-drawers",
+          "quantity": 2
+        },
+        {
+          "itemSlug": "bedside-table",
+          "quantity": 3
+        },
+        {
+          "itemSlug": "desk-office",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "chair-office",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "dining-table-small",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "dining-chair",
+          "quantity": 4
+        },
+        {
+          "itemSlug": "fridge-freezer",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "washing-machine",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "tumble-dryer",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "microwave",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "box-medium",
+          "quantity": 25
+        },
+        {
+          "itemSlug": "box-large",
+          "quantity": 10
+        },
+        {
+          "itemSlug": "bag-black",
+          "quantity": 6
+        },
+        {
+          "itemSlug": "suitcase",
+          "quantity": 3
+        },
+        {
+          "itemSlug": "vacuum",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "bicycle",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "slug": "3-bed",
+      "name": "3 bedrooms",
+      "sortOrder": 40,
+      "items": [
+        {
+          "itemSlug": "sofa-3-seater",
+          "quantity": 2
+        },
+        {
+          "itemSlug": "armchair",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "coffee-table",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "tv-large",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "tv-unit",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "sideboard",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "bookcase-large",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "bed-king",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "bed-double",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "bed-single",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "wardrobe-double",
+          "quantity": 3
+        },
+        {
+          "itemSlug": "chest-of-drawers",
+          "quantity": 3
+        },
+        {
+          "itemSlug": "bedside-table",
+          "quantity": 4
+        },
+        {
+          "itemSlug": "dressing-table",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "desk-office",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "chair-office",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "dining-table-large",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "dining-chair",
+          "quantity": 6
+        },
+        {
+          "itemSlug": "fridge-freezer",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "washing-machine",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "tumble-dryer",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "dishwasher",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "microwave",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "box-medium",
+          "quantity": 35
+        },
+        {
+          "itemSlug": "box-large",
+          "quantity": 15
+        },
+        {
+          "itemSlug": "bag-black",
+          "quantity": 8
+        },
+        {
+          "itemSlug": "suitcase",
+          "quantity": 4
+        },
+        {
+          "itemSlug": "garden-table",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "garden-chair",
+          "quantity": 4
+        },
+        {
+          "itemSlug": "lawn-mower",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "bicycle",
+          "quantity": 2
+        },
+        {
+          "itemSlug": "vacuum",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "slug": "4-bed-plus",
+      "name": "4+ bedrooms",
+      "sortOrder": 50,
+      "items": [
+        {
+          "itemSlug": "sofa-3-seater",
+          "quantity": 2
+        },
+        {
+          "itemSlug": "sofa-corner",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "armchair",
+          "quantity": 2
+        },
+        {
+          "itemSlug": "coffee-table",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "tv-large",
+          "quantity": 2
+        },
+        {
+          "itemSlug": "tv-unit",
+          "quantity": 2
+        },
+        {
+          "itemSlug": "sideboard",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "bookcase-large",
+          "quantity": 2
+        },
+        {
+          "itemSlug": "bed-king",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "bed-double",
+          "quantity": 2
+        },
+        {
+          "itemSlug": "bed-single",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "wardrobe-double",
+          "quantity": 4
+        },
+        {
+          "itemSlug": "chest-of-drawers",
+          "quantity": 4
+        },
+        {
+          "itemSlug": "bedside-table",
+          "quantity": 6
+        },
+        {
+          "itemSlug": "dressing-table",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "desk-office",
+          "quantity": 2
+        },
+        {
+          "itemSlug": "chair-office",
+          "quantity": 2
+        },
+        {
+          "itemSlug": "dining-table-large",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "dining-chair",
+          "quantity": 8
+        },
+        {
+          "itemSlug": "fridge-freezer",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "fridge-undercounter",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "washing-machine",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "tumble-dryer",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "dishwasher",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "microwave",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "box-medium",
+          "quantity": 45
+        },
+        {
+          "itemSlug": "box-large",
+          "quantity": 20
+        },
+        {
+          "itemSlug": "bag-black",
+          "quantity": 10
+        },
+        {
+          "itemSlug": "suitcase",
+          "quantity": 5
+        },
+        {
+          "itemSlug": "garden-table",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "garden-chair",
+          "quantity": 6
+        },
+        {
+          "itemSlug": "lawn-mower",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "bbq",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "bicycle",
+          "quantity": 3
+        },
+        {
+          "itemSlug": "vacuum",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "treadmill",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "slug": "student-room",
+      "name": "Student room",
+      "sortOrder": 60,
+      "items": [
+        {
+          "itemSlug": "box-medium",
+          "quantity": 8
+        },
+        {
+          "itemSlug": "box-large",
+          "quantity": 3
+        },
+        {
+          "itemSlug": "suitcase",
+          "quantity": 2
+        },
+        {
+          "itemSlug": "bag-holdall",
+          "quantity": 3
+        },
+        {
+          "itemSlug": "bag-black",
+          "quantity": 2
+        },
+        {
+          "itemSlug": "tv-small",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "slug": "small-office",
+      "name": "Small office (5 desks)",
+      "sortOrder": 70,
+      "items": [
+        {
+          "itemSlug": "desk-office",
+          "quantity": 5
+        },
+        {
+          "itemSlug": "chair-office",
+          "quantity": 5
+        },
+        {
+          "itemSlug": "workstation",
+          "quantity": 5
+        },
+        {
+          "itemSlug": "cabinet-filing-4",
+          "quantity": 2
+        },
+        {
+          "itemSlug": "printer-desktop",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "meeting-table",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "whiteboard",
+          "quantity": 1
+        },
+        {
+          "itemSlug": "box-archive",
+          "quantity": 20
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,832 @@
+// Speedy Van — database schema (Neon Postgres, Prisma ORM 7.x).
+// REFERENCE. Codex copies this to packages/db/prisma/schema.prisma.
+// The connection URL lives in packages/db/prisma.config.ts (Prisma 7 style), not here.
+// Money: Int pence. Engine inputs (miles, m³): Float, stored exactly as used so re-pricing is bit-identical.
+// Dates: move dates are @db.Date (Europe/London civil dates). Timestamps are UTC timestamptz.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ───────────────────────────── Enums ─────────────────────────────
+
+enum Role {
+  OWNER
+  ADMIN
+  DRIVER
+}
+
+enum UserStatus {
+  INVITED
+  ACTIVE
+  DISABLED
+}
+
+enum AppKind {
+  ADMIN
+  DRIVER
+}
+
+enum DevicePlatform {
+  IOS
+  ANDROID
+}
+
+enum Slot {
+  MORNING
+  AFTERNOON
+  EVENING
+}
+
+enum BookingStatus {
+  PENDING_PAYMENT
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  EXPIRED
+}
+
+enum DispatchStatus {
+  UNASSIGNED
+  OFFERED
+  ACCEPTED
+}
+
+enum JobStage {
+  NOT_STARTED
+  EN_ROUTE_TO_PICKUP
+  AT_PICKUP
+  LOADING
+  EN_ROUTE_TO_DROPOFF
+  AT_DROPOFF
+  UNLOADING
+  COMPLETED
+}
+
+enum BookingSource {
+  WEB
+  ADMIN_PHONE
+  MANUAL_QUOTE
+}
+
+enum CancelledBy {
+  CUSTOMER
+  ADMIN
+  SYSTEM
+}
+
+enum AssignmentStatus {
+  OFFERED
+  ACCEPTED
+  DECLINED
+  WITHDRAWN
+  EXPIRED
+}
+
+enum PaymentKind {
+  BOOKING
+  RESCHEDULE_DIFFERENCE
+  EXTRA_CHARGE
+  MANUAL_QUOTE
+  ADMIN_BOOKING
+}
+
+enum PaymentMethod {
+  STRIPE
+  OFFLINE // cash, bank transfer or paid before this system existed — admin-recorded, audited
+}
+
+enum PaymentStatus {
+  REQUIRES_PAYMENT
+  PROCESSING
+  SUCCEEDED
+  FAILED
+  CANCELED
+}
+
+enum RefundStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  CANCELED
+}
+
+enum ExtraChargeStatus {
+  REQUESTED
+  AWAITING_PAYMENT
+  PAID
+  REJECTED
+  CANCELED
+}
+
+enum QuoteStatus {
+  ACTIVE
+  CONVERTED
+  EXPIRED
+}
+
+enum ManualQuoteStatus {
+  REQUESTED
+  PRICED
+  ACCEPTED
+  DECLINED
+  EXPIRED
+}
+
+enum PricingVersionStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum OutboxStatus {
+  PENDING
+  PROCESSING
+  DONE
+  FAILED
+}
+
+enum ReviewStatus {
+  PENDING
+  PUBLISHED
+  HIDDEN
+}
+
+enum PhotoKind {
+  BEFORE
+  AFTER
+  DAMAGE
+  EXTRA
+}
+
+enum PayoutMethod {
+  BANK_TRANSFER
+  CASH
+  OTHER
+}
+
+enum ContactStatus {
+  NEW
+  HANDLED
+}
+
+// ───────────────────────────── Staff & auth ─────────────────────────────
+
+model User {
+  id            String         @id @default(cuid())
+  email         String         @unique // always lower-case
+  name          String
+  phone         String?
+  role          Role
+  status        UserStatus     @default(INVITED)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  lastLoginAt   DateTime?
+  driver        DriverProfile?
+  sessions      Session[]
+  pushDevices   PushDevice[]
+  notifications Notification[]
+  auditLogs     AuditLog[]
+
+  @@index([role, status])
+}
+
+model AuthOtp {
+  id         String    @id @default(cuid())
+  email      String
+  app        AppKind
+  codeHash   String // sha256(code + OTP_PEPPER), never the code
+  expiresAt  DateTime
+  attempts   Int       @default(0)
+  consumedAt DateTime?
+  ipHash     String?
+  createdAt  DateTime  @default(now())
+
+  @@index([email, app, createdAt])
+}
+
+model Session {
+  id                       String         @id @default(cuid())
+  userId                   String
+  user                     User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  app                      AppKind
+  refreshTokenHash         String         @unique
+  previousRefreshTokenHash String?        @unique // reuse of this ⇒ revoke session (token theft)
+  deviceId                 String
+  deviceName               String?
+  platform                 DevicePlatform
+  appVersion               String?
+  createdAt                DateTime       @default(now())
+  lastUsedAt               DateTime       @default(now())
+  expiresAt                DateTime
+  revokedAt                DateTime?
+  revokedReason            String?
+  pushDevices              PushDevice[]
+
+  @@index([userId, revokedAt])
+}
+
+model PushDevice {
+  id               String         @id @default(cuid())
+  userId           String
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessionId        String?
+  session          Session?       @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  app              AppKind
+  platform         DevicePlatform
+  expoPushToken    String         @unique
+  enabled          Boolean        @default(true)
+  lastRegisteredAt DateTime       @default(now())
+  lastError        String?
+  createdAt        DateTime       @default(now())
+  tickets          PushTicket[]
+
+  @@index([userId, app, enabled])
+}
+
+model PushTicket {
+  id            String     @id @default(cuid())
+  ticketId      String     @unique // Expo push ticket id
+  pushDeviceId  String
+  pushDevice    PushDevice @relation(fields: [pushDeviceId], references: [id], onDelete: Cascade)
+  outboxEventId String?
+  createdAt     DateTime   @default(now())
+  checkedAt     DateTime?
+  status        String? // ok | error
+  error         String? // e.g. DeviceNotRegistered
+
+  @@index([checkedAt, createdAt])
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String // NEW_BOOKING | MANUAL_QUOTE_REQUESTED | JOB_OFFERED | ...
+  title     String
+  body      String
+  data      Json?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, createdAt])
+  @@index([userId, readAt])
+}
+
+// ───────────────────────────── Drivers & fleet ─────────────────────────────
+
+model DriverProfile {
+  userId           String                 @id
+  user             User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  licenceExpiry    DateTime?              @db.Date
+  rightToWorkAt    DateTime?
+  payoutPercent    Int                    @default(0) // 0–100 of booking total; owner sets per driver
+  defaultVanId     String?
+  defaultVan       Van?                   @relation(fields: [defaultVanId], references: [id], onDelete: SetNull)
+  homePostcode     String?
+  notes            String?
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+  assignments      Assignment[]
+  bookings         Booking[]
+  locations        DriverLocation[]
+  unavailabilities DriverUnavailability[]
+  earnings         DriverEarning[]
+  payouts          Payout[]
+}
+
+model Van {
+  id              String          @id @default(cuid())
+  registration    String          @unique // upper-case, no spaces
+  label           String // "Luton 1"
+  sizeClass       String // SMALL | MEDIUM | LARGE | LUTON (validated by contracts)
+  motExpiry       DateTime?       @db.Date
+  insuranceExpiry DateTime?       @db.Date
+  taxExpiry       DateTime?       @db.Date
+  active          Boolean         @default(true)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  drivers         DriverProfile[]
+  bookings        Booking[]
+}
+
+model DriverUnavailability {
+  id        String        @id @default(cuid())
+  driverId  String
+  driver    DriverProfile @relation(fields: [driverId], references: [userId], onDelete: Cascade)
+  date      DateTime      @db.Date
+  slot      Slot
+  reason    String?
+  createdAt DateTime      @default(now())
+
+  @@unique([driverId, date, slot])
+}
+
+model DriverLocation {
+  id         String        @id @default(cuid())
+  driverId   String
+  driver     DriverProfile @relation(fields: [driverId], references: [userId], onDelete: Cascade)
+  bookingId  String?
+  booking    Booking?      @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  lat        Float
+  lng        Float
+  accuracyM  Float?
+  heading    Float?
+  speedMps   Float?
+  recordedAt DateTime
+  createdAt  DateTime      @default(now())
+
+  @@index([bookingId, recordedAt])
+  @@index([driverId, recordedAt])
+}
+
+model DriverEarning {
+  id          String        @id @default(cuid())
+  bookingId   String        @unique
+  booking     Booking       @relation(fields: [bookingId], references: [id], onDelete: Restrict)
+  driverId    String
+  driver      DriverProfile @relation(fields: [driverId], references: [userId], onDelete: Restrict)
+  amountPence Int
+  basis       String // "PERCENT:40" — rule used at completion time
+  payoutId    String?
+  payout      Payout?       @relation(fields: [payoutId], references: [id], onDelete: SetNull)
+  createdAt   DateTime      @default(now())
+
+  @@index([driverId, createdAt])
+}
+
+model Payout {
+  id          String          @id @default(cuid())
+  driverId    String
+  driver      DriverProfile   @relation(fields: [driverId], references: [userId], onDelete: Restrict)
+  periodStart DateTime        @db.Date
+  periodEnd   DateTime        @db.Date
+  amountPence Int
+  method      PayoutMethod
+  reference   String?
+  paidAt      DateTime
+  createdById String
+  createdAt   DateTime        @default(now())
+  earnings    DriverEarning[]
+
+  @@index([driverId, paidAt])
+}
+
+// ───────────────────────────── Customers, quotes, bookings ─────────────────────────────
+
+model Customer {
+  id               String    @id @default(cuid())
+  email            String    @unique // lower-case
+  name             String
+  phone            String // E.164
+  marketingOptIn   Boolean   @default(false)
+  marketingOptInAt DateTime?
+  notes            String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  anonymisedAt     DateTime?
+  bookings         Booking[]
+  quotes           Quote[]
+}
+
+model PricingConfigVersion {
+  id              String               @id @default(cuid())
+  version         Int                  @unique
+  status          PricingVersionStatus @default(DRAFT)
+  config          Json // PricingConfig — validated by packages/pricing validateConfig()
+  notes           String?
+  approvedByOwner Boolean              @default(false)
+  createdById     String?
+  createdAt       DateTime             @default(now())
+  publishedAt     DateTime?
+  publishedById   String?
+  quotes          Quote[]
+  bookings        Booking[]
+  // Raw SQL migration adds: CREATE UNIQUE INDEX "one_active_pricing_version"
+  //   ON "PricingConfigVersion"("status") WHERE "status" = 'ACTIVE';
+}
+
+model Quote {
+  id                  String               @id @default(cuid())
+  publicId            String               @unique // nanoid(12), used in URLs
+  status              QuoteStatus          @default(ACTIVE)
+  service             String
+  variant             String
+  input               Json // PricingInput exactly as priced (incl. inventory snapshot)
+  accessDetail        Json // per-address answers the job-level access was derived from
+  pickup              Json // Address snapshot (contracts: AddressSchema)
+  dropoff             Json?
+  distanceMiles       Float
+  durationMinutes     Int
+  routeGeometry       String? // encoded polyline (precision 5) for maps
+  requiresManualQuote Boolean              @default(false)
+  capacityUnits       Int                  @default(1) // job size (operations.jobSizeRules)
+  blocksSlots         Int                  @default(1)
+  manualReasons       String[]
+  pricingVersionId    String
+  pricingVersion      PricingConfigVersion @relation(fields: [pricingVersionId], references: [id], onDelete: Restrict)
+  staticSubtotalPence Int
+  breakdown           Json // StaticBreakdown
+  calendar            Json // CalendarDay[] (prices only; availability is recomputed live)
+  today               DateTime             @db.Date // London civil date used as day 0
+  expiresAt           DateTime
+  customerId          String?
+  customer            Customer?            @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  attribution         Json? // utm_*, gclid, landingPath, referrer
+  ipHash              String?
+  createdAt           DateTime             @default(now())
+  bookings            Booking[]
+  manualQuote         ManualQuote?
+
+  @@index([createdAt])
+  @@index([status, expiresAt])
+}
+
+model Booking {
+  id                          String               @id @default(cuid())
+  reference                   String               @unique // SV-XXXXXX (Crockford base32, no I/L/O/U)
+  status                      BookingStatus        @default(PENDING_PAYMENT)
+  dispatchStatus              DispatchStatus       @default(UNASSIGNED)
+  jobStage                    JobStage             @default(NOT_STARTED)
+  source                      BookingSource        @default(WEB)
+  customerId                  String
+  customer                    Customer             @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  contactName                 String
+  contactEmail                String
+  contactPhone                String
+  quoteId                     String?
+  quote                       Quote?               @relation(fields: [quoteId], references: [id], onDelete: SetNull)
+  service                     String
+  variant                     String
+  pickup                      Json
+  dropoff                     Json?
+  pickupPostcode              String // normalised "G12 8QQ" — denormalised for search
+  dropoffPostcode             String?
+  distanceMiles               Float
+  durationMinutes             Int
+  routeGeometry               String?
+  pricingInput                Json // PricingInput exactly as priced — re-pricing uses this, never zeros
+  accessDetail                Json // per-address access answers (carry, narrow, permit, floors, lifts)
+  priceBreakdown              Json // StaticBreakdown + chosen slot multipliers
+  pricingVersionId            String
+  pricingVersion              PricingConfigVersion @relation(fields: [pricingVersionId], references: [id], onDelete: Restrict)
+  moveDate                    DateTime             @db.Date
+  slot                        Slot
+  totalPence                  Int // current agreed price for the move
+  paidPence                   Int                  @default(0)
+  refundedPence               Int                  @default(0)
+  holdExpiresAt               DateTime?
+  capacityUnits               Int                  @default(1) // crews this job needs (operations.jobSizeRules)
+  blocksSlots                 Int                  @default(1) // consecutive slots the job occupies from its start slot
+  idempotencyKey              String?              @unique
+  customerNotes               String?
+  adminNotes                  String?
+  driverId                    String?
+  driver                      DriverProfile?       @relation(fields: [driverId], references: [userId], onDelete: SetNull)
+  vanId                       String?
+  van                         Van?                 @relation(fields: [vanId], references: [id], onDelete: SetNull)
+  attribution                 Json?
+  termsAcceptedAt             DateTime?
+  startWithinCancellationAck  DateTime? // Consumer Contracts Regs acknowledgement (move < 14 days away)
+  marketingOptIn              Boolean              @default(false)
+  reminderSentAt              DateTime?
+  reviewRequestedAt           DateTime?
+  cancelledAt                 DateTime?
+  cancelledBy                 CancelledBy?
+  cancelReason                String?
+  completedAt                 DateTime?
+  version                     Int                  @default(0) // optimistic concurrency for admin edits
+  createdAt                   DateTime             @default(now())
+  updatedAt                   DateTime             @updatedAt
+  payments                    Payment[]
+  assignments                 Assignment[]
+  events                      JobEvent[]
+  photos                      JobPhoto[]
+  signature                   Signature?
+  extraCharges                ExtraCharge[]
+  review                      Review?
+  earning                     DriverEarning?
+  locations                   DriverLocation[]
+  manualQuote                 ManualQuote?
+  slotHolds                   SlotHold[]
+
+  @@index([moveDate, slot, status])
+  @@index([status, createdAt])
+  @@index([customerId])
+  @@index([driverId, moveDate])
+  @@index([pickupPostcode])
+  @@index([holdExpiresAt])
+}
+
+model ManualQuote {
+  id            String            @id @default(cuid())
+  quoteId       String            @unique
+  quote         Quote             @relation(fields: [quoteId], references: [id], onDelete: Restrict)
+  status        ManualQuoteStatus @default(REQUESTED)
+  reasons       String[]
+  contactName   String
+  contactEmail  String
+  contactPhone  String
+  preferredDate DateTime?         @db.Date
+  preferredSlot Slot?
+  details       String?
+  pricePence    Int?
+  adminMessage  String?
+  pricedById    String?
+  pricedAt      DateTime?
+  validUntil    DateTime?
+  bookingId     String?           @unique
+  booking       Booking?          @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  @@index([status, createdAt])
+}
+
+model CapacityRule {
+  id       String @id @default(cuid())
+  weekday  Int // 0 = Sunday … 6 = Saturday (London)
+  slot     Slot
+  capacity Int // max confirmed jobs in this slot
+
+  @@unique([weekday, slot])
+}
+
+model CapacityOverride {
+  id          String   @id @default(cuid())
+  date        DateTime @db.Date
+  slot        Slot // "close the whole day" = three rows
+  capacity    Int // 0 = closed
+  reason      String?
+  createdById String?
+  createdAt   DateTime @default(now())
+
+  @@unique([date, slot])
+}
+
+// Temporary capacity reservation that is not a booking's own slot (e.g. a customer
+// paying the price difference for a reschedule). Counted by capacity checks until expiresAt.
+model SlotHold {
+  id            String   @id @default(cuid())
+  date          DateTime @db.Date
+  slot          Slot
+  capacityUnits Int      @default(1)
+  blocksSlots   Int      @default(1)
+  bookingId     String
+  booking       Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  reason        String // RESCHEDULE_PAYMENT
+  paymentId     String?  @unique
+  expiresAt     DateTime
+  createdAt     DateTime @default(now())
+
+  @@index([date, slot, expiresAt])
+}
+
+model Assignment {
+  id            String           @id @default(cuid())
+  bookingId     String
+  booking       Booking          @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  driverId      String
+  driver        DriverProfile    @relation(fields: [driverId], references: [userId], onDelete: Restrict)
+  status        AssignmentStatus @default(OFFERED)
+  offeredById   String
+  offeredAt     DateTime         @default(now())
+  respondedAt   DateTime?
+  expiresAt     DateTime?
+  declineReason String?
+
+  @@index([driverId, status])
+  @@index([bookingId, status])
+}
+
+model JobEvent {
+  id            String    @id @default(cuid())
+  bookingId     String
+  booking       Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  type          String // STAGE_CHANGED | NOTE | ISSUE_REPORTED | STATUS_OVERRIDE | ...
+  fromStage     JobStage?
+  toStage       JobStage?
+  actorUserId   String?
+  clientEventId String?   @unique // idempotency key from the driver app's offline queue
+  occurredAt    DateTime // device clock
+  receivedAt    DateTime  @default(now())
+  lat           Float?
+  lng           Float?
+  payload       Json?
+
+  @@index([bookingId, occurredAt])
+}
+
+model JobPhoto {
+  id           String    @id @default(cuid())
+  bookingId    String
+  booking      Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  kind         PhotoKind
+  blobKey      String // storage pathname — never sent to clients; served via /api/v1/files/:id
+  contentType  String
+  bytes        Int
+  uploadedById String
+  clientId     String?   @unique // idempotency for retried uploads
+  takenAt      DateTime?
+  createdAt    DateTime  @default(now())
+
+  @@index([bookingId, kind])
+}
+
+model Signature {
+  bookingId    String   @id
+  booking      Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  blobKey      String
+  signedName   String
+  signedAt     DateTime
+  capturedById String
+}
+
+// ───────────────────────────── Payments ─────────────────────────────
+
+model Payment {
+  id                      String        @id @default(cuid())
+  bookingId               String
+  booking                 Booking       @relation(fields: [bookingId], references: [id], onDelete: Restrict)
+  kind                    PaymentKind
+  method                  PaymentMethod @default(STRIPE)
+  status                  PaymentStatus @default(REQUIRES_PAYMENT)
+  amountPence             Int
+  currency                String        @default("gbp")
+  stripePaymentIntentId   String?       @unique
+  stripeCheckoutSessionId String?       @unique
+  stripeChargeId          String?
+  failureCode             String?
+  failureMessage          String?
+  offlineReference        String? // required when method = OFFLINE (e.g. "Bank transfer 12/10")
+  recordedById            String? // admin who recorded an OFFLINE payment
+  createdAt               DateTime      @default(now())
+  updatedAt               DateTime      @updatedAt
+  refunds                 Refund[]
+  extraCharge             ExtraCharge?
+
+  @@index([bookingId, kind])
+}
+
+model Refund {
+  id             String       @id @default(cuid())
+  paymentId      String
+  payment        Payment      @relation(fields: [paymentId], references: [id], onDelete: Restrict)
+  amountPence    Int
+  reason         String
+  status         RefundStatus @default(PENDING)
+  stripeRefundId String?      @unique
+  createdById    String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([paymentId])
+}
+
+model ExtraCharge {
+  id            String            @id @default(cuid())
+  bookingId     String
+  booking       Booking           @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  description   String
+  amountPence   Int
+  status        ExtraChargeStatus @default(REQUESTED)
+  requestedById String // driver or admin user id
+  decidedById   String?
+  decidedAt     DateTime?
+  paymentId     String?           @unique
+  payment       Payment?          @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  @@index([bookingId, status])
+}
+
+model StripeEvent {
+  id          String    @id // evt_…
+  type        String
+  receivedAt  DateTime  @default(now())
+  processedAt DateTime?
+  error       String?
+}
+
+// ───────────────────────────── Catalogue & content ─────────────────────────────
+
+model Item {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  name      String
+  category  String
+  volumeM3  Float
+  aliases   String[]
+  popular   Boolean  @default(false)
+  sortOrder Int      @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([category, sortOrder])
+}
+
+model ItemPreset {
+  id        String  @id @default(cuid())
+  slug      String  @unique
+  name      String
+  items     Json // [{ itemSlug, quantity }]
+  sortOrder Int     @default(0)
+  active    Boolean @default(true)
+}
+
+model Review {
+  id            String       @id @default(cuid())
+  bookingId     String       @unique
+  booking       Booking      @relation(fields: [bookingId], references: [id], onDelete: Restrict)
+  rating        Int // 1–5 (CHECK constraint in migration)
+  comment       String?
+  displayName   String // "Sarah M."
+  town          String?
+  status        ReviewStatus @default(PENDING)
+  moderatedById String?
+  moderatedAt   DateTime?
+  createdAt     DateTime     @default(now())
+
+  @@index([status, createdAt])
+}
+
+model LocationContent {
+  slug        String   @id // matches docs/data/scotland-locations.csv
+  localNotes  String? // owner/admin-written local moving notes (Markdown, max 2,000 chars)
+  published   Boolean  @default(true)
+  updatedById String?
+  updatedAt   DateTime @updatedAt
+}
+
+model Faq {
+  id        String   @id @default(cuid())
+  question  String
+  answer    String
+  category  String // BOOKING | PRICING | PAYMENT | ON_THE_DAY | COVERAGE | CHANGES
+  sortOrder Int      @default(0)
+  active    Boolean  @default(true)
+  updatedAt DateTime @updatedAt
+}
+
+model ContactMessage {
+  id          String        @id @default(cuid())
+  name        String
+  email       String
+  phone       String?
+  message     String
+  status      ContactStatus @default(NEW)
+  handledById String?
+  createdAt   DateTime      @default(now())
+
+  @@index([status, createdAt])
+}
+
+// ───────────────────────────── Platform ─────────────────────────────
+
+model Setting {
+  key         String   @id // see 03-database.md §5 for every key and its zod schema
+  value       Json
+  updatedById String?
+  updatedAt   DateTime @updatedAt
+}
+
+model OutboxEvent {
+  id            String       @id @default(cuid())
+  type          String
+  payload       Json
+  status        OutboxStatus @default(PENDING)
+  attempts      Int          @default(0)
+  nextAttemptAt DateTime     @default(now())
+  lastError     String?
+  dedupeKey     String?      @unique
+  createdAt     DateTime     @default(now())
+  processedAt   DateTime?
+
+  @@index([status, nextAttemptAt])
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  actorUserId String?
+  actor       User?    @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+  actorType   String // USER | CUSTOMER | SYSTEM | STRIPE
+  action      String // e.g. booking.cancel, pricing.publish
+  entityType  String
+  entityId    String
+  before      Json?
+  after       Json?
+  reason      String?
+  requestId   String?
+  createdAt   DateTime @default(now())
+
+  @@index([entityType, entityId, createdAt])
+  @@index([actorUserId, createdAt])
+}

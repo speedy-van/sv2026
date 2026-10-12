@@ -1,0 +1,23 @@
+{
+  "name": "@sv/config",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./eslint/base": "./eslint/base.js",
+    "./eslint/next": "./eslint/next.js",
+    "./eslint/react-native": "./eslint/react-native.js",
+    "./prettier": "./prettier/index.cjs",
+    "./tsconfig/base.json": "./tsconfig/base.json",
+    "./tsconfig/expo.json": "./tsconfig/expo.json",
+    "./tsconfig/library.json": "./tsconfig/library.json",
+    "./tsconfig/nextjs.json": "./tsconfig/nextjs.json"
+  },
+  "scripts": {
+    "build": "tsc --noEmit",
+    "lint": "eslint . --max-warnings=0",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  }
+}

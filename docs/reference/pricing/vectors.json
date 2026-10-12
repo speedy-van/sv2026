@@ -1,0 +1,2023 @@
+{
+  "configVersion": "DEFAULT_PRICING_CONFIG v1",
+  "generatedBy": "reference engine",
+  "vectors": [
+    {
+      "id": "gv-01-man-and-van-small",
+      "note": "Example A from the spec walkthrough",
+      "today": "2026-11-02",
+      "input": {
+        "service": "man-and-van",
+        "variant": "standard",
+        "distanceMiles": 12.4,
+        "pickup": {
+          "floor": 2,
+          "hasLift": false
+        },
+        "dropoff": {
+          "floor": 0,
+          "hasLift": false
+        },
+        "inventory": [
+          {
+            "itemId": "sofa-3-seater",
+            "name": "sofa-3-seater",
+            "quantity": 1,
+            "unitVolumeM3": 1.4
+          },
+          {
+            "itemId": "armchair",
+            "name": "armchair",
+            "quantity": 1,
+            "unitVolumeM3": 0.6
+          },
+          {
+            "itemId": "box-medium",
+            "name": "box-medium",
+            "quantity": 1,
+            "unitVolumeM3": 0.08
+          }
+        ],
+        "access": {
+          "carryMetres": 25,
+          "narrowAccess": false,
+          "permitZone": false
+        },
+        "addons": {
+          "helpers": 1,
+          "packing": false,
+          "assembly": false
+        }
+      },
+      "expected": {
+        "staticSubtotalPence": 12408,
+        "breakdown": {
+          "basePence": 4500,
+          "variantMultiplier": 1,
+          "baseAfterVariantPence": 4500,
+          "distance": {
+            "miles": 12.4,
+            "billableMiles": 7.4,
+            "fullRateMiles": 7.4,
+            "discountedMiles": 0,
+            "mode": "STANDARD",
+            "pence": 1110
+          },
+          "floors": {
+            "pickupPence": 2400,
+            "dropoffPence": 0
+          },
+          "inventory": {
+            "itemCount": 3,
+            "volumeM3": 2.08,
+            "mode": "STANDARD",
+            "pence": 1848
+          },
+          "access": {
+            "carryPence": 750,
+            "narrowPence": 0,
+            "permitPence": 0,
+            "pence": 750
+          },
+          "addons": {
+            "helpersPence": 1800,
+            "packingPence": 0,
+            "assemblyPence": 0,
+            "pence": 1800
+          },
+          "staticSubtotalPence": 12408
+        },
+        "requiresManualQuote": false,
+        "calendar": [
+          {
+            "date": "2026-11-02",
+            "MORNING": 18240,
+            "AFTERNOON": 17371,
+            "EVENING": 19108
+          },
+          {
+            "date": "2026-11-03",
+            "MORNING": 15634,
+            "AFTERNOON": 14890,
+            "EVENING": 16379
+          },
+          {
+            "date": "2026-11-04",
+            "MORNING": 14331,
+            "AFTERNOON": 13649,
+            "EVENING": 15014
+          },
+          {
+            "date": "2026-11-05",
+            "MORNING": 13028,
+            "AFTERNOON": 12408,
+            "EVENING": 13649
+          },
+          {
+            "date": "2026-11-06",
+            "MORNING": 13028,
+            "AFTERNOON": 12408,
+            "EVENING": 13649
+          },
+          {
+            "date": "2026-11-07",
+            "MORNING": 14983,
+            "AFTERNOON": 14269,
+            "EVENING": 15696
+          },
+          {
+            "date": "2026-11-08",
+            "MORNING": 14983,
+            "AFTERNOON": 14269,
+            "EVENING": 15696
+          },
+          {
+            "date": "2026-11-09",
+            "MORNING": 13028,
+            "AFTERNOON": 12408,
+            "EVENING": 13649
+          },
+          {
+            "date": "2026-11-10",
+            "MORNING": 13028,
+            "AFTERNOON": 12408,
+            "EVENING": 13649
+          },
+          {
+            "date": "2026-11-11",
+            "MORNING": 13028,
+            "AFTERNOON": 12408,
+            "EVENING": 13649
+          },
+          {
+            "date": "2026-11-12",
+            "MORNING": 13028,
+            "AFTERNOON": 12408,
+            "EVENING": 13649
+          },
+          {
+            "date": "2026-11-13",
+            "MORNING": 13028,
+            "AFTERNOON": 12408,
+            "EVENING": 13649
+          },
+          {
+            "date": "2026-11-14",
+            "MORNING": 14983,
+            "AFTERNOON": 14269,
+            "EVENING": 15696
+          },
+          {
+            "date": "2026-11-15",
+            "MORNING": 14983,
+            "AFTERNOON": 14269,
+            "EVENING": 15696
+          },
+          {
+            "date": "2026-11-16",
+            "MORNING": 13028,
+            "AFTERNOON": 12408,
+            "EVENING": 13649
+          },
+          {
+            "date": "2026-11-17",
+            "MORNING": 13028,
+            "AFTERNOON": 12408,
+            "EVENING": 13649
+          },
+          {
+            "date": "2026-11-18",
+            "MORNING": 13028,
+            "AFTERNOON": 12408,
+            "EVENING": 13649
+          },
+          {
+            "date": "2026-11-19",
+            "MORNING": 13028,
+            "AFTERNOON": 12408,
+            "EVENING": 13649
+          },
+          {
+            "date": "2026-11-20",
+            "MORNING": 13028,
+            "AFTERNOON": 12408,
+            "EVENING": 13649
+          },
+          {
+            "date": "2026-11-21",
+            "MORNING": 14983,
+            "AFTERNOON": 14269,
+            "EVENING": 15696
+          },
+          {
+            "date": "2026-11-22",
+            "MORNING": 14983,
+            "AFTERNOON": 14269,
+            "EVENING": 15696
+          },
+          {
+            "date": "2026-11-23",
+            "MORNING": 13028,
+            "AFTERNOON": 12408,
+            "EVENING": 13649
+          },
+          {
+            "date": "2026-11-24",
+            "MORNING": 13028,
+            "AFTERNOON": 12408,
+            "EVENING": 13649
+          },
+          {
+            "date": "2026-11-25",
+            "MORNING": 13028,
+            "AFTERNOON": 12408,
+            "EVENING": 13649
+          },
+          {
+            "date": "2026-11-26",
+            "MORNING": 13028,
+            "AFTERNOON": 12408,
+            "EVENING": 13649
+          },
+          {
+            "date": "2026-11-27",
+            "MORNING": 13028,
+            "AFTERNOON": 12408,
+            "EVENING": 13649
+          },
+          {
+            "date": "2026-11-28",
+            "MORNING": 16181,
+            "AFTERNOON": 15411,
+            "EVENING": 16952
+          },
+          {
+            "date": "2026-11-29",
+            "MORNING": 16181,
+            "AFTERNOON": 15411,
+            "EVENING": 16952
+          }
+        ]
+      }
+    },
+    {
+      "id": "gv-02-house-large-peak",
+      "note": "Example B: large inventory, July, 46.3 miles",
+      "today": "2026-07-01",
+      "input": {
+        "service": "house-removals",
+        "variant": "2-bed",
+        "distanceMiles": 46.3,
+        "pickup": {
+          "floor": 1,
+          "hasLift": true
+        },
+        "dropoff": {
+          "floor": 3,
+          "hasLift": false
+        },
+        "inventory": [
+          {
+            "itemId": "box-large",
+            "name": "box-large",
+            "quantity": 20,
+            "unitVolumeM3": 0.25
+          },
+          {
+            "itemId": "wardrobe-double",
+            "name": "wardrobe-double",
+            "quantity": 2,
+            "unitVolumeM3": 1.25
+          },
+          {
+            "itemId": "bed-double",
+            "name": "bed-double",
+            "quantity": 2,
+            "unitVolumeM3": 1.5
+          },
+          {
+            "itemId": "sofa-3-seater",
+            "name": "sofa-3-seater",
+            "quantity": 1,
+            "unitVolumeM3": 1.4
+          },
+          {
+            "itemId": "misc",
+            "name": "misc",
+            "quantity": 5,
+            "unitVolumeM3": 0.12
+          }
+        ],
+        "access": {
+          "carryMetres": 10,
+          "narrowAccess": true,
+          "permitZone": true
+        },
+        "addons": {
+          "helpers": 2,
+          "packing": true,
+          "assembly": true
+        }
+      },
+      "expected": {
+        "staticSubtotalPence": 63216,
+        "breakdown": {
+          "basePence": 12000,
+          "variantMultiplier": 1,
+          "baseAfterVariantPence": 12000,
+          "distance": {
+            "miles": 46.3,
+            "billableMiles": 41.3,
+            "fullRateMiles": 20,
+            "discountedMiles": 21.3,
+            "mode": "STANDARD",
+            "pence": 5716
+          },
+          "floors": {
+            "pickupPence": 800,
+            "dropoffPence": 3600
+          },
+          "inventory": {
+            "itemCount": 30,
+            "volumeM3": 12.5,
+            "mode": "LARGE",
+            "pence": 27000
+          },
+          "access": {
+            "carryPence": 0,
+            "narrowPence": 2500,
+            "permitPence": 2000,
+            "pence": 4500
+          },
+          "addons": {
+            "helpersPence": 3600,
+            "packingPence": 3500,
+            "assemblyPence": 2500,
+            "pence": 9600
+          },
+          "staticSubtotalPence": 63216
+        },
+        "requiresManualQuote": false,
+        "calendar": [
+          {
+            "date": "2026-07-01",
+            "MORNING": 102220,
+            "AFTERNOON": 97353,
+            "EVENING": 107088
+          },
+          {
+            "date": "2026-07-02",
+            "MORNING": 87617,
+            "AFTERNOON": 83445,
+            "EVENING": 91790
+          },
+          {
+            "date": "2026-07-03",
+            "MORNING": 80316,
+            "AFTERNOON": 76491,
+            "EVENING": 84140
+          },
+          {
+            "date": "2026-07-04",
+            "MORNING": 83967,
+            "AFTERNOON": 79968,
+            "EVENING": 87965
+          },
+          {
+            "date": "2026-07-05",
+            "MORNING": 83967,
+            "AFTERNOON": 79968,
+            "EVENING": 87965
+          },
+          {
+            "date": "2026-07-06",
+            "MORNING": 73014,
+            "AFTERNOON": 69538,
+            "EVENING": 76491
+          },
+          {
+            "date": "2026-07-07",
+            "MORNING": 73014,
+            "AFTERNOON": 69538,
+            "EVENING": 76491
+          },
+          {
+            "date": "2026-07-08",
+            "MORNING": 73014,
+            "AFTERNOON": 69538,
+            "EVENING": 76491
+          },
+          {
+            "date": "2026-07-09",
+            "MORNING": 73014,
+            "AFTERNOON": 69538,
+            "EVENING": 76491
+          },
+          {
+            "date": "2026-07-10",
+            "MORNING": 73014,
+            "AFTERNOON": 69538,
+            "EVENING": 76491
+          },
+          {
+            "date": "2026-07-11",
+            "MORNING": 83967,
+            "AFTERNOON": 79968,
+            "EVENING": 87965
+          },
+          {
+            "date": "2026-07-12",
+            "MORNING": 83967,
+            "AFTERNOON": 79968,
+            "EVENING": 87965
+          },
+          {
+            "date": "2026-07-13",
+            "MORNING": 73014,
+            "AFTERNOON": 69538,
+            "EVENING": 76491
+          },
+          {
+            "date": "2026-07-14",
+            "MORNING": 73014,
+            "AFTERNOON": 69538,
+            "EVENING": 76491
+          },
+          {
+            "date": "2026-07-15",
+            "MORNING": 73014,
+            "AFTERNOON": 69538,
+            "EVENING": 76491
+          },
+          {
+            "date": "2026-07-16",
+            "MORNING": 73014,
+            "AFTERNOON": 69538,
+            "EVENING": 76491
+          },
+          {
+            "date": "2026-07-17",
+            "MORNING": 73014,
+            "AFTERNOON": 69538,
+            "EVENING": 76491
+          },
+          {
+            "date": "2026-07-18",
+            "MORNING": 83967,
+            "AFTERNOON": 79968,
+            "EVENING": 87965
+          },
+          {
+            "date": "2026-07-19",
+            "MORNING": 83967,
+            "AFTERNOON": 79968,
+            "EVENING": 87965
+          },
+          {
+            "date": "2026-07-20",
+            "MORNING": 73014,
+            "AFTERNOON": 69538,
+            "EVENING": 76491
+          },
+          {
+            "date": "2026-07-21",
+            "MORNING": 73014,
+            "AFTERNOON": 69538,
+            "EVENING": 76491
+          },
+          {
+            "date": "2026-07-22",
+            "MORNING": 73014,
+            "AFTERNOON": 69538,
+            "EVENING": 76491
+          },
+          {
+            "date": "2026-07-23",
+            "MORNING": 73014,
+            "AFTERNOON": 69538,
+            "EVENING": 76491
+          },
+          {
+            "date": "2026-07-24",
+            "MORNING": 73014,
+            "AFTERNOON": 69538,
+            "EVENING": 76491
+          },
+          {
+            "date": "2026-07-25",
+            "MORNING": 83967,
+            "AFTERNOON": 79968,
+            "EVENING": 87965
+          },
+          {
+            "date": "2026-07-26",
+            "MORNING": 83967,
+            "AFTERNOON": 79968,
+            "EVENING": 87965
+          },
+          {
+            "date": "2026-07-27",
+            "MORNING": 73014,
+            "AFTERNOON": 69538,
+            "EVENING": 76491
+          },
+          {
+            "date": "2026-07-28",
+            "MORNING": 73014,
+            "AFTERNOON": 69538,
+            "EVENING": 76491
+          }
+        ]
+      }
+    },
+    {
+      "id": "gv-03-rubbish-feb-eom",
+      "note": "Example C: single address, float-safe 1.0 m³ threshold, February",
+      "today": "2027-02-20",
+      "input": {
+        "service": "rubbish",
+        "variant": "standard",
+        "distanceMiles": 0,
+        "pickup": {
+          "floor": 0,
+          "hasLift": false
+        },
+        "dropoff": null,
+        "inventory": [
+          {
+            "itemId": "bag-black",
+            "name": "bag-black",
+            "quantity": 6,
+            "unitVolumeM3": 0.05
+          },
+          {
+            "itemId": "mattress-double",
+            "name": "mattress-double",
+            "quantity": 1,
+            "unitVolumeM3": 0.7
+          }
+        ],
+        "access": {
+          "carryMetres": 30,
+          "narrowAccess": false,
+          "permitZone": false
+        },
+        "addons": {
+          "helpers": 0,
+          "packing": false,
+          "assembly": false
+        }
+      },
+      "expected": {
+        "staticSubtotalPence": 17500,
+        "breakdown": {
+          "basePence": 9000,
+          "variantMultiplier": 1,
+          "baseAfterVariantPence": 9000,
+          "distance": {
+            "miles": 0,
+            "billableMiles": 0,
+            "fullRateMiles": 0,
+            "discountedMiles": 0,
+            "mode": "STANDARD",
+            "pence": 0
+          },
+          "floors": {
+            "pickupPence": 0,
+            "dropoffPence": 0
+          },
+          "inventory": {
+            "itemCount": 7,
+            "volumeM3": 1,
+            "mode": "LARGE",
+            "pence": 7500
+          },
+          "access": {
+            "carryPence": 1000,
+            "narrowPence": 0,
+            "permitPence": 0,
+            "pence": 1000
+          },
+          "addons": {
+            "helpersPence": 0,
+            "packingPence": 0,
+            "assemblyPence": 0,
+            "pence": 0
+          },
+          "staticSubtotalPence": 17500
+        },
+        "requiresManualQuote": false,
+        "calendar": [
+          {
+            "date": "2027-02-20",
+            "MORNING": 29584,
+            "AFTERNOON": 28175,
+            "EVENING": 30993
+          },
+          {
+            "date": "2027-02-21",
+            "MORNING": 25358,
+            "AFTERNOON": 24150,
+            "EVENING": 26565
+          },
+          {
+            "date": "2027-02-22",
+            "MORNING": 20213,
+            "AFTERNOON": 19250,
+            "EVENING": 21175
+          },
+          {
+            "date": "2027-02-23",
+            "MORNING": 18375,
+            "AFTERNOON": 17500,
+            "EVENING": 19250
+          },
+          {
+            "date": "2027-02-24",
+            "MORNING": 18375,
+            "AFTERNOON": 17500,
+            "EVENING": 19250
+          },
+          {
+            "date": "2027-02-25",
+            "MORNING": 18375,
+            "AFTERNOON": 17500,
+            "EVENING": 19250
+          },
+          {
+            "date": "2027-02-26",
+            "MORNING": 19845,
+            "AFTERNOON": 18900,
+            "EVENING": 20790
+          },
+          {
+            "date": "2027-02-27",
+            "MORNING": 22822,
+            "AFTERNOON": 21735,
+            "EVENING": 23909
+          },
+          {
+            "date": "2027-02-28",
+            "MORNING": 22822,
+            "AFTERNOON": 21735,
+            "EVENING": 23909
+          },
+          {
+            "date": "2027-03-01",
+            "MORNING": 18375,
+            "AFTERNOON": 17500,
+            "EVENING": 19250
+          },
+          {
+            "date": "2027-03-02",
+            "MORNING": 18375,
+            "AFTERNOON": 17500,
+            "EVENING": 19250
+          },
+          {
+            "date": "2027-03-03",
+            "MORNING": 18375,
+            "AFTERNOON": 17500,
+            "EVENING": 19250
+          },
+          {
+            "date": "2027-03-04",
+            "MORNING": 18375,
+            "AFTERNOON": 17500,
+            "EVENING": 19250
+          },
+          {
+            "date": "2027-03-05",
+            "MORNING": 18375,
+            "AFTERNOON": 17500,
+            "EVENING": 19250
+          },
+          {
+            "date": "2027-03-06",
+            "MORNING": 21131,
+            "AFTERNOON": 20125,
+            "EVENING": 22138
+          },
+          {
+            "date": "2027-03-07",
+            "MORNING": 21131,
+            "AFTERNOON": 20125,
+            "EVENING": 22138
+          },
+          {
+            "date": "2027-03-08",
+            "MORNING": 18375,
+            "AFTERNOON": 17500,
+            "EVENING": 19250
+          },
+          {
+            "date": "2027-03-09",
+            "MORNING": 18375,
+            "AFTERNOON": 17500,
+            "EVENING": 19250
+          },
+          {
+            "date": "2027-03-10",
+            "MORNING": 18375,
+            "AFTERNOON": 17500,
+            "EVENING": 19250
+          },
+          {
+            "date": "2027-03-11",
+            "MORNING": 18375,
+            "AFTERNOON": 17500,
+            "EVENING": 19250
+          },
+          {
+            "date": "2027-03-12",
+            "MORNING": 18375,
+            "AFTERNOON": 17500,
+            "EVENING": 19250
+          },
+          {
+            "date": "2027-03-13",
+            "MORNING": 21131,
+            "AFTERNOON": 20125,
+            "EVENING": 22138
+          },
+          {
+            "date": "2027-03-14",
+            "MORNING": 21131,
+            "AFTERNOON": 20125,
+            "EVENING": 22138
+          },
+          {
+            "date": "2027-03-15",
+            "MORNING": 18375,
+            "AFTERNOON": 17500,
+            "EVENING": 19250
+          },
+          {
+            "date": "2027-03-16",
+            "MORNING": 18375,
+            "AFTERNOON": 17500,
+            "EVENING": 19250
+          },
+          {
+            "date": "2027-03-17",
+            "MORNING": 18375,
+            "AFTERNOON": 17500,
+            "EVENING": 19250
+          },
+          {
+            "date": "2027-03-18",
+            "MORNING": 18375,
+            "AFTERNOON": 17500,
+            "EVENING": 19250
+          },
+          {
+            "date": "2027-03-19",
+            "MORNING": 18375,
+            "AFTERNOON": 17500,
+            "EVENING": 19250
+          }
+        ]
+      }
+    },
+    {
+      "id": "gv-04-same-day-short",
+      "note": "Inside free miles, no items, today multiplier",
+      "today": "2026-10-12",
+      "input": {
+        "service": "same-day",
+        "variant": "standard",
+        "distanceMiles": 4.99,
+        "pickup": {
+          "floor": 0,
+          "hasLift": false
+        },
+        "dropoff": {
+          "floor": 0,
+          "hasLift": false
+        },
+        "inventory": [],
+        "access": {
+          "carryMetres": 0,
+          "narrowAccess": false,
+          "permitZone": false
+        },
+        "addons": {
+          "helpers": 0,
+          "packing": false,
+          "assembly": false
+        }
+      },
+      "expected": {
+        "staticSubtotalPence": 5500,
+        "breakdown": {
+          "basePence": 5500,
+          "variantMultiplier": 1,
+          "baseAfterVariantPence": 5500,
+          "distance": {
+            "miles": 4.99,
+            "billableMiles": 0,
+            "fullRateMiles": 0,
+            "discountedMiles": 0,
+            "mode": "STANDARD",
+            "pence": 0
+          },
+          "floors": {
+            "pickupPence": 0,
+            "dropoffPence": 0
+          },
+          "inventory": {
+            "itemCount": 0,
+            "volumeM3": 0,
+            "mode": "STANDARD",
+            "pence": 0
+          },
+          "access": {
+            "carryPence": 0,
+            "narrowPence": 0,
+            "permitPence": 0,
+            "pence": 0
+          },
+          "addons": {
+            "helpersPence": 0,
+            "packingPence": 0,
+            "assemblyPence": 0,
+            "pence": 0
+          },
+          "staticSubtotalPence": 5500
+        },
+        "requiresManualQuote": false,
+        "calendar": [
+          {
+            "date": "2026-10-12",
+            "MORNING": 8085,
+            "AFTERNOON": 7700,
+            "EVENING": 8470
+          },
+          {
+            "date": "2026-10-13",
+            "MORNING": 6930,
+            "AFTERNOON": 6600,
+            "EVENING": 7260
+          },
+          {
+            "date": "2026-10-14",
+            "MORNING": 6353,
+            "AFTERNOON": 6050,
+            "EVENING": 6655
+          },
+          {
+            "date": "2026-10-15",
+            "MORNING": 5775,
+            "AFTERNOON": 5500,
+            "EVENING": 6050
+          },
+          {
+            "date": "2026-10-16",
+            "MORNING": 5775,
+            "AFTERNOON": 5500,
+            "EVENING": 6050
+          },
+          {
+            "date": "2026-10-17",
+            "MORNING": 6641,
+            "AFTERNOON": 6325,
+            "EVENING": 6958
+          },
+          {
+            "date": "2026-10-18",
+            "MORNING": 6641,
+            "AFTERNOON": 6325,
+            "EVENING": 6958
+          },
+          {
+            "date": "2026-10-19",
+            "MORNING": 5775,
+            "AFTERNOON": 5500,
+            "EVENING": 6050
+          },
+          {
+            "date": "2026-10-20",
+            "MORNING": 5775,
+            "AFTERNOON": 5500,
+            "EVENING": 6050
+          },
+          {
+            "date": "2026-10-21",
+            "MORNING": 5775,
+            "AFTERNOON": 5500,
+            "EVENING": 6050
+          },
+          {
+            "date": "2026-10-22",
+            "MORNING": 5775,
+            "AFTERNOON": 5500,
+            "EVENING": 6050
+          },
+          {
+            "date": "2026-10-23",
+            "MORNING": 5775,
+            "AFTERNOON": 5500,
+            "EVENING": 6050
+          },
+          {
+            "date": "2026-10-24",
+            "MORNING": 6641,
+            "AFTERNOON": 6325,
+            "EVENING": 6958
+          },
+          {
+            "date": "2026-10-25",
+            "MORNING": 6641,
+            "AFTERNOON": 6325,
+            "EVENING": 6958
+          },
+          {
+            "date": "2026-10-26",
+            "MORNING": 5775,
+            "AFTERNOON": 5500,
+            "EVENING": 6050
+          },
+          {
+            "date": "2026-10-27",
+            "MORNING": 5775,
+            "AFTERNOON": 5500,
+            "EVENING": 6050
+          },
+          {
+            "date": "2026-10-28",
+            "MORNING": 5775,
+            "AFTERNOON": 5500,
+            "EVENING": 6050
+          },
+          {
+            "date": "2026-10-29",
+            "MORNING": 6237,
+            "AFTERNOON": 5940,
+            "EVENING": 6534
+          },
+          {
+            "date": "2026-10-30",
+            "MORNING": 6237,
+            "AFTERNOON": 5940,
+            "EVENING": 6534
+          },
+          {
+            "date": "2026-10-31",
+            "MORNING": 7173,
+            "AFTERNOON": 6831,
+            "EVENING": 7514
+          },
+          {
+            "date": "2026-11-01",
+            "MORNING": 6641,
+            "AFTERNOON": 6325,
+            "EVENING": 6958
+          },
+          {
+            "date": "2026-11-02",
+            "MORNING": 5775,
+            "AFTERNOON": 5500,
+            "EVENING": 6050
+          },
+          {
+            "date": "2026-11-03",
+            "MORNING": 5775,
+            "AFTERNOON": 5500,
+            "EVENING": 6050
+          },
+          {
+            "date": "2026-11-04",
+            "MORNING": 5775,
+            "AFTERNOON": 5500,
+            "EVENING": 6050
+          },
+          {
+            "date": "2026-11-05",
+            "MORNING": 5775,
+            "AFTERNOON": 5500,
+            "EVENING": 6050
+          },
+          {
+            "date": "2026-11-06",
+            "MORNING": 5775,
+            "AFTERNOON": 5500,
+            "EVENING": 6050
+          },
+          {
+            "date": "2026-11-07",
+            "MORNING": 6641,
+            "AFTERNOON": 6325,
+            "EVENING": 6958
+          },
+          {
+            "date": "2026-11-08",
+            "MORNING": 6641,
+            "AFTERNOON": 6325,
+            "EVENING": 6958
+          }
+        ]
+      }
+    },
+    {
+      "id": "gv-05-student-exactly-threshold",
+      "note": "Exactly 20 billable miles (25.0 total) — no discounted miles; 4 items is not large",
+      "today": "2026-12-24",
+      "input": {
+        "service": "student",
+        "variant": "halls",
+        "distanceMiles": 25,
+        "pickup": {
+          "floor": 4,
+          "hasLift": true
+        },
+        "dropoff": {
+          "floor": 2,
+          "hasLift": false
+        },
+        "inventory": [
+          {
+            "itemId": "box-medium",
+            "name": "box-medium",
+            "quantity": 3,
+            "unitVolumeM3": 0.08
+          },
+          {
+            "itemId": "suitcase",
+            "name": "suitcase",
+            "quantity": 1,
+            "unitVolumeM3": 0.1
+          }
+        ],
+        "access": {
+          "carryMetres": 11,
+          "narrowAccess": false,
+          "permitZone": true
+        },
+        "addons": {
+          "helpers": 0,
+          "packing": false,
+          "assembly": false
+        }
+      },
+      "expected": {
+        "staticSubtotalPence": 19654,
+        "breakdown": {
+          "basePence": 8000,
+          "variantMultiplier": 1,
+          "baseAfterVariantPence": 8000,
+          "distance": {
+            "miles": 25,
+            "billableMiles": 20,
+            "fullRateMiles": 20,
+            "discountedMiles": 0,
+            "mode": "STANDARD",
+            "pence": 3000
+          },
+          "floors": {
+            "pickupPence": 3200,
+            "dropoffPence": 2400
+          },
+          "inventory": {
+            "itemCount": 4,
+            "volumeM3": 0.34,
+            "mode": "STANDARD",
+            "pence": 1004
+          },
+          "access": {
+            "carryPence": 50,
+            "narrowPence": 0,
+            "permitPence": 2000,
+            "pence": 2050
+          },
+          "addons": {
+            "helpersPence": 0,
+            "packingPence": 0,
+            "assemblyPence": 0,
+            "pence": 0
+          },
+          "staticSubtotalPence": 19654
+        },
+        "requiresManualQuote": false,
+        "calendar": [
+          {
+            "date": "2026-12-24",
+            "MORNING": 28891,
+            "AFTERNOON": 27516,
+            "EVENING": 30267
+          },
+          {
+            "date": "2026-12-25",
+            "MORNING": 24764,
+            "AFTERNOON": 23585,
+            "EVENING": 25943
+          },
+          {
+            "date": "2026-12-26",
+            "MORNING": 26105,
+            "AFTERNOON": 24862,
+            "EVENING": 27349
+          },
+          {
+            "date": "2026-12-27",
+            "MORNING": 23732,
+            "AFTERNOON": 22602,
+            "EVENING": 24862
+          },
+          {
+            "date": "2026-12-28",
+            "MORNING": 20637,
+            "AFTERNOON": 19654,
+            "EVENING": 21619
+          },
+          {
+            "date": "2026-12-29",
+            "MORNING": 22288,
+            "AFTERNOON": 21226,
+            "EVENING": 23349
+          },
+          {
+            "date": "2026-12-30",
+            "MORNING": 22288,
+            "AFTERNOON": 21226,
+            "EVENING": 23349
+          },
+          {
+            "date": "2026-12-31",
+            "MORNING": 22288,
+            "AFTERNOON": 21226,
+            "EVENING": 23349
+          },
+          {
+            "date": "2027-01-01",
+            "MORNING": 20637,
+            "AFTERNOON": 19654,
+            "EVENING": 21619
+          },
+          {
+            "date": "2027-01-02",
+            "MORNING": 23732,
+            "AFTERNOON": 22602,
+            "EVENING": 24862
+          },
+          {
+            "date": "2027-01-03",
+            "MORNING": 23732,
+            "AFTERNOON": 22602,
+            "EVENING": 24862
+          },
+          {
+            "date": "2027-01-04",
+            "MORNING": 20637,
+            "AFTERNOON": 19654,
+            "EVENING": 21619
+          },
+          {
+            "date": "2027-01-05",
+            "MORNING": 20637,
+            "AFTERNOON": 19654,
+            "EVENING": 21619
+          },
+          {
+            "date": "2027-01-06",
+            "MORNING": 20637,
+            "AFTERNOON": 19654,
+            "EVENING": 21619
+          },
+          {
+            "date": "2027-01-07",
+            "MORNING": 20637,
+            "AFTERNOON": 19654,
+            "EVENING": 21619
+          },
+          {
+            "date": "2027-01-08",
+            "MORNING": 20637,
+            "AFTERNOON": 19654,
+            "EVENING": 21619
+          },
+          {
+            "date": "2027-01-09",
+            "MORNING": 23732,
+            "AFTERNOON": 22602,
+            "EVENING": 24862
+          },
+          {
+            "date": "2027-01-10",
+            "MORNING": 23732,
+            "AFTERNOON": 22602,
+            "EVENING": 24862
+          },
+          {
+            "date": "2027-01-11",
+            "MORNING": 20637,
+            "AFTERNOON": 19654,
+            "EVENING": 21619
+          },
+          {
+            "date": "2027-01-12",
+            "MORNING": 20637,
+            "AFTERNOON": 19654,
+            "EVENING": 21619
+          },
+          {
+            "date": "2027-01-13",
+            "MORNING": 20637,
+            "AFTERNOON": 19654,
+            "EVENING": 21619
+          },
+          {
+            "date": "2027-01-14",
+            "MORNING": 20637,
+            "AFTERNOON": 19654,
+            "EVENING": 21619
+          },
+          {
+            "date": "2027-01-15",
+            "MORNING": 20637,
+            "AFTERNOON": 19654,
+            "EVENING": 21619
+          },
+          {
+            "date": "2027-01-16",
+            "MORNING": 23732,
+            "AFTERNOON": 22602,
+            "EVENING": 24862
+          },
+          {
+            "date": "2027-01-17",
+            "MORNING": 23732,
+            "AFTERNOON": 22602,
+            "EVENING": 24862
+          },
+          {
+            "date": "2027-01-18",
+            "MORNING": 20637,
+            "AFTERNOON": 19654,
+            "EVENING": 21619
+          },
+          {
+            "date": "2027-01-19",
+            "MORNING": 20637,
+            "AFTERNOON": 19654,
+            "EVENING": 21619
+          },
+          {
+            "date": "2027-01-20",
+            "MORNING": 20637,
+            "AFTERNOON": 19654,
+            "EVENING": 21619
+          }
+        ]
+      }
+    },
+    {
+      "id": "gv-06-office-medium-long",
+      "note": "Long distance with discount, large load, Sunday/Monday boundary",
+      "today": "2026-08-29",
+      "input": {
+        "service": "office",
+        "variant": "medium",
+        "distanceMiles": 142.37,
+        "pickup": {
+          "floor": 5,
+          "hasLift": true
+        },
+        "dropoff": {
+          "floor": 0,
+          "hasLift": false
+        },
+        "inventory": [
+          {
+            "itemId": "desk-office",
+            "name": "desk-office",
+            "quantity": 10,
+            "unitVolumeM3": 0.7
+          },
+          {
+            "itemId": "chair-office",
+            "name": "chair-office",
+            "quantity": 10,
+            "unitVolumeM3": 0.3
+          },
+          {
+            "itemId": "cabinet-filing-4",
+            "name": "cabinet-filing-4",
+            "quantity": 4,
+            "unitVolumeM3": 0.55
+          },
+          {
+            "itemId": "box-archive",
+            "name": "box-archive",
+            "quantity": 40,
+            "unitVolumeM3": 0.05
+          }
+        ],
+        "access": {
+          "carryMetres": 40,
+          "narrowAccess": true,
+          "permitZone": true
+        },
+        "addons": {
+          "helpers": 3,
+          "packing": true,
+          "assembly": true
+        }
+      },
+      "expected": {
+        "staticSubtotalPence": 97005,
+        "breakdown": {
+          "basePence": 15000,
+          "variantMultiplier": 1,
+          "baseAfterVariantPence": 15000,
+          "distance": {
+            "miles": 142.37,
+            "billableMiles": 137.37,
+            "fullRateMiles": 20,
+            "discountedMiles": 117.37,
+            "mode": "STANDARD",
+            "pence": 17965
+          },
+          "floors": {
+            "pickupPence": 4000,
+            "dropoffPence": 0
+          },
+          "inventory": {
+            "itemCount": 64,
+            "volumeM3": 14.2,
+            "mode": "LARGE",
+            "pence": 42640
+          },
+          "access": {
+            "carryPence": 1500,
+            "narrowPence": 2500,
+            "permitPence": 2000,
+            "pence": 6000
+          },
+          "addons": {
+            "helpersPence": 5400,
+            "packingPence": 3500,
+            "assemblyPence": 2500,
+            "pence": 11400
+          },
+          "staticSubtotalPence": 97005
+        },
+        "requiresManualQuote": false,
+        "calendar": [
+          {
+            "date": "2026-08-29",
+            "MORNING": 194816,
+            "AFTERNOON": 185540,
+            "EVENING": 204093
+          },
+          {
+            "date": "2026-08-30",
+            "MORNING": 166986,
+            "AFTERNOON": 159034,
+            "EVENING": 174937
+          },
+          {
+            "date": "2026-08-31",
+            "MORNING": 133104,
+            "AFTERNOON": 126766,
+            "EVENING": 139443
+          },
+          {
+            "date": "2026-09-01",
+            "MORNING": 101855,
+            "AFTERNOON": 97005,
+            "EVENING": 106706
+          },
+          {
+            "date": "2026-09-02",
+            "MORNING": 101855,
+            "AFTERNOON": 97005,
+            "EVENING": 106706
+          },
+          {
+            "date": "2026-09-03",
+            "MORNING": 101855,
+            "AFTERNOON": 97005,
+            "EVENING": 106706
+          },
+          {
+            "date": "2026-09-04",
+            "MORNING": 101855,
+            "AFTERNOON": 97005,
+            "EVENING": 106706
+          },
+          {
+            "date": "2026-09-05",
+            "MORNING": 117134,
+            "AFTERNOON": 111556,
+            "EVENING": 122711
+          },
+          {
+            "date": "2026-09-06",
+            "MORNING": 117134,
+            "AFTERNOON": 111556,
+            "EVENING": 122711
+          },
+          {
+            "date": "2026-09-07",
+            "MORNING": 101855,
+            "AFTERNOON": 97005,
+            "EVENING": 106706
+          },
+          {
+            "date": "2026-09-08",
+            "MORNING": 101855,
+            "AFTERNOON": 97005,
+            "EVENING": 106706
+          },
+          {
+            "date": "2026-09-09",
+            "MORNING": 101855,
+            "AFTERNOON": 97005,
+            "EVENING": 106706
+          },
+          {
+            "date": "2026-09-10",
+            "MORNING": 101855,
+            "AFTERNOON": 97005,
+            "EVENING": 106706
+          },
+          {
+            "date": "2026-09-11",
+            "MORNING": 101855,
+            "AFTERNOON": 97005,
+            "EVENING": 106706
+          },
+          {
+            "date": "2026-09-12",
+            "MORNING": 117134,
+            "AFTERNOON": 111556,
+            "EVENING": 122711
+          },
+          {
+            "date": "2026-09-13",
+            "MORNING": 117134,
+            "AFTERNOON": 111556,
+            "EVENING": 122711
+          },
+          {
+            "date": "2026-09-14",
+            "MORNING": 101855,
+            "AFTERNOON": 97005,
+            "EVENING": 106706
+          },
+          {
+            "date": "2026-09-15",
+            "MORNING": 101855,
+            "AFTERNOON": 97005,
+            "EVENING": 106706
+          },
+          {
+            "date": "2026-09-16",
+            "MORNING": 101855,
+            "AFTERNOON": 97005,
+            "EVENING": 106706
+          },
+          {
+            "date": "2026-09-17",
+            "MORNING": 101855,
+            "AFTERNOON": 97005,
+            "EVENING": 106706
+          },
+          {
+            "date": "2026-09-18",
+            "MORNING": 101855,
+            "AFTERNOON": 97005,
+            "EVENING": 106706
+          },
+          {
+            "date": "2026-09-19",
+            "MORNING": 117134,
+            "AFTERNOON": 111556,
+            "EVENING": 122711
+          },
+          {
+            "date": "2026-09-20",
+            "MORNING": 117134,
+            "AFTERNOON": 111556,
+            "EVENING": 122711
+          },
+          {
+            "date": "2026-09-21",
+            "MORNING": 101855,
+            "AFTERNOON": 97005,
+            "EVENING": 106706
+          },
+          {
+            "date": "2026-09-22",
+            "MORNING": 101855,
+            "AFTERNOON": 97005,
+            "EVENING": 106706
+          },
+          {
+            "date": "2026-09-23",
+            "MORNING": 101855,
+            "AFTERNOON": 97005,
+            "EVENING": 106706
+          },
+          {
+            "date": "2026-09-24",
+            "MORNING": 101855,
+            "AFTERNOON": 97005,
+            "EVENING": 106706
+          },
+          {
+            "date": "2026-09-25",
+            "MORNING": 101855,
+            "AFTERNOON": 97005,
+            "EVENING": 106706
+          }
+        ]
+      }
+    },
+    {
+      "id": "gv-07-piano-upright",
+      "note": "Piano upright, no inventory lines, ground floors",
+      "today": "2026-05-29",
+      "input": {
+        "service": "piano",
+        "variant": "upright",
+        "distanceMiles": 8.6,
+        "pickup": {
+          "floor": 0,
+          "hasLift": false
+        },
+        "dropoff": {
+          "floor": 1,
+          "hasLift": false
+        },
+        "inventory": [],
+        "access": {
+          "carryMetres": 15,
+          "narrowAccess": false,
+          "permitZone": false
+        },
+        "addons": {
+          "helpers": 1,
+          "packing": false,
+          "assembly": false
+        }
+      },
+      "expected": {
+        "staticSubtotalPence": 23790,
+        "breakdown": {
+          "basePence": 20000,
+          "variantMultiplier": 1,
+          "baseAfterVariantPence": 20000,
+          "distance": {
+            "miles": 8.6,
+            "billableMiles": 3.6,
+            "fullRateMiles": 3.6,
+            "discountedMiles": 0,
+            "mode": "STANDARD",
+            "pence": 540
+          },
+          "floors": {
+            "pickupPence": 0,
+            "dropoffPence": 1200
+          },
+          "inventory": {
+            "itemCount": 0,
+            "volumeM3": 0,
+            "mode": "STANDARD",
+            "pence": 0
+          },
+          "access": {
+            "carryPence": 250,
+            "narrowPence": 0,
+            "permitPence": 0,
+            "pence": 250
+          },
+          "addons": {
+            "helpersPence": 1800,
+            "packingPence": 0,
+            "assemblyPence": 0,
+            "pence": 1800
+          },
+          "staticSubtotalPence": 23790
+        },
+        "requiresManualQuote": false,
+        "calendar": [
+          {
+            "date": "2026-05-29",
+            "MORNING": 37769,
+            "AFTERNOON": 35970,
+            "EVENING": 39568
+          },
+          {
+            "date": "2026-05-30",
+            "MORNING": 37229,
+            "AFTERNOON": 35457,
+            "EVENING": 39002
+          },
+          {
+            "date": "2026-05-31",
+            "MORNING": 34127,
+            "AFTERNOON": 32502,
+            "EVENING": 35752
+          },
+          {
+            "date": "2026-06-01",
+            "MORNING": 27477,
+            "AFTERNOON": 26169,
+            "EVENING": 28786
+          },
+          {
+            "date": "2026-06-02",
+            "MORNING": 27477,
+            "AFTERNOON": 26169,
+            "EVENING": 28786
+          },
+          {
+            "date": "2026-06-03",
+            "MORNING": 27477,
+            "AFTERNOON": 26169,
+            "EVENING": 28786
+          },
+          {
+            "date": "2026-06-04",
+            "MORNING": 27477,
+            "AFTERNOON": 26169,
+            "EVENING": 28786
+          },
+          {
+            "date": "2026-06-05",
+            "MORNING": 27477,
+            "AFTERNOON": 26169,
+            "EVENING": 28786
+          },
+          {
+            "date": "2026-06-06",
+            "MORNING": 31599,
+            "AFTERNOON": 30094,
+            "EVENING": 33104
+          },
+          {
+            "date": "2026-06-07",
+            "MORNING": 31599,
+            "AFTERNOON": 30094,
+            "EVENING": 33104
+          },
+          {
+            "date": "2026-06-08",
+            "MORNING": 27477,
+            "AFTERNOON": 26169,
+            "EVENING": 28786
+          },
+          {
+            "date": "2026-06-09",
+            "MORNING": 27477,
+            "AFTERNOON": 26169,
+            "EVENING": 28786
+          },
+          {
+            "date": "2026-06-10",
+            "MORNING": 27477,
+            "AFTERNOON": 26169,
+            "EVENING": 28786
+          },
+          {
+            "date": "2026-06-11",
+            "MORNING": 27477,
+            "AFTERNOON": 26169,
+            "EVENING": 28786
+          },
+          {
+            "date": "2026-06-12",
+            "MORNING": 27477,
+            "AFTERNOON": 26169,
+            "EVENING": 28786
+          },
+          {
+            "date": "2026-06-13",
+            "MORNING": 31599,
+            "AFTERNOON": 30094,
+            "EVENING": 33104
+          },
+          {
+            "date": "2026-06-14",
+            "MORNING": 31599,
+            "AFTERNOON": 30094,
+            "EVENING": 33104
+          },
+          {
+            "date": "2026-06-15",
+            "MORNING": 27477,
+            "AFTERNOON": 26169,
+            "EVENING": 28786
+          },
+          {
+            "date": "2026-06-16",
+            "MORNING": 27477,
+            "AFTERNOON": 26169,
+            "EVENING": 28786
+          },
+          {
+            "date": "2026-06-17",
+            "MORNING": 27477,
+            "AFTERNOON": 26169,
+            "EVENING": 28786
+          },
+          {
+            "date": "2026-06-18",
+            "MORNING": 27477,
+            "AFTERNOON": 26169,
+            "EVENING": 28786
+          },
+          {
+            "date": "2026-06-19",
+            "MORNING": 27477,
+            "AFTERNOON": 26169,
+            "EVENING": 28786
+          },
+          {
+            "date": "2026-06-20",
+            "MORNING": 31599,
+            "AFTERNOON": 30094,
+            "EVENING": 33104
+          },
+          {
+            "date": "2026-06-21",
+            "MORNING": 31599,
+            "AFTERNOON": 30094,
+            "EVENING": 33104
+          },
+          {
+            "date": "2026-06-22",
+            "MORNING": 27477,
+            "AFTERNOON": 26169,
+            "EVENING": 28786
+          },
+          {
+            "date": "2026-06-23",
+            "MORNING": 27477,
+            "AFTERNOON": 26169,
+            "EVENING": 28786
+          },
+          {
+            "date": "2026-06-24",
+            "MORNING": 27477,
+            "AFTERNOON": 26169,
+            "EVENING": 28786
+          },
+          {
+            "date": "2026-06-25",
+            "MORNING": 27477,
+            "AFTERNOON": 26169,
+            "EVENING": 28786
+          }
+        ]
+      }
+    },
+    {
+      "id": "gv-08-ikea-assembly",
+      "note": "IKEA with assembly add-on, 5 small items under 1 m³ (not large)",
+      "today": "2026-06-28",
+      "input": {
+        "service": "ikea",
+        "variant": "standard",
+        "distanceMiles": 17.25,
+        "pickup": {
+          "floor": 0,
+          "hasLift": false
+        },
+        "dropoff": {
+          "floor": 2,
+          "hasLift": true
+        },
+        "inventory": [
+          {
+            "itemId": "flatpack-small",
+            "name": "flatpack-small",
+            "quantity": 5,
+            "unitVolumeM3": 0.15
+          }
+        ],
+        "access": {
+          "carryMetres": 0,
+          "narrowAccess": false,
+          "permitZone": false
+        },
+        "addons": {
+          "helpers": 0,
+          "packing": false,
+          "assembly": true
+        }
+      },
+      "expected": {
+        "staticSubtotalPence": 14388,
+        "breakdown": {
+          "basePence": 7000,
+          "variantMultiplier": 1,
+          "baseAfterVariantPence": 7000,
+          "distance": {
+            "miles": 17.25,
+            "billableMiles": 12.25,
+            "fullRateMiles": 12.25,
+            "discountedMiles": 0,
+            "mode": "STANDARD",
+            "pence": 1838
+          },
+          "floors": {
+            "pickupPence": 0,
+            "dropoffPence": 1600
+          },
+          "inventory": {
+            "itemCount": 5,
+            "volumeM3": 0.75,
+            "mode": "STANDARD",
+            "pence": 1450
+          },
+          "access": {
+            "carryPence": 0,
+            "narrowPence": 0,
+            "permitPence": 0,
+            "pence": 0
+          },
+          "addons": {
+            "helpersPence": 0,
+            "packingPence": 0,
+            "assemblyPence": 2500,
+            "pence": 2500
+          },
+          "staticSubtotalPence": 14388
+        },
+        "requiresManualQuote": false,
+        "calendar": [
+          {
+            "date": "2026-06-28",
+            "MORNING": 28896,
+            "AFTERNOON": 27520,
+            "EVENING": 30272
+          },
+          {
+            "date": "2026-06-29",
+            "MORNING": 21537,
+            "AFTERNOON": 20512,
+            "EVENING": 22563
+          },
+          {
+            "date": "2026-06-30",
+            "MORNING": 19742,
+            "AFTERNOON": 18802,
+            "EVENING": 20682
+          },
+          {
+            "date": "2026-07-01",
+            "MORNING": 16618,
+            "AFTERNOON": 15827,
+            "EVENING": 17409
+          },
+          {
+            "date": "2026-07-02",
+            "MORNING": 16618,
+            "AFTERNOON": 15827,
+            "EVENING": 17409
+          },
+          {
+            "date": "2026-07-03",
+            "MORNING": 16618,
+            "AFTERNOON": 15827,
+            "EVENING": 17409
+          },
+          {
+            "date": "2026-07-04",
+            "MORNING": 19111,
+            "AFTERNOON": 18201,
+            "EVENING": 20021
+          },
+          {
+            "date": "2026-07-05",
+            "MORNING": 19111,
+            "AFTERNOON": 18201,
+            "EVENING": 20021
+          },
+          {
+            "date": "2026-07-06",
+            "MORNING": 16618,
+            "AFTERNOON": 15827,
+            "EVENING": 17409
+          },
+          {
+            "date": "2026-07-07",
+            "MORNING": 16618,
+            "AFTERNOON": 15827,
+            "EVENING": 17409
+          },
+          {
+            "date": "2026-07-08",
+            "MORNING": 16618,
+            "AFTERNOON": 15827,
+            "EVENING": 17409
+          },
+          {
+            "date": "2026-07-09",
+            "MORNING": 16618,
+            "AFTERNOON": 15827,
+            "EVENING": 17409
+          },
+          {
+            "date": "2026-07-10",
+            "MORNING": 16618,
+            "AFTERNOON": 15827,
+            "EVENING": 17409
+          },
+          {
+            "date": "2026-07-11",
+            "MORNING": 19111,
+            "AFTERNOON": 18201,
+            "EVENING": 20021
+          },
+          {
+            "date": "2026-07-12",
+            "MORNING": 19111,
+            "AFTERNOON": 18201,
+            "EVENING": 20021
+          },
+          {
+            "date": "2026-07-13",
+            "MORNING": 16618,
+            "AFTERNOON": 15827,
+            "EVENING": 17409
+          },
+          {
+            "date": "2026-07-14",
+            "MORNING": 16618,
+            "AFTERNOON": 15827,
+            "EVENING": 17409
+          },
+          {
+            "date": "2026-07-15",
+            "MORNING": 16618,
+            "AFTERNOON": 15827,
+            "EVENING": 17409
+          },
+          {
+            "date": "2026-07-16",
+            "MORNING": 16618,
+            "AFTERNOON": 15827,
+            "EVENING": 17409
+          },
+          {
+            "date": "2026-07-17",
+            "MORNING": 16618,
+            "AFTERNOON": 15827,
+            "EVENING": 17409
+          },
+          {
+            "date": "2026-07-18",
+            "MORNING": 19111,
+            "AFTERNOON": 18201,
+            "EVENING": 20021
+          },
+          {
+            "date": "2026-07-19",
+            "MORNING": 19111,
+            "AFTERNOON": 18201,
+            "EVENING": 20021
+          },
+          {
+            "date": "2026-07-20",
+            "MORNING": 16618,
+            "AFTERNOON": 15827,
+            "EVENING": 17409
+          },
+          {
+            "date": "2026-07-21",
+            "MORNING": 16618,
+            "AFTERNOON": 15827,
+            "EVENING": 17409
+          },
+          {
+            "date": "2026-07-22",
+            "MORNING": 16618,
+            "AFTERNOON": 15827,
+            "EVENING": 17409
+          },
+          {
+            "date": "2026-07-23",
+            "MORNING": 16618,
+            "AFTERNOON": 15827,
+            "EVENING": 17409
+          },
+          {
+            "date": "2026-07-24",
+            "MORNING": 16618,
+            "AFTERNOON": 15827,
+            "EVENING": 17409
+          },
+          {
+            "date": "2026-07-25",
+            "MORNING": 19111,
+            "AFTERNOON": 18201,
+            "EVENING": 20021
+          }
+        ]
+      }
+    }
+  ]
+}

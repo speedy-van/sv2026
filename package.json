@@ -1,0 +1,50 @@
+{
+  "name": "speedyvan",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "npm@11.5.1",
+  "engines": {
+    "node": ">=24"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:web": "npm run dev -w apps/web",
+    "dev:admin": "npm run dev -w apps/admin",
+    "dev:driver": "npm run dev -w apps/driver",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "test:pricing": "npm run test -w @sv/pricing",
+    "e2e": "turbo run e2e",
+    "build": "turbo run build",
+    "db:migrate": "npm run db:migrate -w @sv/db",
+    "db:deploy": "npm run db:deploy -w @sv/db",
+    "db:seed": "npm run db:seed -w @sv/db",
+    "db:studio": "npm run db:studio -w @sv/db",
+    "verify": "npm run lint && npm run typecheck && npm run test && npm run build",
+    "verify:launch": "tsx scripts/launch-check.ts"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.39.5",
+    "@next/eslint-plugin-next": "16.4.0",
+    "@types/node": "26.6.5",
+    "@vitest/coverage-v8": "5.0.4",
+    "eslint": "9.39.5",
+    "eslint-config-prettier": "10.1.8",
+    "eslint-plugin-react": "7.37.5",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "eslint-plugin-react-native": "5.0.0",
+    "globals": "17.13.0",
+    "prettier": "3.9.10",
+    "prisma": "7.10.0",
+    "tsx": "4.23.15",
+    "turbo": "2.11.7",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.71.2",
+    "vitest": "5.0.4"
+  }
+}

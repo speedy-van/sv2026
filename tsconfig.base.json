@@ -1,0 +1,30 @@
+{
+  "extends": "./packages/config/tsconfig/base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@sv/api-client": [
+        "packages/api-client/src/index.ts"
+      ],
+      "@sv/config": [
+        "packages/config/src/index.ts"
+      ],
+      "@sv/contracts": [
+        "packages/contracts/src/index.ts"
+      ],
+      "@sv/db": [
+        "packages/db/src/index.ts"
+      ],
+      "@sv/emails": [
+        "packages/emails/src/index.ts"
+      ],
+      "@sv/pricing": [
+        "packages/pricing/src/index.ts"
+      ],
+      "@sv/tokens": [
+        "packages/tokens/src/index.ts"
+      ]
+    }
+  },
+  "files": []
+}
