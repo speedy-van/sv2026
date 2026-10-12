@@ -114,3 +114,8 @@ Every decision that shapes the build, with the reason. Codex appends new entries
 **Decision:** Initialise a local Git repository and create branch `phase/01-monorepo-foundation` before the Phase 1 commit because this workspace did not contain a `.git` directory.
 **Why:** AGENTS.md §9 requires a phase branch and a commit after verification. Phase 0 expects the owner-created GitHub repository to exist, but no local repository metadata was present in this workspace.
 **Alternatives considered:** Stop and ask the owner to initialise Git (rejected because Phase 1 implementation and verification were otherwise complete); skip the commit (rejected because the phase prompt explicitly requires a commit).
+
+## D24 — Rolldown bindings for Vitest 5
+**Decision:** Add explicit Rolldown bindings for the current test environments: `@rolldown/binding-wasm32-wasi` as a dev dependency and `@rolldown/binding-win32-x64-msvc` / `@rolldown/binding-linux-x64-gnu` as optional dependencies.
+**Why:** `vitest run --coverage` failed locally when Rolldown's transitive optional native binding was missing. The WASM fallback also failed to resolve from this workspace path, which contains a space. Explicit bindings keep Vitest 5 working on Windows locally and Linux CI without weakening coverage requirements.
+**Alternatives considered:** Downgrade Vitest (rejected because Phase 1 pinned current stable Vitest 5); remove coverage or lower thresholds (rejected because Phase 2 requires 100% line/branch coverage); rely on npm to install transitive optional dependencies (rejected because it already failed in this workspace).

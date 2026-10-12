@@ -23,7 +23,16 @@ _Verify (2026-10-12):_ `npm ci && npm run verify` passed. `actionlint` was not a
 
 ## Phase 2 — Pricing engine
 _Plan:_
-- [ ] Port reference engine · [ ] reference tests (12) · [ ] golden vectors (8 × 84) · [ ] property tests · [ ] 100% coverage gate · [ ] `formatPriceBreakdownLines()`
+- [x] Port `types.ts`, `dates.ts`, `config.default.ts` and `engine.ts` from `docs/reference/pricing` with extensionless imports.
+- [x] Export the pricing engine API from `packages/pricing/src/index.ts`.
+- [x] Add `formatPriceBreakdownLines()` for UI-ready line items without changing arithmetic.
+- [x] Port the 12 reference tests to Vitest with the same expected values.
+- [x] Add golden-vector tests against all 8 vectors and all 672 slot prices from `vectors.json`.
+- [x] Add fast-check property tests for non-negative prices, monotonic items/miles, slot ordering, calendar shape and `priceForSlot` parity.
+- [x] Configure `npm run test:pricing` with 100% line and branch coverage for `packages/pricing`.
+- [x] Run `npm run test:pricing` and `npm run verify` until green.
+
+_Verify (2026-10-12):_ `npm run test:pricing` passed: 4 files, 26 tests, all 8 golden vectors and 672 slot prices checked, 100% statements/branches/functions/lines. `npm run verify` passed across lint, typecheck, test and build for all current packages.
 
 ## Phase 3 — Contracts & tokens
 _Plan:_
