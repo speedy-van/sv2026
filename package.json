@@ -19,7 +19,7 @@
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "test:pricing": "npm run test -w @sv/pricing",
-    "e2e": "turbo run e2e",
+    "e2e": "npm run build && npm run e2e -w @sv/web --",
     "build": "turbo run build",
     "db:migrate": "npm run db:migrate -w @sv/db",
     "db:deploy": "npm run db:deploy -w @sv/db",

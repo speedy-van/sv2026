@@ -1,0 +1,34 @@
+{
+  "name": "@sv/web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "next build",
+    "dev": "next dev",
+    "e2e": "tsx scripts/run-e2e.ts",
+    "lint": "eslint . --max-warnings=0",
+    "lighthouse": "tsx scripts/run-lighthouse.ts",
+    "start": "next start -H 127.0.0.1 -p 3000",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@chakra-ui/react": "3.37.0",
+    "@emotion/react": "11.14.0",
+    "@number-flow/react": "0.6.2",
+    "@sentry/nextjs": "11.7.0",
+    "@sv/contracts": "0.0.0",
+    "@sv/tokens": "0.0.0",
+    "@vercel/speed-insights": "2.0.0",
+    "lucide-react": "1.55.0",
+    "motion": "14.1.0",
+    "next": "16.4.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.0",
+    "lighthouse": "13.5.0"
+  }
+}

@@ -63,7 +63,16 @@ _Verify (2026-10-12):_ `npm run db:migrate` passed using the committed migration
 
 ## Phase 5 — Web foundation
 _Plan:_
-- [ ] Next.js 16 app · [ ] Chakra system + recipes · [ ] fonts · [ ] header (desktop panels, mobile sheet) · [ ] footer + legal line · [ ] mobile sticky bar · [ ] site banner · [ ] consent banner + Consent Mode · [ ] error/404/loading pages · [ ] security headers · [ ] Sentry + Speed Insights · [ ] motion primitives · [ ] `/styleguide` (every component, every state)
+- [x] Scaffold `apps/web` as a Next.js 16 App Router workspace with strict TS, package scripts, nested AGENTS.md and source imports from shared packages.
+- [x] Add Chakra v3 system from `@sv/tokens`, global CSS, `next/font/google`, and core UI primitives with documented states.
+- [x] Build global layout: skip link, optional site banner, sticky header with desktop panels/mobile sheet, footer legal line, mobile sticky CTA, placeholder home.
+- [x] Build cookie consent and preferences UI with Consent Mode v2 basic wiring and shared cookie inventory content.
+- [x] Add security headers/CSP in `next.config.ts`, Sentry config/tunnel and Vercel Speed Insights.
+- [x] Add motion primitives and the first Scotland route map component with reduced-motion behavior.
+- [x] Add loading, error, not-found pages and `/styleguide` dev-only inventory for component states.
+- [x] Add Phase 5 tests/E2E foundation checks and Lighthouse script, then run every Verify command.
+
+_Verify (2026-10-12):_ `npm run verify` passed across lint, typecheck, test and build for all packages. `npm run e2e -- --grep '@foundation'` passed: 6 Playwright checks covering header/footer/home booking card, cookie consent and 404 recovery links across desktop and mobile Chromium. `npm run lighthouse -w @sv/web` passed with `/` performance score 98. Local Playwright browser download from the CDN timed out, so the final local E2E run used installed Windows Chrome via the Phase 5 Playwright config fallback. On PowerShell, the `@foundation` grep tag must be quoted; the runner still defaults a missing `--grep` value to `@foundation` for this phase's documented command.
 
 ## Phase 6 — Quote API
 _Plan:_

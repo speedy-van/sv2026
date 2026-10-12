@@ -9,6 +9,8 @@ coverage/
 playwright-report/
 test-results/
 .turbo/
+*.tsbuildinfo
+.lighthouse*.json
 
 # Expo and native output
 .expo/
