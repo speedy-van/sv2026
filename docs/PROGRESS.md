@@ -46,7 +46,7 @@ _Plan:_
 - [x] Replace shell tests with contract unit tests for exhaustive transitions, postcode/service-area and flat parser cases from `06-booking-flow.md` §4.3, plus schema/token smoke tests.
 - [x] Run `npm run verify` until green, update progress, record any deviations/questions, then commit.
 
-_Verify (2026-10-12):_ `npm run verify` passed across lint, typecheck, test and build. Contract unit tests passed: exhaustive booking and dispatch transition tables, service stage paths, postcode/service-area helpers, every flat-notation row and negatives from `06-booking-flow.md` §4.3, core schema checks and settings validation. Token tests passed for brand colour, semantic, typography, layout and motion exports.
+_Verify (2026-10-12):_ `npm run verify` passed across lint, typecheck, test and build. Contract unit tests passed: exhaustive booking and dispatch transition tables; `stagePathFor()` dropoff and rubbish single-address paths; JobStage rules for driver one-step moves, move-date/day-after guard, same-driver accepted-job guard, undo window, admin/owner override with reason and completion evidence; postcode/service-area helpers; every flat-notation row and negatives from `06-booking-flow.md` §4.3; core schema checks and settings validation. Token tests passed for brand colour, semantic, typography, layout and motion exports.
 
 ## Phase 4 — Database
 _Plan:_

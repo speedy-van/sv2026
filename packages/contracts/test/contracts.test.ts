@@ -11,9 +11,11 @@ import {
   QuoteRequestSchema,
   SlotSchema,
   TRANSITION_ACTORS,
+  assertJobStageTransition,
   assertTransition,
   canBookingTransition,
   canDispatchTransition,
+  canJobStageTransition,
   dispatchCanChangeWhile,
   formatGBP,
   isScottishPostcode,
@@ -98,6 +100,53 @@ describe('booking state machine', () => {
     expect(dispatchCanChangeWhile('CONFIRMED')).toBe(true);
     expect(dispatchCanChangeWhile('IN_PROGRESS')).toBe(true);
     expect(dispatchCanChangeWhile('PENDING_PAYMENT')).toBe(false);
+  });
+
+  it('enforces driver job-stage movement rules from 05-api §12', () => {
+    const base = {
+      service: 'man-and-van' as const,
+      from: 'EN_ROUTE_TO_PICKUP' as const,
+      to: 'AT_PICKUP' as const,
+      actor: 'DRIVER' as const,
+      ownAcceptedJob: true,
+      moveDateIsTodayOrYesterday: true,
+      undoWindowOpen: false,
+      completionEvidenceSatisfied: false,
+    };
+
+    expect(canJobStageTransition(base)).toBe(true);
+    expect(canJobStageTransition({ ...base, to: 'LOADING' })).toBe(false);
+    expect(canJobStageTransition({ ...base, moveDateIsTodayOrYesterday: false })).toBe(false);
+    expect(canJobStageTransition({ ...base, ownAcceptedJob: false })).toBe(false);
+    expect(canJobStageTransition({ ...base, from: 'AT_PICKUP', to: 'EN_ROUTE_TO_PICKUP', undoWindowOpen: false })).toBe(false);
+    expect(canJobStageTransition({ ...base, from: 'AT_PICKUP', to: 'EN_ROUTE_TO_PICKUP', undoWindowOpen: true })).toBe(true);
+    expect(canJobStageTransition({ ...base, from: 'UNLOADING', to: 'COMPLETED', completionEvidenceSatisfied: false })).toBe(false);
+    expect(canJobStageTransition({ ...base, from: 'UNLOADING', to: 'COMPLETED', completionEvidenceSatisfied: true })).toBe(true);
+    expect(() => {
+      assertJobStageTransition({ ...base, to: 'LOADING' });
+    }).toThrow(AppError);
+  });
+
+  it('allows admin and owner job-stage override only with a reason', () => {
+    const override = {
+      service: 'man-and-van' as const,
+      from: 'NOT_STARTED' as const,
+      to: 'AT_DROPOFF' as const,
+      actor: 'ADMIN' as const,
+      ownAcceptedJob: false,
+      moveDateIsTodayOrYesterday: false,
+      undoWindowOpen: false,
+      completionEvidenceSatisfied: false,
+      overrideReason: 'Driver called in an update',
+    };
+
+    expect(canJobStageTransition(override)).toBe(true);
+    expect(canJobStageTransition({ ...override, actor: 'OWNER' })).toBe(true);
+    expect(canJobStageTransition({ ...override, overrideReason: '   ' })).toBe(false);
+    expect(canJobStageTransition({ ...override, service: 'rubbish', to: 'AT_DROPOFF' })).toBe(false);
+    expect(() => {
+      assertJobStageTransition({ ...override, actor: 'OWNER' });
+    }).not.toThrow();
   });
 });
 

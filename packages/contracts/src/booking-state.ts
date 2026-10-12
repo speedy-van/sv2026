@@ -165,6 +165,10 @@ export interface DriverStageTransitionInput {
   completionEvidenceSatisfied: boolean;
 }
 
+export interface JobStageTransitionInput extends DriverStageTransitionInput {
+  overrideReason?: string | undefined;
+}
+
 export function canDriverMoveStage(input: DriverStageTransitionInput): boolean {
   if (input.actor !== 'DRIVER' || !input.ownAcceptedJob || !input.moveDateIsTodayOrYesterday) {
     return false;
@@ -175,8 +179,28 @@ export function canDriverMoveStage(input: DriverStageTransitionInput): boolean {
   return input.undoWindowOpen && previousStageFor(input.service, input.from) === input.to;
 }
 
+function stageIsOnServicePath(service: ServiceKey, stage: JobStage): boolean {
+  return stagePathFor(service).includes(stage);
+}
+
+export function canJobStageTransition(input: JobStageTransitionInput): boolean {
+  if (!stageIsOnServicePath(input.service, input.from) || !stageIsOnServicePath(input.service, input.to)) {
+    return false;
+  }
+  if (input.actor === 'ADMIN' || input.actor === 'OWNER') {
+    return typeof input.overrideReason === 'string' && input.overrideReason.trim().length > 0;
+  }
+  return canDriverMoveStage(input);
+}
+
 export function assertDriverStageTransition(input: DriverStageTransitionInput): void {
   if (!canDriverMoveStage(input)) {
+    invalidTransition('job-stage', input.from, input.to, input.actor);
+  }
+}
+
+export function assertJobStageTransition(input: JobStageTransitionInput): void {
+  if (!canJobStageTransition(input)) {
     invalidTransition('job-stage', input.from, input.to, input.actor);
   }
 }
