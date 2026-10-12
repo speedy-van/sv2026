@@ -26,6 +26,7 @@ import {
   stagePathFor,
   UkPostcodeSchema,
   CompanySettingsSchema,
+  OperationsSettingsSchema,
 } from '../src';
 
 function transitionKey(from: string, to: string, actor: string): string {
@@ -253,5 +254,24 @@ describe('core schemas and helpers', () => {
         icoRegistrationNumber: null,
       }).tradingName,
     ).toBe('Speedy Van');
+    expect(
+      OperationsSettingsSchema.parse({
+        slotWindows: {
+          MORNING: { label: '08:00-12:00', start: '08:00', end: '12:00' },
+          AFTERNOON: { label: '12:00-16:00', start: '12:00', end: '16:00' },
+          EVENING: { label: '16:00-20:00', start: '16:00', end: '20:00' },
+        },
+        minLeadMinutes: 120,
+        defaultCapacityPerSlot: 1,
+        serviceAreaRule: 'TO_OR_FROM_SCOTLAND',
+        crossBorderMoves: null,
+        maxInstantDistanceMiles: 400,
+        quoteValidityMinutes: 60,
+        paymentHoldMinutes: 30,
+        phoneBookingHoldHours: 24,
+        bookingPaused: false,
+        jobSizeRules: [],
+      }).crossBorderMoves,
+    ).toBeNull();
   });
 });

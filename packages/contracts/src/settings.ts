@@ -22,7 +22,7 @@ export const CompanySettingsSchema = z
     companyNumber: z.string().trim().min(1).nullable(),
     registeredIn: z.string().trim().min(1).nullable(),
     registeredOffice: z.string().trim().min(1).nullable(),
-    vatRegistered: z.boolean(),
+    vatRegistered: z.boolean().nullable(),
     vatNumber: z.string().trim().min(1).nullable(),
     icoRegistrationNumber: z.string().trim().min(1).nullable(),
   })
@@ -57,6 +57,9 @@ export const WebSettingsSchema = z
         facebook: SettingUrlSchema.nullable(),
         instagram: SettingUrlSchema.nullable(),
         tiktok: SettingUrlSchema.nullable(),
+        x: SettingUrlSchema.nullable(),
+        linkedin: SettingUrlSchema.nullable(),
+        youtube: SettingUrlSchema.nullable(),
       })
       .strict(),
   })
@@ -76,7 +79,7 @@ export const OperationsSettingsSchema = z
     minLeadMinutes: z.number().int().min(0).max(10080),
     defaultCapacityPerSlot: z.number().int().min(0).max(100),
     serviceAreaRule: z.enum(['SCOTLAND_ONLY', 'TO_OR_FROM_SCOTLAND', 'SCOTLAND_ENGLAND_WALES']),
-    crossBorderMoves: z.boolean(),
+    crossBorderMoves: z.boolean().nullable(),
     maxInstantDistanceMiles: z.number().positive().max(2000),
     quoteValidityMinutes: z.number().int().min(1).max(1440),
     paymentHoldMinutes: z.number().int().min(1).max(1440),
@@ -95,10 +98,10 @@ export const AppsSettingsSchema = z
 
 export const CancellationSettingsSchema = z
   .object({
-    freeCancellationHours: z.number().int().min(0).max(8760),
-    lateCancellationRefundPercent: z.number().int().min(0).max(100),
-    noRefundHours: z.number().int().min(0).max(8760),
-    selfServiceRescheduleHours: z.number().int().min(0).max(8760),
+    freeCancellationHours: z.number().int().min(0).max(8760).nullable(),
+    lateCancellationRefundPercent: z.number().int().min(0).max(100).nullable(),
+    noRefundHours: z.number().int().min(0).max(8760).nullable(),
+    selfServiceRescheduleHours: z.number().int().min(0).max(8760).nullable(),
   })
   .strict();
 
@@ -120,14 +123,14 @@ export const TrustSettingsSchema = z
 
 export const DriversSettingsSchema = z
   .object({
-    defaultPayoutPercent: z.number().int().min(0).max(100),
+    defaultPayoutPercent: z.number().int().min(0).max(100).nullable(),
   })
   .strict();
 
 export const SiteBannerSettingsSchema = z
   .object({
     enabled: z.boolean(),
-    text: z.string().trim().min(1).max(160),
+    text: z.string().trim().max(160),
     href: SettingUrlSchema.optional(),
     tone: z.enum(['info', 'success', 'warning', 'danger']),
   })

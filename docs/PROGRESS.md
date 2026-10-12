@@ -50,7 +50,16 @@ _Verify (2026-10-12):_ `npm run verify` passed across lint, typecheck, test and 
 
 ## Phase 4 — Database
 _Plan:_
-- [ ] Prisma 7 + Neon adapter · [ ] schema + first migration + raw SQL · [ ] client singleton · [ ] advisory-lock helpers · [ ] outbox enqueue · [ ] idempotent seed (all 10 steps) · [ ] concurrency test (10 → 1)
+- [x] Confirm Prisma 7/D21, add Prisma Client + Neon adapter dependencies, and configure Prisma 7 with `prisma.config.ts` using `DATABASE_URL_UNPOOLED` when present.
+- [x] Copy the reference schema unchanged into `packages/db/prisma/schema.prisma`, create the initial migration, and append the required raw SQL extras.
+- [x] Build the pooled Neon Prisma client singleton, advisory slot-lock helpers, capacity helpers, and outbox enqueue helper.
+- [x] Implement the idempotent seed: facts/settings, pricing v1, item catalogue, presets, capacity rules, closed dates, FAQs, owner user, and location content.
+- [x] Update CI to create and delete a Neon branch per run, then run migrate, seed, verify against that branch.
+- [x] Add the Phase 4 DB integration tests for transactions and concurrent slot booking.
+- [x] Run `npm run db:migrate && npm run db:seed && npm run db:seed`, then `npm run verify` until all pass.
+- [x] Update progress, decisions/questions as needed, commit, and stop before Phase 5.
+
+_Verify (2026-10-12):_ `npm run db:migrate` passed using the committed migration SQL through the local Neon HTTP migration runner and applied `20261012120000_init` (142 statements). `npm run db:seed` passed twice; the second run completed without errors and without duplicate inserts. Local seed warned that `operations.defaultCapacityPerSlot` fell back to `1` and `SEED_OWNER_EMAIL` / `SEED_OWNER_NAME` were absent, so the local OWNER row was skipped; CI supplies those two secrets. Final `npm ci` passed. Final `npm run verify` passed across lint, typecheck, test and build. `@sv/db` integration tests passed: interactive transaction plus 10 concurrent same-slot booking attempts, with 1 success and 9 `SLOT_UNAVAILABLE` failures.
 
 ## Phase 5 — Web foundation
 _Plan:_

@@ -23,6 +23,7 @@ ios/
 
 # Prisma generated output
 packages/db/generated/
+packages/db/src/generated/
 
 # logs
 *.log

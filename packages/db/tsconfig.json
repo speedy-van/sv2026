@@ -1,6 +1,7 @@
 {
   "extends": "../config/tsconfig/library.json",
   "include": [
+    "prisma.config.ts",
     "src/**/*.ts",
     "test/**/*.ts",
     "vitest.config.ts"

@@ -18,6 +18,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
+      - name: Create Neon branch
+        id: create-branch
+        uses: neondatabase/create-branch-action@v6
+        with:
+          project_id: ${{ secrets.NEON_PROJECT_ID }}
+          branch_name: ci-${{ github.run_id }}-${{ github.run_attempt }}
+          parent_branch: dev
+          role: neondb_owner
+          api_key: ${{ secrets.NEON_API_KEY }}
+
       - name: Setup Node
         uses: actions/setup-node@v5
         with:
@@ -27,5 +37,28 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Migrate and seed database
+        run: |
+          npm run db:deploy
+          npm run db:seed
+        env:
+          DATABASE_URL: ${{ steps.create-branch.outputs.db_url_pooled }}
+          DATABASE_URL_UNPOOLED: ${{ steps.create-branch.outputs.db_url }}
+          SEED_OWNER_EMAIL: ${{ secrets.SEED_OWNER_EMAIL }}
+          SEED_OWNER_NAME: ${{ secrets.SEED_OWNER_NAME }}
+
       - name: Verify
         run: npm run verify
+        env:
+          DATABASE_URL: ${{ steps.create-branch.outputs.db_url_pooled }}
+          DATABASE_URL_UNPOOLED: ${{ steps.create-branch.outputs.db_url }}
+          SEED_OWNER_EMAIL: ${{ secrets.SEED_OWNER_EMAIL }}
+          SEED_OWNER_NAME: ${{ secrets.SEED_OWNER_NAME }}
+
+      - name: Delete Neon branch
+        if: ${{ always() }}
+        uses: neondatabase/delete-branch-action@v3
+        with:
+          project_id: ${{ secrets.NEON_PROJECT_ID }}
+          branch: ci-${{ github.run_id }}-${{ github.run_attempt }}
+          api_key: ${{ secrets.NEON_API_KEY }}
