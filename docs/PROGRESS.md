@@ -76,7 +76,19 @@ _Verify (2026-10-12):_ `npm run verify` passed across lint, typecheck, test and 
 
 ## Phase 6 — Quote API
 _Plan:_
-- [ ] Mapbox suggest/retrieve/postcode · [ ] Directions + ferry detection + cache · [ ] static map proxy · [ ] service-area rules · [ ] availability overlay (all 5 reasons, job size) · [ ] quote service · [ ] NDJSON stream + JSON mode · [ ] `GET /quotes/:id` · [ ] catalogue endpoint · [ ] rate limits · [ ] Mapbox mock
+- [x] Add Phase 6 server dependencies and record exact versions for Upstash rate limiting.
+- [x] Add server env, request IDs, API error wrapper, JSON/NDJSON helpers, and no-store/cache headers.
+- [x] Add rate limiting with Upstash Redis and an in-memory fallback when Upstash is unavailable.
+- [x] Build Mapbox integration with live and mock adapters for suggest, retrieve, postcode lookup, directions with ferry detection, and static images.
+- [x] Build route cache helpers and service-area checks from postcode/address rules.
+- [x] Build catalogue endpoint from seeded items, presets, categories, and active pricing custom sizes.
+- [x] Build availability overlay from capacity rules/overrides/holds/bookings, lead time, closed dates, same-day-only, and job-size rules.
+- [x] Build quote orchestration: snapshot items, derive pricing input, call `@sv/pricing`, persist quotes/manual quotes, and map to `QuoteDto`.
+- [x] Add `POST /api/v1/quotes` with NDJSON streaming plus JSON mode, `GET /api/v1/quotes/:publicId`, address endpoints, and static map proxy.
+- [x] Add integration tests with Mapbox mock for ferry manual quote, outside Scotland rejection, full slot unavailable, and stream event order.
+- [x] Run `npm run verify` until green and update docs/commit.
+
+_Verify (2026-10-12):_ `npm run verify` passed across lint, typecheck, test and build. `@sv/web` quote integration tests passed with Mapbox mock: ferry route returns manual quote reason `FERRY_ROUTE`; London-only route is rejected with `OUTSIDE_SERVICE_AREA`; a capacity-1 confirmed booking makes the same morning slot unavailable with reason `FULL`; `POST /api/v1/quotes` streams events in order `accepted`, `route`, `availability`, `prices`, `done`. Next build listed all Phase 6 API routes as dynamic server routes.
 
 ## Phase 7 — Booking, payments, outbox, emails
 _Plan:_

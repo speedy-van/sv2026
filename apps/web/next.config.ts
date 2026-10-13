@@ -54,7 +54,7 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-  transpilePackages: ['@sv/contracts', '@sv/tokens'],
+  transpilePackages: ['@sv/contracts', '@sv/db', '@sv/pricing', '@sv/tokens'],
 };
 
 export default nextConfig;
