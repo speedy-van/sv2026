@@ -1,0 +1,35 @@
+{
+  "cli": {
+    "version": ">= 16.0.0"
+  },
+  "build": {
+    "development": {
+      "channel": "development",
+      "developmentClient": true,
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_API_BASE_URL": "http://127.0.0.1:3000"
+      },
+      "ios": {
+        "simulator": false
+      }
+    },
+    "preview": {
+      "channel": "preview",
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_API_BASE_URL": "https://staging.speedyvan.uk"
+      }
+    },
+    "production": {
+      "channel": "production",
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_API_BASE_URL": "https://www.speedyvan.uk"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}

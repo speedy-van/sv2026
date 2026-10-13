@@ -184,7 +184,19 @@ _Verify (2026-10-13):_ `npm run verify` passed across lint, typecheck, tests and
 
 ## Phase 13 — Admin iOS app
 _Plan:_
-- [ ] Shell + gates (update, sign-in, Face ID, permissions) · [ ] Today · [ ] Bookings list · [ ] Booking detail · [ ] sheets: assign, unassign, edit, re-price, reschedule, cancel, refund, extra charge, offline payment, resend email · [ ] New phone booking (5 steps) · [ ] Schedule + capacity · [ ] Drivers + detail + invite + live map · [ ] Leads (quote requests, abandoned) · [ ] Customers · [ ] Pricing (versions, editor, simulator, publish, approve) · [ ] Items + presets · [ ] Reviews · [ ] Content (locations, FAQs, banner, SEO) · [ ] Messages · [ ] Fleet · [ ] Payouts · [ ] Reports · [ ] Team · [ ] Settings (all sections) · [ ] Notifications inbox · [ ] System health · [ ] Audit · [ ] Account · [ ] push + sounds + categories · [ ] NewJobModal + feed fallback · [ ] iPad split views · [ ] EAS profiles + updates
+- [x] Scaffold `apps/admin` as an Expo SDK 57 / Expo Router workspace with nested AGENTS.md, EAS profiles, app config, sounds/assets and strict TS scripts.
+- [x] Build the app theme from `@sv/tokens` with light/dark palettes, Bricolage/Manrope font loading and reusable primitives (`ScreenState`, buttons, cards, badges, sheets).
+- [x] Implement auth/update/app-lock/notification-permission gates, OTP sign-in/code screens, secure token storage and API client wiring.
+- [x] Implement the tab shell: Today, Bookings, Schedule, Drivers and More, with iPhone and iPad-responsive layouts.
+- [x] Build every documented Admin screen/menu surface from `14-admin-app.md` with loading, empty, error, success and disabled/submitting states.
+- [x] Build booking detail actions and sheets: assign/offer, unassign, edit, re-price, reschedule, cancel, refund, extra charge, offline payment and resend email.
+- [x] Build new phone booking wizard using the quote/catalogue endpoints and payment-mode branch.
+- [x] Implement push registration, notification categories, deep-link routing, foreground `NewJobModal`, sounds/haptics and feed polling fallback.
+- [x] Add React Query polling/invalidation rules, offline banner behavior and permission/role gating.
+- [x] Add jest-expo tests for api-client integration, `ScreenState`, permission gates, deep-link routing and `NewJobModal` stacking/dedupe.
+- [x] Run `npm run -w apps/admin typecheck`, `npm run -w apps/admin test`, `npx expo-doctor` in `apps/admin`, then root `npm run verify`, update docs and commit.
+
+_Verify (2026-10-13):_ `npm run -w apps/admin typecheck` passed. `npm run -w apps/admin test` passed: 4 jest-expo suites covering `ScreenState`, notification permission gate, notification deep-link routing and `NewJobModal` stacking/dedupe. `npx expo-doctor` in `apps/admin` passed all 21 checks. Final `npm run verify` passed across lint, typecheck, tests and build for all packages. A local iPhone development build/closed-app push acceptance run was not possible in this Windows workspace without an interactive Expo/Apple Developer login and registered device; recorded in D35.
 
 ## Phase 14 — Driver API & Driver iOS app
 _Plan:_

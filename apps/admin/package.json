@@ -1,0 +1,73 @@
+{
+  "name": "@sv/admin",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "expo-router/entry",
+  "scripts": {
+    "build": "tsc --noEmit",
+    "dev": "expo start",
+    "lint": "eslint . --max-warnings=0",
+    "test": "jest --runInBand",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@expo-google-fonts/bricolage-grotesque": "0.4.1",
+    "@expo-google-fonts/manrope": "0.4.2",
+    "@expo/metro-runtime": "57.0.16",
+    "@react-native-community/netinfo": "12.0.1",
+    "@react-native/assets-registry": "0.86.3",
+    "@sentry/react-native": "7.11.0",
+    "@sv/api-client": "0.0.0",
+    "@sv/contracts": "0.0.0",
+    "@sv/tokens": "0.0.0",
+    "@tanstack/react-query": "5.104.2",
+    "expo": "57.0.28",
+    "expo-audio": "57.0.5",
+    "expo-constants": "57.0.21",
+    "expo-font": "57.0.4",
+    "expo-haptics": "57.0.3",
+    "expo-linking": "57.0.12",
+    "expo-local-authentication": "57.0.3",
+    "expo-notifications": "57.0.22",
+    "expo-router": "57.0.26",
+    "expo-secure-store": "57.0.4",
+    "expo-splash-screen": "57.0.10",
+    "expo-status-bar": "57.0.1",
+    "expo-updates": "57.0.26",
+    "lucide-react-native": "1.56.0",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-native": "0.86.3",
+    "react-native-gesture-handler": "2.32.0",
+    "react-native-reanimated": "4.5.1",
+    "react-native-safe-area-context": "5.7.0",
+    "react-native-screens": "4.26.0",
+    "react-native-web": "0.21.4",
+    "react-native-worklets": "0.10.1",
+    "zustand": "5.0.15"
+  },
+  "devDependencies": {
+    "@testing-library/react-native": "14.1.0",
+    "@types/jest": "29.5.14",
+    "@types/react": "19.2.4",
+    "expo-doctor": "1.20.4",
+    "jest-expo": "57.0.6",
+    "react-test-renderer": "19.2.3"
+  },
+  "jest": {
+    "preset": "jest-expo",
+    "setupFilesAfterEnv": [
+      "<rootDir>/test/setup.ts"
+    ],
+    "moduleNameMapper": {
+      "^expo-modules-core$": "<rootDir>/../../node_modules/expo-modules-core",
+      "^expo-modules-core/(.*)$": "<rootDir>/../../node_modules/expo-modules-core/$1",
+      "^lucide-react-native$": "<rootDir>/test/lucide-react-native.mock.tsx"
+    },
+    "testMatch": [
+      "<rootDir>/test/**/*.test.ts",
+      "<rootDir>/test/**/*.test.tsx"
+    ]
+  }
+}

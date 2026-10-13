@@ -32,6 +32,7 @@
   "devDependencies": {
     "@eslint/js": "9.39.5",
     "@next/eslint-plugin-next": "16.4.0",
+    "@react-native/assets-registry": "0.86.3",
     "@rolldown/binding-wasm32-wasi": "^1.2.13",
     "@types/node": "26.6.5",
     "@vitest/coverage-v8": "5.0.4",
@@ -44,6 +45,14 @@
     "globals": "17.13.0",
     "prettier": "3.9.10",
     "prisma": "7.10.0",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-native": "0.86.3",
+    "react-native-gesture-handler": "2.32.0",
+    "react-native-reanimated": "4.5.1",
+    "react-native-safe-area-context": "5.7.0",
+    "react-native-screens": "4.26.0",
+    "react-native-worklets": "0.10.1",
     "tsx": "4.23.15",
     "turbo": "2.11.7",
     "typescript": "6.0.3",
@@ -53,5 +62,16 @@
   "optionalDependencies": {
     "@rolldown/binding-linux-x64-gnu": "^1.2.13",
     "@rolldown/binding-win32-x64-msvc": "^1.2.13"
+  },
+  "overrides": {
+    "@react-native/assets-registry": "0.86.3",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-native": "0.86.3",
+    "react-native-gesture-handler": "2.32.0",
+    "react-native-reanimated": "4.5.1",
+    "react-native-safe-area-context": "5.7.0",
+    "react-native-screens": "4.26.0",
+    "react-native-worklets": "0.10.1"
   }
 }
