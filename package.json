@@ -20,6 +20,7 @@
     "test": "turbo run test",
     "test:pricing": "npm run test -w @sv/pricing",
     "e2e": "npm run build && npm run e2e -w @sv/web --",
+    "seo:check": "npm run build && npm run seo:check -w @sv/web",
     "build": "turbo run build",
     "db:migrate": "npm run db:migrate -w @sv/db",
     "db:deploy": "npm run db:deploy -w @sv/db",

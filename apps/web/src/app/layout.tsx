@@ -34,6 +34,19 @@ export const metadata: Metadata = {
 export default async function RootLayout({ children }: { children: ReactNode }): Promise<ReactNode> {
   const settings = await getPublicSettings();
   const phoneHref = settings.contact.phoneE164 ? `tel:${settings.contact.phoneE164}` : null;
+  const origin = settings.web.canonicalOrigin;
+  const organizationJson = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: settings.company.tradingName,
+    url: origin,
+  };
+  const websiteJson = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: settings.company.tradingName,
+    url: origin,
+  };
 
   return (
     <html className={`${body.variable} ${display.variable}`} lang="en-GB">
@@ -49,6 +62,10 @@ export default async function RootLayout({ children }: { children: ReactNode }):
           <MobileStickyCta phoneDisplay={settings.contact.phoneDisplay} phoneHref={phoneHref} />
           <ConsentBanner />
         </div>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify([organizationJson, websiteJson]).replaceAll('<', '\\u003c') }}
+        />
         <SpeedInsights />
       </body>
     </html>

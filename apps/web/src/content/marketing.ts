@@ -1,12 +1,12 @@
 export const cityMarketingLinks = [
-  { href: '/areas/glasgow', label: 'Glasgow' },
-  { href: '/areas/edinburgh', label: 'Edinburgh' },
-  { href: '/areas/aberdeen', label: 'Aberdeen' },
-  { href: '/areas/dundee', label: 'Dundee' },
-  { href: '/areas/inverness', label: 'Inverness' },
-  { href: '/areas/perth', label: 'Perth' },
-  { href: '/areas/stirling', label: 'Stirling' },
-  { href: '/areas/dunfermline', label: 'Dunfermline' },
+  { href: '/removals/glasgow', label: 'Glasgow' },
+  { href: '/removals/edinburgh', label: 'Edinburgh' },
+  { href: '/removals/aberdeen', label: 'Aberdeen' },
+  { href: '/removals/dundee', label: 'Dundee' },
+  { href: '/removals/inverness', label: 'Inverness' },
+  { href: '/removals/perth', label: 'Perth' },
+  { href: '/removals/stirling', label: 'Stirling' },
+  { href: '/removals/dunfermline', label: 'Dunfermline' },
 ] as const;
 
 export const regionLinks = [

@@ -74,8 +74,8 @@ export function Header({ phoneDisplay, phoneHref }: { phoneDisplay: string | nul
           <Link className="nav-link" href="/help">
             Help
           </Link>
-          <Link className="nav-link" href="/manage">
-            Manage booking
+          <Link className="nav-link" href="/contact">
+            Contact
           </Link>
         </nav>
         <div className="header-actions">
@@ -118,8 +118,8 @@ export function Header({ phoneDisplay, phoneHref }: { phoneDisplay: string | nul
           <Link href="/help" onClick={() => { setMobileOpen(false); }}>
             Help
           </Link>
-          <Link href="/manage" onClick={() => { setMobileOpen(false); }}>
-            Manage booking
+          <Link href="/contact" onClick={() => { setMobileOpen(false); }}>
+            Contact
           </Link>
           {phoneDisplay && phoneHref ? (
             <Link href={phoneHref} onClick={() => { setMobileOpen(false); }}>

@@ -26,7 +26,7 @@ export default async function ContactPage(): Promise<ReactNode> {
             {settings.contact.phoneHours ? <span>{settings.contact.phoneHours}</span> : null}
             {settings.company.registeredOffice ? <span>Registered office: {settings.company.registeredOffice}</span> : null}
           </div>
-          <Link className="button button-secondary" href="/manage">Already booked? Manage your booking</Link>
+          <Link className="button button-secondary" href="/help">Already booked? Read booking help</Link>
         </div>
         <ContactForm />
       </div>

@@ -141,7 +141,17 @@ _Verify (2026-10-13):_ `npm run verify` passed across lint, typecheck, tests and
 
 ## Phase 10 — SEO
 _Plan:_
-- [ ] Geocode script + report · [ ] location graph · [ ] route distances · [ ] `/areas` · [ ] 12 region pages · [ ] 221 town pages · [ ] 8 man-and-van city pages · [ ] 26 route pages · [ ] metadata + OG images · [ ] JSON-LD graphs · [ ] sitemaps + index · [ ] robots · [ ] indexing policy (tier 3) · [ ] redirects mechanism · [ ] city note drafts seeded · [ ] `seo:check`
+- [x] Add Phase 10 location data pipeline scripts for geocoding, nearest-location graph, route distances and reports.
+- [x] Commit generated location and distance JSON used by the website, with manual-review notes.
+- [x] Add shared SEO content/data helpers for locations, regions, routes, indexability, prices, metadata and JSON-LD.
+- [x] Build `/areas`, 12 region hubs, 221 town pages, 8 city man-and-van pages and 26 route pages.
+- [x] Add sitemap/robots generation, canonical metadata, breadcrumbs, structured data and internal linking.
+- [x] Add `npm run seo:check` to crawl public SEO URLs and validate title, description, H1, canonical, JSON-LD and links.
+- [x] Cover sample town, route, region and city pages through the sitemap-wide `seo:check` crawler instead of a redundant Playwright SEO suite.
+- [x] Record the Mapbox/local-generation and Rich Results boundaries in `docs/DECISIONS.md`.
+- [x] Run `npm run verify`, `npm run seo:check`, and record Rich Results sample status before committing.
+
+_Verify (2026-10-13):_ `npm run seo:check` passed after building the app: 126 sitemap URLs checked for status, title, meta description, H1, canonical, JSON-LD and internal links; 268 internal links checked with no broken links. `npm run verify` passed across lint, typecheck, tests and build. Rich Results sample status: local JSON-LD parsing passed for every crawled sitemap URL including sample town (`/removals/glasgow`), route (`/removals/glasgow-to-edinburgh`), region (`/areas/glasgow-and-clyde`) and city (`/man-and-van/glasgow`); Google's Rich Results Test was not run against localhost because the local build is not publicly reachable, recorded in D32.
 
 ## Phase 11 — Customer self-service
 _Plan:_

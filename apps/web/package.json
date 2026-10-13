@@ -9,6 +9,7 @@
     "e2e": "tsx scripts/run-e2e.ts",
     "lint": "eslint . --max-warnings=0",
     "lighthouse": "tsx scripts/run-lighthouse.ts",
+    "seo:check": "tsx scripts/seo-check.ts",
     "start": "next start -H 127.0.0.1 -p 3000",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"

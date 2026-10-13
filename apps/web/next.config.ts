@@ -1,4 +1,5 @@
 import type { NextConfig } from 'next';
+import { redirects } from './src/content/redirects';
 
 const csp = [
   "default-src 'self'",
@@ -53,6 +54,10 @@ const nextConfig: NextConfig = {
         headers: [...securityHeaders],
       },
     ];
+  },
+  redirects: async () => {
+    await Promise.resolve();
+    return redirects;
   },
   transpilePackages: ['@sv/contracts', '@sv/db', '@sv/pricing', '@sv/tokens'],
 };

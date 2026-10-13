@@ -1,0 +1,6411 @@
+[
+  {
+    "slug": "glasgow",
+    "name": "Glasgow",
+    "council_area": "Glasgow City",
+    "region": "glasgow-and-clyde",
+    "postcode_area": "G",
+    "tier": "1",
+    "island": "N",
+    "ferry": "NO",
+    "lat": 55.8642,
+    "lng": -4.2518,
+    "confidence": "high",
+    "nearestCities": [
+      "glasgow",
+      "stirling",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "giffnock",
+      "blantyre",
+      "wishaw",
+      "girvan",
+      "dollar",
+      "denny",
+      "lanark",
+      "milngavie"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "paisley",
+    "name": "Paisley",
+    "council_area": "Renfrewshire",
+    "region": "glasgow-and-clyde",
+    "postcode_area": "PA",
+    "tier": "2",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 56.0526,
+    "lng": -4.0701,
+    "nearestCities": [
+      "stirling",
+      "glasgow",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "bridge-of-weir",
+      "callander",
+      "boness",
+      "erskine",
+      "alexandria",
+      "newton-mearns",
+      "tillicoultry",
+      "grangemouth"
+    ],
+    "regionHub": "stirling"
+  },
+  {
+    "slug": "renfrew",
+    "name": "Renfrew",
+    "council_area": "Renfrewshire",
+    "region": "glasgow-and-clyde",
+    "postcode_area": "PA",
+    "tier": "2",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.9062,
+    "lng": -4.0062,
+    "nearestCities": [
+      "glasgow",
+      "stirling",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "lenzie",
+      "lanark",
+      "denny",
+      "tillicoultry",
+      "grangemouth",
+      "kilmacolm",
+      "wishaw",
+      "boness"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "johnstone",
+    "name": "Johnstone",
+    "council_area": "Renfrewshire",
+    "region": "glasgow-and-clyde",
+    "postcode_area": "PA",
+    "tier": "2",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 56.0892,
+    "lng": -4.6758,
+    "nearestCities": [
+      "glasgow",
+      "stirling",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "kirkintilloch",
+      "bearsden",
+      "tobermory",
+      "rothesay",
+      "dunoon",
+      "bishopton",
+      "clarkston",
+      "clydebank"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "erskine",
+    "name": "Erskine",
+    "council_area": "Renfrewshire",
+    "region": "glasgow-and-clyde",
+    "postcode_area": "PA",
+    "tier": "2",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 56.0082,
+    "lng": -4.116,
+    "nearestCities": [
+      "stirling",
+      "glasgow",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "boness",
+      "bridge-of-weir",
+      "grangemouth",
+      "tillicoultry",
+      "paisley",
+      "dollar",
+      "alexandria",
+      "callander"
+    ],
+    "regionHub": "stirling"
+  },
+  {
+    "slug": "linwood",
+    "name": "Linwood",
+    "council_area": "Renfrewshire",
+    "region": "glasgow-and-clyde",
+    "postcode_area": "PA",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.7076,
+    "lng": -4.5354,
+    "nearestCities": [
+      "glasgow",
+      "stirling",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "maybole",
+      "dumbarton",
+      "greenock",
+      "kilmarnock",
+      "galston",
+      "brodick",
+      "milngavie",
+      "barrhead"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "bishopton",
+    "name": "Bishopton",
+    "council_area": "Renfrewshire",
+    "region": "glasgow-and-clyde",
+    "postcode_area": "PA",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 56.082,
+    "lng": -4.3968,
+    "nearestCities": [
+      "glasgow",
+      "stirling",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "clarkston",
+      "clydebank",
+      "johnstone",
+      "kirkintilloch",
+      "erskine",
+      "dollar",
+      "newton-mearns",
+      "paisley"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "bridge-of-weir",
+    "name": "Bridge of Weir",
+    "council_area": "Renfrewshire",
+    "region": "glasgow-and-clyde",
+    "postcode_area": "PA",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 56.031,
+    "lng": -4.062,
+    "nearestCities": [
+      "stirling",
+      "glasgow",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "paisley",
+      "boness",
+      "erskine",
+      "alexandria",
+      "callander",
+      "tillicoultry",
+      "grangemouth",
+      "newton-mearns"
+    ],
+    "regionHub": "stirling"
+  },
+  {
+    "slug": "houston",
+    "name": "Houston",
+    "council_area": "Renfrewshire",
+    "region": "glasgow-and-clyde",
+    "postcode_area": "PA",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.5732,
+    "lng": -4.1367,
+    "nearestCities": [
+      "glasgow",
+      "stirling",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "coatbridge",
+      "cumnock",
+      "cambuslang",
+      "barrhead",
+      "carluke",
+      "brodick",
+      "moodiesburn",
+      "shotts"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "greenock",
+    "name": "Greenock",
+    "council_area": "Inverclyde",
+    "region": "glasgow-and-clyde",
+    "postcode_area": "PA",
+    "tier": "2",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.7592,
+    "lng": -4.4058,
+    "nearestCities": [
+      "glasgow",
+      "stirling",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "galston",
+      "milngavie",
+      "dumbarton",
+      "girvan",
+      "brodick",
+      "linwood",
+      "maybole",
+      "barrhead"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "port-glasgow",
+    "name": "Port Glasgow",
+    "council_area": "Inverclyde",
+    "region": "glasgow-and-clyde",
+    "postcode_area": "PA",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 56.0664,
+    "lng": -3.9063,
+    "nearestCities": [
+      "stirling",
+      "dunfermline",
+      "glasgow"
+    ],
+    "nearestLocations": [
+      "alexandria",
+      "stirling",
+      "callander",
+      "kilmacolm",
+      "paisley",
+      "bridge-of-weir",
+      "newton-mearns",
+      "boness"
+    ],
+    "regionHub": "stirling"
+  },
+  {
+    "slug": "gourock",
+    "name": "Gourock",
+    "council_area": "Inverclyde",
+    "region": "glasgow-and-clyde",
+    "postcode_area": "PA",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.782,
+    "lng": -4.8,
+    "nearestCities": [
+      "glasgow",
+      "stirling",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "largs",
+      "stevenston",
+      "troon",
+      "west-kilbride",
+      "linwood",
+      "maybole",
+      "dumbarton",
+      "bishopbriggs"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "kilmacolm",
+    "name": "Kilmacolm",
+    "council_area": "Inverclyde",
+    "region": "glasgow-and-clyde",
+    "postcode_area": "PA",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.977,
+    "lng": -3.9009,
+    "nearestCities": [
+      "stirling",
+      "glasgow",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "alexandria",
+      "port-glasgow",
+      "renfrew",
+      "tullibody",
+      "tillicoultry",
+      "boness",
+      "grangemouth",
+      "bridge-of-weir"
+    ],
+    "regionHub": "stirling"
+  },
+  {
+    "slug": "clydebank",
+    "name": "Clydebank",
+    "council_area": "West Dunbartonshire",
+    "region": "glasgow-and-clyde",
+    "postcode_area": "G",
+    "tier": "2",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.995,
+    "lng": -4.2807,
+    "nearestCities": [
+      "glasgow",
+      "stirling",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "clarkston",
+      "dollar",
+      "erskine",
+      "bishopton",
+      "denny",
+      "grangemouth",
+      "boness",
+      "tillicoultry"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "dumbarton",
+    "name": "Dumbarton",
+    "council_area": "West Dunbartonshire",
+    "region": "glasgow-and-clyde",
+    "postcode_area": "G",
+    "tier": "2",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.7832,
+    "lng": -4.4616,
+    "nearestCities": [
+      "glasgow",
+      "stirling",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "milngavie",
+      "greenock",
+      "galston",
+      "girvan",
+      "linwood",
+      "maybole",
+      "brodick",
+      "giffnock"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "alexandria",
+    "name": "Alexandria",
+    "council_area": "West Dunbartonshire",
+    "region": "glasgow-and-clyde",
+    "postcode_area": "G",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 56.0358,
+    "lng": -3.9783,
+    "nearestCities": [
+      "stirling",
+      "glasgow",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "callander",
+      "bridge-of-weir",
+      "port-glasgow",
+      "paisley",
+      "boness",
+      "kilmacolm",
+      "erskine",
+      "tillicoultry"
+    ],
+    "regionHub": "stirling"
+  },
+  {
+    "slug": "bearsden",
+    "name": "Bearsden",
+    "council_area": "East Dunbartonshire",
+    "region": "glasgow-and-clyde",
+    "postcode_area": "G",
+    "tier": "2",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 56.1012,
+    "lng": -4.7703,
+    "nearestCities": [
+      "glasgow",
+      "stirling",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "tobermory",
+      "kirkintilloch",
+      "johnstone",
+      "rothesay",
+      "dunoon",
+      "bishopton",
+      "campbeltown",
+      "clarkston"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "milngavie",
+    "name": "Milngavie",
+    "council_area": "East Dunbartonshire",
+    "region": "glasgow-and-clyde",
+    "postcode_area": "G",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.7916,
+    "lng": -4.4076,
+    "nearestCities": [
+      "glasgow",
+      "stirling",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "dumbarton",
+      "greenock",
+      "girvan",
+      "galston",
+      "giffnock",
+      "brodick",
+      "blantyre",
+      "linwood"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "bishopbriggs",
+    "name": "Bishopbriggs",
+    "council_area": "East Dunbartonshire",
+    "region": "glasgow-and-clyde",
+    "postcode_area": "G",
+    "tier": "2",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.5882,
+    "lng": -4.6938,
+    "nearestCities": [
+      "glasgow",
+      "stirling",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "beith",
+      "west-kilbride",
+      "saltcoats",
+      "ayr",
+      "kilmarnock",
+      "stevenston",
+      "maybole",
+      "linwood"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "kirkintilloch",
+    "name": "Kirkintilloch",
+    "council_area": "East Dunbartonshire",
+    "region": "glasgow-and-clyde",
+    "postcode_area": "G",
+    "tier": "2",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 56.0898,
+    "lng": -4.6857,
+    "nearestCities": [
+      "glasgow",
+      "stirling",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "johnstone",
+      "bearsden",
+      "tobermory",
+      "rothesay",
+      "dunoon",
+      "bishopton",
+      "clarkston",
+      "clydebank"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "lenzie",
+    "name": "Lenzie",
+    "council_area": "East Dunbartonshire",
+    "region": "glasgow-and-clyde",
+    "postcode_area": "G",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.8822,
+    "lng": -4.0008,
+    "nearestCities": [
+      "glasgow",
+      "stirling",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "renfrew",
+      "lanark",
+      "denny",
+      "wishaw",
+      "tillicoultry",
+      "grangemouth",
+      "kilmacolm",
+      "east-kilbride"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "newton-mearns",
+    "name": "Newton Mearns",
+    "council_area": "East Renfrewshire",
+    "region": "glasgow-and-clyde",
+    "postcode_area": "G",
+    "tier": "2",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 56.1168,
+    "lng": -4.0782,
+    "nearestCities": [
+      "stirling",
+      "glasgow",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "callander",
+      "paisley",
+      "stirling",
+      "bridge-of-weir",
+      "alexandria",
+      "port-glasgow",
+      "boness",
+      "erskine"
+    ],
+    "regionHub": "stirling"
+  },
+  {
+    "slug": "giffnock",
+    "name": "Giffnock",
+    "council_area": "East Renfrewshire",
+    "region": "glasgow-and-clyde",
+    "postcode_area": "G",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.8402,
+    "lng": -4.2771,
+    "nearestCities": [
+      "glasgow",
+      "stirling",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "glasgow",
+      "blantyre",
+      "girvan",
+      "wishaw",
+      "milngavie",
+      "galston",
+      "greenock",
+      "denny"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "clarkston",
+    "name": "Clarkston",
+    "council_area": "East Renfrewshire",
+    "region": "glasgow-and-clyde",
+    "postcode_area": "G",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 56.0646,
+    "lng": -4.2888,
+    "nearestCities": [
+      "glasgow",
+      "stirling",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "bishopton",
+      "clydebank",
+      "erskine",
+      "paisley",
+      "newton-mearns",
+      "bridge-of-weir",
+      "boness",
+      "dollar"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "barrhead",
+    "name": "Barrhead",
+    "council_area": "East Renfrewshire",
+    "region": "glasgow-and-clyde",
+    "postcode_area": "G",
+    "tier": "2",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.6602,
+    "lng": -4.3545,
+    "nearestCities": [
+      "glasgow",
+      "stirling",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "brodick",
+      "kilmarnock",
+      "galston",
+      "maybole",
+      "greenock",
+      "cumnock",
+      "linwood",
+      "milngavie"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "east-kilbride",
+    "name": "East Kilbride",
+    "council_area": "South Lanarkshire",
+    "region": "lanarkshire",
+    "postcode_area": "G",
+    "tier": "2",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.7728,
+    "lng": -3.9607,
+    "nearestCities": [
+      "glasgow",
+      "stirling",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "shotts",
+      "cambuslang",
+      "carluke",
+      "lanark",
+      "moodiesburn",
+      "lenzie",
+      "wishaw",
+      "motherwell"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "hamilton",
+    "name": "Hamilton",
+    "council_area": "South Lanarkshire",
+    "region": "lanarkshire",
+    "postcode_area": "ML",
+    "tier": "2",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.5184,
+    "lng": -3.4999,
+    "nearestCities": [
+      "edinburgh",
+      "glasgow",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "bothwell",
+      "lesmahagow",
+      "biggar",
+      "langholm",
+      "coldstream",
+      "galashiels",
+      "bellshill",
+      "larkhall"
+    ],
+    "regionHub": "edinburgh"
+  },
+  {
+    "slug": "rutherglen",
+    "name": "Rutherglen",
+    "council_area": "South Lanarkshire",
+    "region": "lanarkshire",
+    "postcode_area": "G",
+    "tier": "2",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.9876,
+    "lng": -3.4135,
+    "nearestCities": [
+      "dunfermline",
+      "edinburgh",
+      "stirling"
+    ],
+    "nearestLocations": [
+      "larbert",
+      "stepps",
+      "alva",
+      "burntisland",
+      "dunfermline",
+      "balerno",
+      "falkirk",
+      "lochgelly"
+    ],
+    "regionHub": "dunfermline"
+  },
+  {
+    "slug": "cambuslang",
+    "name": "Cambuslang",
+    "council_area": "South Lanarkshire",
+    "region": "lanarkshire",
+    "postcode_area": "G",
+    "tier": "2",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.6978,
+    "lng": -3.9994,
+    "nearestCities": [
+      "glasgow",
+      "stirling",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "shotts",
+      "carluke",
+      "east-kilbride",
+      "moodiesburn",
+      "airdrie",
+      "houston",
+      "motherwell",
+      "lanark"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "blantyre",
+    "name": "Blantyre",
+    "council_area": "South Lanarkshire",
+    "region": "lanarkshire",
+    "postcode_area": "G",
+    "tier": "2",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.813,
+    "lng": -4.219,
+    "nearestCities": [
+      "glasgow",
+      "stirling",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "giffnock",
+      "wishaw",
+      "glasgow",
+      "moodiesburn",
+      "girvan",
+      "lanark",
+      "carluke",
+      "galston"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "larkhall",
+    "name": "Larkhall",
+    "council_area": "South Lanarkshire",
+    "region": "lanarkshire",
+    "postcode_area": "ML",
+    "tier": "2",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.5346,
+    "lng": -3.7654,
+    "nearestCities": [
+      "glasgow",
+      "edinburgh",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "cumbernauld",
+      "biggar",
+      "bothwell",
+      "linlithgow",
+      "airdrie",
+      "bellshill",
+      "musselburgh",
+      "hamilton"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "carluke",
+    "name": "Carluke",
+    "council_area": "South Lanarkshire",
+    "region": "lanarkshire",
+    "postcode_area": "ML",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.7362,
+    "lng": -4.1164,
+    "nearestCities": [
+      "glasgow",
+      "stirling",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "moodiesburn",
+      "shotts",
+      "cambuslang",
+      "east-kilbride",
+      "blantyre",
+      "wishaw",
+      "lanark",
+      "brodick"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "lanark",
+    "name": "Lanark",
+    "council_area": "South Lanarkshire",
+    "region": "lanarkshire",
+    "postcode_area": "ML",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.8478,
+    "lng": -4.0687,
+    "nearestCities": [
+      "glasgow",
+      "stirling",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "wishaw",
+      "lenzie",
+      "renfrew",
+      "denny",
+      "blantyre",
+      "east-kilbride",
+      "glasgow",
+      "moodiesburn"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "uddingston",
+    "name": "Uddingston",
+    "council_area": "South Lanarkshire",
+    "region": "lanarkshire",
+    "postcode_area": "G",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.687,
+    "lng": -3.5107,
+    "nearestCities": [
+      "edinburgh",
+      "dunfermline",
+      "glasgow"
+    ],
+    "nearestLocations": [
+      "haddington",
+      "kilsyth",
+      "bellshill",
+      "tranent",
+      "bathgate",
+      "armadale",
+      "musselburgh",
+      "linlithgow"
+    ],
+    "regionHub": "edinburgh"
+  },
+  {
+    "slug": "bothwell",
+    "name": "Bothwell",
+    "council_area": "South Lanarkshire",
+    "region": "lanarkshire",
+    "postcode_area": "G",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.4914,
+    "lng": -3.6196,
+    "nearestCities": [
+      "glasgow",
+      "edinburgh",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "biggar",
+      "hamilton",
+      "larkhall",
+      "cumbernauld",
+      "lesmahagow",
+      "bellshill",
+      "linlithgow",
+      "galashiels"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "strathaven",
+    "name": "Strathaven",
+    "council_area": "South Lanarkshire",
+    "region": "lanarkshire",
+    "postcode_area": "ML",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.8292,
+    "lng": -3.5656,
+    "nearestCities": [
+      "edinburgh",
+      "dunfermline",
+      "stirling"
+    ],
+    "nearestLocations": [
+      "west-calder",
+      "tranent",
+      "stenhousemuir",
+      "gorebridge",
+      "prestonpans",
+      "armadale",
+      "alva",
+      "bathgate"
+    ],
+    "regionHub": "edinburgh"
+  },
+  {
+    "slug": "lesmahagow",
+    "name": "Lesmahagow",
+    "council_area": "South Lanarkshire",
+    "region": "lanarkshire",
+    "postcode_area": "ML",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.444,
+    "lng": -3.4036,
+    "nearestCities": [
+      "edinburgh",
+      "dunfermline",
+      "glasgow"
+    ],
+    "nearestLocations": [
+      "galashiels",
+      "coldstream",
+      "hamilton",
+      "langholm",
+      "kirkcudbright",
+      "newton-stewart",
+      "bothwell",
+      "innerleithen"
+    ],
+    "regionHub": "edinburgh"
+  },
+  {
+    "slug": "biggar",
+    "name": "Biggar",
+    "council_area": "South Lanarkshire",
+    "region": "lanarkshire",
+    "postcode_area": "ML",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.468,
+    "lng": -3.6772,
+    "nearestCities": [
+      "glasgow",
+      "edinburgh",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "bothwell",
+      "larkhall",
+      "cumbernauld",
+      "hamilton",
+      "lesmahagow",
+      "bellshill",
+      "linlithgow",
+      "galashiels"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "cumbernauld",
+    "name": "Cumbernauld",
+    "council_area": "North Lanarkshire",
+    "region": "lanarkshire",
+    "postcode_area": "G",
+    "tier": "2",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.4956,
+    "lng": -3.8284,
+    "nearestCities": [
+      "glasgow",
+      "edinburgh",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "larkhall",
+      "biggar",
+      "bothwell",
+      "airdrie",
+      "linlithgow",
+      "bellshill",
+      "hamilton",
+      "houston"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "coatbridge",
+    "name": "Coatbridge",
+    "council_area": "North Lanarkshire",
+    "region": "lanarkshire",
+    "postcode_area": "ML",
+    "tier": "2",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.5352,
+    "lng": -4.2361,
+    "nearestCities": [
+      "glasgow",
+      "stirling",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "cumnock",
+      "houston",
+      "barrhead",
+      "kilwinning",
+      "kilmarnock",
+      "brodick",
+      "stewarton",
+      "prestwick"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "airdrie",
+    "name": "Airdrie",
+    "council_area": "North Lanarkshire",
+    "region": "lanarkshire",
+    "postcode_area": "ML",
+    "tier": "2",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.6576,
+    "lng": -3.8212,
+    "nearestCities": [
+      "glasgow",
+      "edinburgh",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "musselburgh",
+      "linlithgow",
+      "motherwell",
+      "cambuslang",
+      "larkhall",
+      "bellshill",
+      "shotts",
+      "east-kilbride"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "motherwell",
+    "name": "Motherwell",
+    "council_area": "North Lanarkshire",
+    "region": "lanarkshire",
+    "postcode_area": "ML",
+    "tier": "2",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.723,
+    "lng": -3.7384,
+    "nearestCities": [
+      "glasgow",
+      "dunfermline",
+      "edinburgh"
+    ],
+    "nearestLocations": [
+      "musselburgh",
+      "airdrie",
+      "linlithgow",
+      "bellshill",
+      "uddingston",
+      "east-kilbride",
+      "strathaven",
+      "cambuslang"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "wishaw",
+    "name": "Wishaw",
+    "council_area": "North Lanarkshire",
+    "region": "lanarkshire",
+    "postcode_area": "ML",
+    "tier": "2",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.8454,
+    "lng": -4.1533,
+    "nearestCities": [
+      "glasgow",
+      "stirling",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "lanark",
+      "blantyre",
+      "glasgow",
+      "giffnock",
+      "denny",
+      "lenzie",
+      "moodiesburn",
+      "dollar"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "bellshill",
+    "name": "Bellshill",
+    "council_area": "North Lanarkshire",
+    "region": "lanarkshire",
+    "postcode_area": "ML",
+    "tier": "2",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.627,
+    "lng": -3.5944,
+    "nearestCities": [
+      "edinburgh",
+      "glasgow",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "linlithgow",
+      "uddingston",
+      "musselburgh",
+      "kilsyth",
+      "haddington",
+      "hamilton",
+      "motherwell",
+      "airdrie"
+    ],
+    "regionHub": "edinburgh"
+  },
+  {
+    "slug": "kilsyth",
+    "name": "Kilsyth",
+    "council_area": "North Lanarkshire",
+    "region": "lanarkshire",
+    "postcode_area": "G",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.6744,
+    "lng": -3.4144,
+    "nearestCities": [
+      "edinburgh",
+      "dunfermline",
+      "glasgow"
+    ],
+    "nearestLocations": [
+      "haddington",
+      "uddingston",
+      "bathgate",
+      "armadale",
+      "tranent",
+      "bellshill",
+      "linlithgow",
+      "musselburgh"
+    ],
+    "regionHub": "edinburgh"
+  },
+  {
+    "slug": "shotts",
+    "name": "Shotts",
+    "council_area": "North Lanarkshire",
+    "region": "lanarkshire",
+    "postcode_area": "ML",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.7422,
+    "lng": -4.0084,
+    "nearestCities": [
+      "glasgow",
+      "stirling",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "east-kilbride",
+      "cambuslang",
+      "carluke",
+      "moodiesburn",
+      "lanark",
+      "wishaw",
+      "airdrie",
+      "blantyre"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "moodiesburn",
+    "name": "Moodiesburn",
+    "council_area": "North Lanarkshire",
+    "region": "lanarkshire",
+    "postcode_area": "G",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.7506,
+    "lng": -4.1515,
+    "nearestCities": [
+      "glasgow",
+      "stirling",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "carluke",
+      "blantyre",
+      "shotts",
+      "wishaw",
+      "cambuslang",
+      "lanark",
+      "east-kilbride",
+      "giffnock"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "stepps",
+    "name": "Stepps",
+    "council_area": "North Lanarkshire",
+    "region": "lanarkshire",
+    "postcode_area": "G",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.9666,
+    "lng": -3.5332,
+    "nearestCities": [
+      "dunfermline",
+      "edinburgh",
+      "stirling"
+    ],
+    "nearestLocations": [
+      "larbert",
+      "burntisland",
+      "alva",
+      "falkirk",
+      "methil",
+      "prestonpans",
+      "lochgelly",
+      "stenhousemuir"
+    ],
+    "regionHub": "dunfermline"
+  },
+  {
+    "slug": "edinburgh",
+    "name": "Edinburgh",
+    "council_area": "City of Edinburgh",
+    "region": "edinburgh-and-lothians",
+    "postcode_area": "EH",
+    "tier": "1",
+    "island": "N",
+    "ferry": "NO",
+    "lat": 55.9533,
+    "lng": -3.1883,
+    "confidence": "high",
+    "nearestCities": [
+      "edinburgh",
+      "dunfermline",
+      "stirling"
+    ],
+    "nearestLocations": [
+      "kelty",
+      "north-berwick",
+      "broxburn",
+      "dunbar",
+      "blackburn",
+      "rutherglen",
+      "mayfield",
+      "alva"
+    ],
+    "regionHub": "edinburgh"
+  },
+  {
+    "slug": "south-queensferry",
+    "name": "South Queensferry",
+    "council_area": "City of Edinburgh",
+    "region": "edinburgh-and-lothians",
+    "postcode_area": "EH",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.6786,
+    "lng": -3.0988,
+    "nearestCities": [
+      "edinburgh",
+      "dunfermline",
+      "stirling"
+    ],
+    "nearestLocations": [
+      "dalkeith",
+      "mayfield",
+      "dunbar",
+      "bathgate",
+      "kilsyth",
+      "haddington",
+      "blackburn",
+      "jedburgh"
+    ],
+    "regionHub": "edinburgh"
+  },
+  {
+    "slug": "balerno",
+    "name": "Balerno",
+    "council_area": "City of Edinburgh",
+    "region": "edinburgh-and-lothians",
+    "postcode_area": "EH",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 56.0494,
+    "lng": -3.5308,
+    "nearestCities": [
+      "dunfermline",
+      "edinburgh",
+      "stirling"
+    ],
+    "nearestLocations": [
+      "lochgelly",
+      "dunfermline",
+      "falkirk",
+      "methil",
+      "burntisland",
+      "stepps",
+      "larbert",
+      "rutherglen"
+    ],
+    "regionHub": "dunfermline"
+  },
+  {
+    "slug": "musselburgh",
+    "name": "Musselburgh",
+    "council_area": "East Lothian",
+    "region": "edinburgh-and-lothians",
+    "postcode_area": "EH",
+    "tier": "2",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.6786,
+    "lng": -3.7,
+    "nearestCities": [
+      "glasgow",
+      "edinburgh",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "linlithgow",
+      "motherwell",
+      "airdrie",
+      "bellshill",
+      "uddingston",
+      "larkhall",
+      "tranent",
+      "haddington"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "haddington",
+    "name": "Haddington",
+    "council_area": "East Lothian",
+    "region": "edinburgh-and-lothians",
+    "postcode_area": "EH",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.6888,
+    "lng": -3.4219,
+    "nearestCities": [
+      "edinburgh",
+      "dunfermline",
+      "glasgow"
+    ],
+    "nearestLocations": [
+      "kilsyth",
+      "uddingston",
+      "bathgate",
+      "armadale",
+      "tranent",
+      "bellshill",
+      "mayfield",
+      "musselburgh"
+    ],
+    "regionHub": "edinburgh"
+  },
+  {
+    "slug": "tranent",
+    "name": "Tranent",
+    "council_area": "East Lothian",
+    "region": "edinburgh-and-lothians",
+    "postcode_area": "EH",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.774,
+    "lng": -3.484,
+    "nearestCities": [
+      "edinburgh",
+      "dunfermline",
+      "stirling"
+    ],
+    "nearestLocations": [
+      "armadale",
+      "bathgate",
+      "strathaven",
+      "uddingston",
+      "haddington",
+      "west-calder",
+      "kilsyth",
+      "mayfield"
+    ],
+    "regionHub": "edinburgh"
+  },
+  {
+    "slug": "north-berwick",
+    "name": "North Berwick",
+    "council_area": "East Lothian",
+    "region": "edinburgh-and-lothians",
+    "postcode_area": "EH",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.8706,
+    "lng": -3.1888,
+    "nearestCities": [
+      "edinburgh",
+      "dunfermline",
+      "stirling"
+    ],
+    "nearestLocations": [
+      "broxburn",
+      "dunbar",
+      "blackburn",
+      "mayfield",
+      "edinburgh",
+      "kelty",
+      "bathgate",
+      "armadale"
+    ],
+    "regionHub": "edinburgh"
+  },
+  {
+    "slug": "prestonpans",
+    "name": "Prestonpans",
+    "council_area": "East Lothian",
+    "region": "edinburgh-and-lothians",
+    "postcode_area": "EH",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.9234,
+    "lng": -3.5614,
+    "nearestCities": [
+      "dunfermline",
+      "edinburgh",
+      "stirling"
+    ],
+    "nearestLocations": [
+      "stenhousemuir",
+      "alva",
+      "larbert",
+      "stepps",
+      "burntisland",
+      "gorebridge",
+      "west-calder",
+      "falkirk"
+    ],
+    "regionHub": "dunfermline"
+  },
+  {
+    "slug": "dunbar",
+    "name": "Dunbar",
+    "council_area": "East Lothian",
+    "region": "edinburgh-and-lothians",
+    "postcode_area": "EH",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.8496,
+    "lng": -3.133,
+    "nearestCities": [
+      "edinburgh",
+      "dunfermline",
+      "stirling"
+    ],
+    "nearestLocations": [
+      "broxburn",
+      "north-berwick",
+      "blackburn",
+      "mayfield",
+      "edinburgh",
+      "kelty",
+      "loanhead",
+      "bathgate"
+    ],
+    "regionHub": "edinburgh"
+  },
+  {
+    "slug": "dalkeith",
+    "name": "Dalkeith",
+    "council_area": "Midlothian",
+    "region": "edinburgh-and-lothians",
+    "postcode_area": "EH",
+    "tier": "2",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.6612,
+    "lng": -2.8252,
+    "nearestCities": [
+      "edinburgh",
+      "dunfermline",
+      "stirling"
+    ],
+    "nearestLocations": [
+      "south-queensferry",
+      "loanhead",
+      "peebles",
+      "dumfries",
+      "selkirk",
+      "gretna",
+      "jedburgh",
+      "dunbar"
+    ],
+    "regionHub": "edinburgh"
+  },
+  {
+    "slug": "penicuik",
+    "name": "Penicuik",
+    "council_area": "Midlothian",
+    "region": "edinburgh-and-lothians",
+    "postcode_area": "EH",
+    "tier": "2",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 56.1652,
+    "lng": -3.1753,
+    "nearestCities": [
+      "dunfermline",
+      "edinburgh",
+      "perth"
+    ],
+    "nearestLocations": [
+      "whitburn",
+      "cowdenbeath",
+      "tayport",
+      "east-calder",
+      "aberfeldy",
+      "glenrothes",
+      "kirkcaldy",
+      "dalgety-bay"
+    ],
+    "regionHub": "dunfermline"
+  },
+  {
+    "slug": "bonnyrigg",
+    "name": "Bonnyrigg",
+    "council_area": "Midlothian",
+    "region": "edinburgh-and-lothians",
+    "postcode_area": "EH",
+    "tier": "2",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 56.083,
+    "lng": -2.872,
+    "nearestCities": [
+      "edinburgh",
+      "dunfermline",
+      "dundee"
+    ],
+    "nearestLocations": [
+      "east-calder",
+      "tayport",
+      "kirkcaldy",
+      "whitburn",
+      "kelty",
+      "glenrothes",
+      "penicuik",
+      "kinross"
+    ],
+    "regionHub": "edinburgh"
+  },
+  {
+    "slug": "loanhead",
+    "name": "Loanhead",
+    "council_area": "Midlothian",
+    "region": "edinburgh-and-lothians",
+    "postcode_area": "EH",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.8268,
+    "lng": -2.8522,
+    "nearestCities": [
+      "edinburgh",
+      "dunfermline",
+      "dundee"
+    ],
+    "nearestLocations": [
+      "dunbar",
+      "dalkeith",
+      "broxburn",
+      "north-berwick",
+      "south-queensferry",
+      "kelty",
+      "edinburgh",
+      "blackburn"
+    ],
+    "regionHub": "edinburgh"
+  },
+  {
+    "slug": "gorebridge",
+    "name": "Gorebridge",
+    "council_area": "Midlothian",
+    "region": "edinburgh-and-lothians",
+    "postcode_area": "EH",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.9108,
+    "lng": -3.6487,
+    "nearestCities": [
+      "dunfermline",
+      "stirling",
+      "edinburgh"
+    ],
+    "nearestLocations": [
+      "prestonpans",
+      "alloa",
+      "tullibody",
+      "stenhousemuir",
+      "methil",
+      "alva",
+      "burntisland",
+      "stepps"
+    ],
+    "regionHub": "dunfermline"
+  },
+  {
+    "slug": "mayfield",
+    "name": "Mayfield",
+    "council_area": "Midlothian",
+    "region": "edinburgh-and-lothians",
+    "postcode_area": "EH",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.8154,
+    "lng": -3.2644,
+    "nearestCities": [
+      "edinburgh",
+      "dunfermline",
+      "stirling"
+    ],
+    "nearestLocations": [
+      "blackburn",
+      "north-berwick",
+      "dunbar",
+      "broxburn",
+      "bathgate",
+      "armadale",
+      "tranent",
+      "west-calder"
+    ],
+    "regionHub": "edinburgh"
+  },
+  {
+    "slug": "livingston",
+    "name": "Livingston",
+    "council_area": "West Lothian",
+    "region": "edinburgh-and-lothians",
+    "postcode_area": "EH",
+    "tier": "2",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 56.1874,
+    "lng": -3.6109,
+    "nearestCities": [
+      "dunfermline",
+      "stirling",
+      "perth"
+    ],
+    "nearestLocations": [
+      "dunblane",
+      "uphall",
+      "dalgety-bay",
+      "polmont",
+      "balerno",
+      "dunfermline",
+      "bannockburn",
+      "lochgelly"
+    ],
+    "regionHub": "dunfermline"
+  },
+  {
+    "slug": "bathgate",
+    "name": "Bathgate",
+    "council_area": "West Lothian",
+    "region": "edinburgh-and-lothians",
+    "postcode_area": "EH",
+    "tier": "2",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.7584,
+    "lng": -3.376,
+    "nearestCities": [
+      "edinburgh",
+      "dunfermline",
+      "stirling"
+    ],
+    "nearestLocations": [
+      "armadale",
+      "tranent",
+      "haddington",
+      "mayfield",
+      "kilsyth",
+      "uddingston",
+      "blackburn",
+      "strathaven"
+    ],
+    "regionHub": "edinburgh"
+  },
+  {
+    "slug": "broxburn",
+    "name": "Broxburn",
+    "council_area": "West Lothian",
+    "region": "edinburgh-and-lothians",
+    "postcode_area": "EH",
+    "tier": "2",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.87,
+    "lng": -3.1564,
+    "nearestCities": [
+      "edinburgh",
+      "dunfermline",
+      "stirling"
+    ],
+    "nearestLocations": [
+      "north-berwick",
+      "dunbar",
+      "blackburn",
+      "mayfield",
+      "edinburgh",
+      "kelty",
+      "bathgate",
+      "armadale"
+    ],
+    "regionHub": "edinburgh"
+  },
+  {
+    "slug": "linlithgow",
+    "name": "Linlithgow",
+    "council_area": "West Lothian",
+    "region": "edinburgh-and-lothians",
+    "postcode_area": "EH",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.6378,
+    "lng": -3.6865,
+    "nearestCities": [
+      "glasgow",
+      "edinburgh",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "musselburgh",
+      "bellshill",
+      "airdrie",
+      "motherwell",
+      "uddingston",
+      "larkhall",
+      "bothwell",
+      "haddington"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "whitburn",
+    "name": "Whitburn",
+    "council_area": "West Lothian",
+    "region": "edinburgh-and-lothians",
+    "postcode_area": "EH",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 56.1454,
+    "lng": -3.1393,
+    "nearestCities": [
+      "dunfermline",
+      "edinburgh",
+      "perth"
+    ],
+    "nearestLocations": [
+      "penicuik",
+      "east-calder",
+      "tayport",
+      "cowdenbeath",
+      "kirkcaldy",
+      "glenrothes",
+      "aberfeldy",
+      "kelty"
+    ],
+    "regionHub": "dunfermline"
+  },
+  {
+    "slug": "armadale",
+    "name": "Armadale",
+    "council_area": "West Lothian",
+    "region": "edinburgh-and-lothians",
+    "postcode_area": "EH",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.7758,
+    "lng": -3.4075,
+    "nearestCities": [
+      "edinburgh",
+      "dunfermline",
+      "stirling"
+    ],
+    "nearestLocations": [
+      "bathgate",
+      "tranent",
+      "haddington",
+      "mayfield",
+      "kilsyth",
+      "strathaven",
+      "blackburn",
+      "uddingston"
+    ],
+    "regionHub": "edinburgh"
+  },
+  {
+    "slug": "blackburn",
+    "name": "Blackburn",
+    "council_area": "West Lothian",
+    "region": "edinburgh-and-lothians",
+    "postcode_area": "EH",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.84,
+    "lng": -3.259,
+    "nearestCities": [
+      "edinburgh",
+      "dunfermline",
+      "stirling"
+    ],
+    "nearestLocations": [
+      "mayfield",
+      "north-berwick",
+      "broxburn",
+      "dunbar",
+      "bathgate",
+      "armadale",
+      "edinburgh",
+      "west-calder"
+    ],
+    "regionHub": "edinburgh"
+  },
+  {
+    "slug": "east-calder",
+    "name": "East Calder",
+    "council_area": "West Lothian",
+    "region": "edinburgh-and-lothians",
+    "postcode_area": "EH",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 56.1214,
+    "lng": -3.007,
+    "nearestCities": [
+      "edinburgh",
+      "dunfermline",
+      "dundee"
+    ],
+    "nearestLocations": [
+      "tayport",
+      "whitburn",
+      "bonnyrigg",
+      "kirkcaldy",
+      "penicuik",
+      "glenrothes",
+      "kelty",
+      "aberfeldy"
+    ],
+    "regionHub": "edinburgh"
+  },
+  {
+    "slug": "uphall",
+    "name": "Uphall",
+    "council_area": "West Lothian",
+    "region": "edinburgh-and-lothians",
+    "postcode_area": "EH",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 56.2036,
+    "lng": -3.4894,
+    "nearestCities": [
+      "dunfermline",
+      "perth",
+      "stirling"
+    ],
+    "nearestLocations": [
+      "dalgety-bay",
+      "livingston",
+      "dunblane",
+      "cowdenbeath",
+      "dunfermline",
+      "balerno",
+      "polmont",
+      "auchterarder"
+    ],
+    "regionHub": "dunfermline"
+  },
+  {
+    "slug": "west-calder",
+    "name": "West Calder",
+    "council_area": "West Lothian",
+    "region": "edinburgh-and-lothians",
+    "postcode_area": "EH",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.8754,
+    "lng": -3.4921,
+    "nearestCities": [
+      "edinburgh",
+      "dunfermline",
+      "stirling"
+    ],
+    "nearestLocations": [
+      "stenhousemuir",
+      "prestonpans",
+      "strathaven",
+      "alva",
+      "larbert",
+      "stepps",
+      "gorebridge",
+      "tranent"
+    ],
+    "regionHub": "edinburgh"
+  },
+  {
+    "slug": "stirling",
+    "name": "Stirling",
+    "council_area": "Stirling",
+    "region": "forth-valley",
+    "postcode_area": "FK",
+    "tier": "1",
+    "island": "N",
+    "ferry": "NO",
+    "lat": 56.1165,
+    "lng": -3.9369,
+    "confidence": "high",
+    "nearestCities": [
+      "stirling",
+      "dunfermline",
+      "glasgow"
+    ],
+    "nearestLocations": [
+      "port-glasgow",
+      "callander",
+      "newton-mearns",
+      "alexandria",
+      "paisley",
+      "bridge-of-weir",
+      "bannockburn",
+      "boness"
+    ],
+    "regionHub": "stirling"
+  },
+  {
+    "slug": "dunblane",
+    "name": "Dunblane",
+    "council_area": "Stirling",
+    "region": "forth-valley",
+    "postcode_area": "FK",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 56.2366,
+    "lng": -3.6228,
+    "nearestCities": [
+      "dunfermline",
+      "perth",
+      "stirling"
+    ],
+    "nearestLocations": [
+      "livingston",
+      "uphall",
+      "polmont",
+      "dalgety-bay",
+      "bridge-of-allan",
+      "bannockburn",
+      "auchterarder",
+      "dunfermline"
+    ],
+    "regionHub": "dunfermline"
+  },
+  {
+    "slug": "bridge-of-allan",
+    "name": "Bridge of Allan",
+    "council_area": "Stirling",
+    "region": "forth-valley",
+    "postcode_area": "FK",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 56.3536,
+    "lng": -3.7137,
+    "nearestCities": [
+      "perth",
+      "stirling",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "polmont",
+      "auchterarder",
+      "dunblane",
+      "bannockburn",
+      "perth",
+      "inverkeithing",
+      "livingston",
+      "anstruther"
+    ],
+    "regionHub": "perth"
+  },
+  {
+    "slug": "callander",
+    "name": "Callander",
+    "council_area": "Stirling",
+    "region": "forth-valley",
+    "postcode_area": "FK",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 56.0716,
+    "lng": -4.0053,
+    "nearestCities": [
+      "stirling",
+      "glasgow",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "alexandria",
+      "paisley",
+      "bridge-of-weir",
+      "port-glasgow",
+      "stirling",
+      "newton-mearns",
+      "boness",
+      "erskine"
+    ],
+    "regionHub": "stirling"
+  },
+  {
+    "slug": "bannockburn",
+    "name": "Bannockburn",
+    "council_area": "Stirling",
+    "region": "forth-valley",
+    "postcode_area": "FK",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 56.2258,
+    "lng": -3.8748,
+    "nearestCities": [
+      "stirling",
+      "dunfermline",
+      "perth"
+    ],
+    "nearestLocations": [
+      "stirling",
+      "dunblane",
+      "livingston",
+      "polmont",
+      "bridge-of-allan",
+      "newton-mearns",
+      "port-glasgow",
+      "callander"
+    ],
+    "regionHub": "stirling"
+  },
+  {
+    "slug": "falkirk",
+    "name": "Falkirk",
+    "council_area": "Falkirk",
+    "region": "forth-valley",
+    "postcode_area": "FK",
+    "tier": "2",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.9864,
+    "lng": -3.5751,
+    "nearestCities": [
+      "dunfermline",
+      "edinburgh",
+      "stirling"
+    ],
+    "nearestLocations": [
+      "methil",
+      "burntisland",
+      "stepps",
+      "lochgelly",
+      "larbert",
+      "alva",
+      "prestonpans",
+      "balerno"
+    ],
+    "regionHub": "dunfermline"
+  },
+  {
+    "slug": "grangemouth",
+    "name": "Grangemouth",
+    "council_area": "Falkirk",
+    "region": "forth-valley",
+    "postcode_area": "FK",
+    "tier": "2",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.9726,
+    "lng": -4.0881,
+    "nearestCities": [
+      "glasgow",
+      "stirling",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "tillicoultry",
+      "boness",
+      "erskine",
+      "bridge-of-weir",
+      "denny",
+      "dollar",
+      "paisley",
+      "renfrew"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "larbert",
+    "name": "Larbert",
+    "council_area": "Falkirk",
+    "region": "forth-valley",
+    "postcode_area": "FK",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.9636,
+    "lng": -3.522,
+    "nearestCities": [
+      "dunfermline",
+      "edinburgh",
+      "stirling"
+    ],
+    "nearestLocations": [
+      "stepps",
+      "burntisland",
+      "alva",
+      "falkirk",
+      "prestonpans",
+      "methil",
+      "lochgelly",
+      "stenhousemuir"
+    ],
+    "regionHub": "dunfermline"
+  },
+  {
+    "slug": "stenhousemuir",
+    "name": "Stenhousemuir",
+    "council_area": "Falkirk",
+    "region": "forth-valley",
+    "postcode_area": "FK",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.9042,
+    "lng": -3.5211,
+    "nearestCities": [
+      "dunfermline",
+      "edinburgh",
+      "stirling"
+    ],
+    "nearestLocations": [
+      "prestonpans",
+      "west-calder",
+      "alva",
+      "larbert",
+      "stepps",
+      "burntisland",
+      "gorebridge",
+      "strathaven"
+    ],
+    "regionHub": "dunfermline"
+  },
+  {
+    "slug": "boness",
+    "name": "Bo'ness",
+    "council_area": "Falkirk",
+    "region": "forth-valley",
+    "postcode_area": "EH",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 56.008,
+    "lng": -4.0746,
+    "nearestCities": [
+      "stirling",
+      "glasgow",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "erskine",
+      "bridge-of-weir",
+      "tillicoultry",
+      "grangemouth",
+      "paisley",
+      "alexandria",
+      "callander",
+      "dollar"
+    ],
+    "regionHub": "stirling"
+  },
+  {
+    "slug": "denny",
+    "name": "Denny",
+    "council_area": "Falkirk",
+    "region": "forth-valley",
+    "postcode_area": "FK",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.9192,
+    "lng": -4.1412,
+    "nearestCities": [
+      "glasgow",
+      "stirling",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "dollar",
+      "grangemouth",
+      "tillicoultry",
+      "wishaw",
+      "renfrew",
+      "lanark",
+      "glasgow",
+      "lenzie"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "polmont",
+    "name": "Polmont",
+    "council_area": "Falkirk",
+    "region": "forth-valley",
+    "postcode_area": "FK",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 56.3254,
+    "lng": -3.6669,
+    "nearestCities": [
+      "perth",
+      "stirling",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "bridge-of-allan",
+      "dunblane",
+      "auchterarder",
+      "livingston",
+      "perth",
+      "bannockburn",
+      "uphall",
+      "anstruther"
+    ],
+    "regionHub": "perth"
+  },
+  {
+    "slug": "alloa",
+    "name": "Alloa",
+    "council_area": "Clackmannanshire",
+    "region": "forth-valley",
+    "postcode_area": "FK",
+    "tier": "2",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.9546,
+    "lng": -3.6948,
+    "nearestCities": [
+      "dunfermline",
+      "stirling",
+      "edinburgh"
+    ],
+    "nearestLocations": [
+      "tullibody",
+      "gorebridge",
+      "methil",
+      "falkirk",
+      "prestonpans",
+      "burntisland",
+      "stepps",
+      "lochgelly"
+    ],
+    "regionHub": "dunfermline"
+  },
+  {
+    "slug": "tillicoultry",
+    "name": "Tillicoultry",
+    "council_area": "Clackmannanshire",
+    "region": "forth-valley",
+    "postcode_area": "FK",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.9744,
+    "lng": -4.0755,
+    "nearestCities": [
+      "glasgow",
+      "stirling",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "grangemouth",
+      "boness",
+      "erskine",
+      "bridge-of-weir",
+      "denny",
+      "dollar",
+      "paisley",
+      "renfrew"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "alva",
+    "name": "Alva",
+    "council_area": "Clackmannanshire",
+    "region": "forth-valley",
+    "postcode_area": "FK",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.942,
+    "lng": -3.5157,
+    "nearestCities": [
+      "dunfermline",
+      "edinburgh",
+      "stirling"
+    ],
+    "nearestLocations": [
+      "larbert",
+      "stepps",
+      "prestonpans",
+      "burntisland",
+      "stenhousemuir",
+      "falkirk",
+      "methil",
+      "west-calder"
+    ],
+    "regionHub": "dunfermline"
+  },
+  {
+    "slug": "dollar",
+    "name": "Dollar",
+    "council_area": "Clackmannanshire",
+    "region": "forth-valley",
+    "postcode_area": "FK",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.9408,
+    "lng": -4.197,
+    "nearestCities": [
+      "glasgow",
+      "stirling",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "denny",
+      "grangemouth",
+      "clydebank",
+      "tillicoultry",
+      "erskine",
+      "glasgow",
+      "boness",
+      "wishaw"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "tullibody",
+    "name": "Tullibody",
+    "council_area": "Clackmannanshire",
+    "region": "forth-valley",
+    "postcode_area": "FK",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.9252,
+    "lng": -3.7641,
+    "nearestCities": [
+      "stirling",
+      "dunfermline",
+      "glasgow"
+    ],
+    "nearestLocations": [
+      "alloa",
+      "gorebridge",
+      "kilmacolm",
+      "methil",
+      "prestonpans",
+      "falkirk",
+      "burntisland",
+      "stepps"
+    ],
+    "regionHub": "stirling"
+  },
+  {
+    "slug": "dunfermline",
+    "name": "Dunfermline",
+    "council_area": "Fife",
+    "region": "fife",
+    "postcode_area": "KY",
+    "tier": "1",
+    "island": "N",
+    "ferry": "NO",
+    "lat": 56.0717,
+    "lng": -3.4522,
+    "confidence": "high",
+    "nearestCities": [
+      "dunfermline",
+      "edinburgh",
+      "stirling"
+    ],
+    "nearestLocations": [
+      "balerno",
+      "lochgelly",
+      "rutherglen",
+      "dalgety-bay",
+      "falkirk",
+      "burntisland",
+      "stepps",
+      "larbert"
+    ],
+    "regionHub": "dunfermline"
+  },
+  {
+    "slug": "kirkcaldy",
+    "name": "Kirkcaldy",
+    "council_area": "Fife",
+    "region": "fife",
+    "postcode_area": "KY",
+    "tier": "2",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 56.2144,
+    "lng": -2.9358,
+    "nearestCities": [
+      "dundee",
+      "edinburgh",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "glenrothes",
+      "tayport",
+      "kinross",
+      "aberfeldy",
+      "east-calder",
+      "whitburn",
+      "bonnyrigg",
+      "penicuik"
+    ],
+    "regionHub": "dundee"
+  },
+  {
+    "slug": "glenrothes",
+    "name": "Glenrothes",
+    "council_area": "Fife",
+    "region": "fife",
+    "postcode_area": "KY",
+    "tier": "2",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 56.2438,
+    "lng": -2.9763,
+    "nearestCities": [
+      "dundee",
+      "perth",
+      "edinburgh"
+    ],
+    "nearestLocations": [
+      "kirkcaldy",
+      "kinross",
+      "aberfeldy",
+      "tayport",
+      "east-calder",
+      "whitburn",
+      "penicuik",
+      "st-andrews"
+    ],
+    "regionHub": "dundee"
+  },
+  {
+    "slug": "st-andrews",
+    "name": "St Andrews",
+    "council_area": "Fife",
+    "region": "fife",
+    "postcode_area": "KY",
+    "tier": "2",
+    "island": "N",
+    "ferry": "NO",
+    "lat": 56.3398,
+    "lng": -2.7967,
+    "confidence": "high",
+    "nearestCities": [
+      "dundee",
+      "perth",
+      "edinburgh"
+    ],
+    "nearestLocations": [
+      "kinross",
+      "cupar",
+      "coupar-angus",
+      "glenrothes",
+      "kirkcaldy",
+      "aberfeldy",
+      "dundee",
+      "rosyth"
+    ],
+    "regionHub": "dundee"
+  },
+  {
+    "slug": "cowdenbeath",
+    "name": "Cowdenbeath",
+    "council_area": "Fife",
+    "region": "fife",
+    "postcode_area": "KY",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 56.1544,
+    "lng": -3.3039,
+    "nearestCities": [
+      "dunfermline",
+      "edinburgh",
+      "perth"
+    ],
+    "nearestLocations": [
+      "penicuik",
+      "whitburn",
+      "dalgety-bay",
+      "uphall",
+      "dunfermline",
+      "balerno",
+      "east-calder",
+      "tayport"
+    ],
+    "regionHub": "dunfermline"
+  },
+  {
+    "slug": "rosyth",
+    "name": "Rosyth",
+    "council_area": "Fife",
+    "region": "fife",
+    "postcode_area": "KY",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 56.4946,
+    "lng": -2.88,
+    "nearestCities": [
+      "dundee",
+      "perth",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "pitlochry",
+      "scone",
+      "kirriemuir",
+      "dundee",
+      "coupar-angus",
+      "cupar",
+      "blairgowrie",
+      "st-andrews"
+    ],
+    "regionHub": "dundee"
+  },
+  {
+    "slug": "leven",
+    "name": "Leven",
+    "council_area": "Fife",
+    "region": "fife",
+    "postcode_area": "KY",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 56.3788,
+    "lng": -3.1914,
+    "nearestCities": [
+      "perth",
+      "dundee",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "anstruther",
+      "arbroath",
+      "aberfeldy",
+      "perth",
+      "dundee",
+      "auchterarder",
+      "scone",
+      "cupar"
+    ],
+    "regionHub": "perth"
+  },
+  {
+    "slug": "methil",
+    "name": "Methil",
+    "council_area": "Fife",
+    "region": "fife",
+    "postcode_area": "KY",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.9858,
+    "lng": -3.5964,
+    "nearestCities": [
+      "dunfermline",
+      "edinburgh",
+      "stirling"
+    ],
+    "nearestLocations": [
+      "falkirk",
+      "burntisland",
+      "lochgelly",
+      "stepps",
+      "larbert",
+      "alva",
+      "alloa",
+      "prestonpans"
+    ],
+    "regionHub": "dunfermline"
+  },
+  {
+    "slug": "cupar",
+    "name": "Cupar",
+    "council_area": "Fife",
+    "region": "fife",
+    "postcode_area": "KY",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 56.4274,
+    "lng": -2.8827,
+    "nearestCities": [
+      "dundee",
+      "perth",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "dundee",
+      "coupar-angus",
+      "rosyth",
+      "scone",
+      "pitlochry",
+      "st-andrews",
+      "kirriemuir",
+      "blairgowrie"
+    ],
+    "regionHub": "dundee"
+  },
+  {
+    "slug": "inverkeithing",
+    "name": "Inverkeithing",
+    "council_area": "Fife",
+    "region": "fife",
+    "postcode_area": "KY",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 56.4646,
+    "lng": -3.4749,
+    "nearestCities": [
+      "perth",
+      "dundee",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "perth",
+      "auchterarder",
+      "anstruther",
+      "forfar",
+      "arbroath",
+      "bridge-of-allan",
+      "polmont",
+      "leven"
+    ],
+    "regionHub": "perth"
+  },
+  {
+    "slug": "dalgety-bay",
+    "name": "Dalgety Bay",
+    "council_area": "Fife",
+    "region": "fife",
+    "postcode_area": "KY",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 56.1634,
+    "lng": -3.4695,
+    "nearestCities": [
+      "dunfermline",
+      "perth",
+      "edinburgh"
+    ],
+    "nearestLocations": [
+      "uphall",
+      "livingston",
+      "dunfermline",
+      "cowdenbeath",
+      "dunblane",
+      "balerno",
+      "lochgelly",
+      "penicuik"
+    ],
+    "regionHub": "dunfermline"
+  },
+  {
+    "slug": "burntisland",
+    "name": "Burntisland",
+    "council_area": "Fife",
+    "region": "fife",
+    "postcode_area": "KY",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.9732,
+    "lng": -3.5478,
+    "nearestCities": [
+      "dunfermline",
+      "edinburgh",
+      "stirling"
+    ],
+    "nearestLocations": [
+      "stepps",
+      "larbert",
+      "falkirk",
+      "methil",
+      "alva",
+      "lochgelly",
+      "prestonpans",
+      "stenhousemuir"
+    ],
+    "regionHub": "dunfermline"
+  },
+  {
+    "slug": "lochgelly",
+    "name": "Lochgelly",
+    "council_area": "Fife",
+    "region": "fife",
+    "postcode_area": "KY",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 56.017,
+    "lng": -3.5667,
+    "nearestCities": [
+      "dunfermline",
+      "edinburgh",
+      "stirling"
+    ],
+    "nearestLocations": [
+      "falkirk",
+      "methil",
+      "balerno",
+      "burntisland",
+      "stepps",
+      "larbert",
+      "alva",
+      "dunfermline"
+    ],
+    "regionHub": "dunfermline"
+  },
+  {
+    "slug": "tayport",
+    "name": "Tayport",
+    "council_area": "Fife",
+    "region": "fife",
+    "postcode_area": "DD",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 56.1958,
+    "lng": -3.0024,
+    "nearestCities": [
+      "edinburgh",
+      "dundee",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "kirkcaldy",
+      "glenrothes",
+      "east-calder",
+      "aberfeldy",
+      "whitburn",
+      "kinross",
+      "penicuik",
+      "bonnyrigg"
+    ],
+    "regionHub": "edinburgh"
+  },
+  {
+    "slug": "anstruther",
+    "name": "Anstruther",
+    "council_area": "Fife",
+    "region": "fife",
+    "postcode_area": "KY",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 56.3812,
+    "lng": -3.3804,
+    "nearestCities": [
+      "perth",
+      "dundee",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "perth",
+      "auchterarder",
+      "inverkeithing",
+      "leven",
+      "arbroath",
+      "polmont",
+      "bridge-of-allan",
+      "uphall"
+    ],
+    "regionHub": "perth"
+  },
+  {
+    "slug": "kelty",
+    "name": "Kelty",
+    "council_area": "Fife",
+    "region": "fife",
+    "postcode_area": "KY",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.9858,
+    "lng": -3.1104,
+    "nearestCities": [
+      "edinburgh",
+      "dunfermline",
+      "perth"
+    ],
+    "nearestLocations": [
+      "edinburgh",
+      "broxburn",
+      "north-berwick",
+      "dunbar",
+      "east-calder",
+      "whitburn",
+      "bonnyrigg",
+      "blackburn"
+    ],
+    "regionHub": "edinburgh"
+  },
+  {
+    "slug": "dundee",
+    "name": "Dundee",
+    "council_area": "Dundee City",
+    "region": "tayside",
+    "postcode_area": "DD",
+    "tier": "1",
+    "island": "N",
+    "ferry": "NO",
+    "lat": 56.462,
+    "lng": -2.9707,
+    "confidence": "high",
+    "nearestCities": [
+      "dundee",
+      "perth",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "scone",
+      "cupar",
+      "rosyth",
+      "kirriemuir",
+      "pitlochry",
+      "coupar-angus",
+      "blairgowrie",
+      "arbroath"
+    ],
+    "regionHub": "dundee"
+  },
+  {
+    "slug": "perth",
+    "name": "Perth",
+    "council_area": "Perth and Kinross",
+    "region": "tayside",
+    "postcode_area": "PH",
+    "tier": "1",
+    "island": "N",
+    "ferry": "NO",
+    "lat": 56.3969,
+    "lng": -3.437,
+    "confidence": "high",
+    "nearestCities": [
+      "perth",
+      "dundee",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "anstruther",
+      "auchterarder",
+      "inverkeithing",
+      "leven",
+      "polmont",
+      "arbroath",
+      "bridge-of-allan",
+      "forfar"
+    ],
+    "regionHub": "perth"
+  },
+  {
+    "slug": "blairgowrie",
+    "name": "Blairgowrie",
+    "council_area": "Perth and Kinross",
+    "region": "tayside",
+    "postcode_area": "PH",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 56.5614,
+    "lng": -2.8206,
+    "nearestCities": [
+      "dundee",
+      "perth",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "pitlochry",
+      "rosyth",
+      "kirriemuir",
+      "coupar-angus",
+      "scone",
+      "crieff",
+      "dundee",
+      "cupar"
+    ],
+    "regionHub": "dundee"
+  },
+  {
+    "slug": "crieff",
+    "name": "Crieff",
+    "council_area": "Perth and Kinross",
+    "region": "tayside",
+    "postcode_area": "PH",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 56.6838,
+    "lng": -2.8593,
+    "nearestCities": [
+      "dundee",
+      "perth",
+      "aberdeen"
+    ],
+    "nearestLocations": [
+      "blairgowrie",
+      "brechin",
+      "kirriemuir",
+      "pitlochry",
+      "rosyth",
+      "scone",
+      "coupar-angus",
+      "dundee"
+    ],
+    "regionHub": "dundee"
+  },
+  {
+    "slug": "kinross",
+    "name": "Kinross",
+    "council_area": "Perth and Kinross",
+    "region": "tayside",
+    "postcode_area": "KY",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 56.277,
+    "lng": -2.925,
+    "nearestCities": [
+      "dundee",
+      "perth",
+      "edinburgh"
+    ],
+    "nearestLocations": [
+      "glenrothes",
+      "kirkcaldy",
+      "aberfeldy",
+      "tayport",
+      "st-andrews",
+      "cupar",
+      "east-calder",
+      "whitburn"
+    ],
+    "regionHub": "dundee"
+  },
+  {
+    "slug": "auchterarder",
+    "name": "Auchterarder",
+    "council_area": "Perth and Kinross",
+    "region": "tayside",
+    "postcode_area": "PH",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 56.37,
+    "lng": -3.4929,
+    "nearestCities": [
+      "perth",
+      "dunfermline",
+      "dundee"
+    ],
+    "nearestLocations": [
+      "perth",
+      "anstruther",
+      "inverkeithing",
+      "polmont",
+      "bridge-of-allan",
+      "dunblane",
+      "uphall",
+      "leven"
+    ],
+    "regionHub": "perth"
+  },
+  {
+    "slug": "pitlochry",
+    "name": "Pitlochry",
+    "council_area": "Perth and Kinross",
+    "region": "tayside",
+    "postcode_area": "PH",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 56.5152,
+    "lng": -2.8602,
+    "nearestCities": [
+      "dundee",
+      "perth",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "rosyth",
+      "blairgowrie",
+      "kirriemuir",
+      "scone",
+      "coupar-angus",
+      "dundee",
+      "cupar",
+      "crieff"
+    ],
+    "regionHub": "dundee"
+  },
+  {
+    "slug": "aberfeldy",
+    "name": "Aberfeldy",
+    "council_area": "Perth and Kinross",
+    "region": "tayside",
+    "postcode_area": "PH",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 56.2716,
+    "lng": -3.0465,
+    "nearestCities": [
+      "dundee",
+      "perth",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "glenrothes",
+      "kinross",
+      "tayport",
+      "kirkcaldy",
+      "penicuik",
+      "leven",
+      "whitburn",
+      "east-calder"
+    ],
+    "regionHub": "dundee"
+  },
+  {
+    "slug": "scone",
+    "name": "Scone",
+    "council_area": "Perth and Kinross",
+    "region": "tayside",
+    "postcode_area": "PH",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 56.4936,
+    "lng": -2.9673,
+    "nearestCities": [
+      "dundee",
+      "perth",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "dundee",
+      "kirriemuir",
+      "rosyth",
+      "pitlochry",
+      "cupar",
+      "coupar-angus",
+      "blairgowrie",
+      "arbroath"
+    ],
+    "regionHub": "dundee"
+  },
+  {
+    "slug": "coupar-angus",
+    "name": "Coupar Angus",
+    "council_area": "Perth and Kinross",
+    "region": "tayside",
+    "postcode_area": "PH",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 56.463,
+    "lng": -2.7846,
+    "nearestCities": [
+      "dundee",
+      "perth",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "rosyth",
+      "cupar",
+      "pitlochry",
+      "blairgowrie",
+      "dundee",
+      "scone",
+      "kirriemuir",
+      "st-andrews"
+    ],
+    "regionHub": "dundee"
+  },
+  {
+    "slug": "arbroath",
+    "name": "Arbroath",
+    "council_area": "Angus",
+    "region": "tayside",
+    "postcode_area": "DD",
+    "tier": "2",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 56.4846,
+    "lng": -3.2067,
+    "nearestCities": [
+      "dundee",
+      "perth",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "leven",
+      "forfar",
+      "dundee",
+      "scone",
+      "carnoustie",
+      "anstruther",
+      "kirriemuir",
+      "inverkeithing"
+    ],
+    "regionHub": "dundee"
+  },
+  {
+    "slug": "forfar",
+    "name": "Forfar",
+    "council_area": "Angus",
+    "region": "tayside",
+    "postcode_area": "DD",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 56.58,
+    "lng": -3.3705,
+    "nearestCities": [
+      "perth",
+      "dundee",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "carnoustie",
+      "inverkeithing",
+      "arbroath",
+      "perth",
+      "montrose",
+      "anstruther",
+      "auchterarder",
+      "leven"
+    ],
+    "regionHub": "perth"
+  },
+  {
+    "slug": "montrose",
+    "name": "Montrose",
+    "council_area": "Angus",
+    "region": "tayside",
+    "postcode_area": "DD",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 56.7486,
+    "lng": -3.5334,
+    "nearestCities": [
+      "perth",
+      "dundee",
+      "stirling"
+    ],
+    "nearestLocations": [
+      "monifieth",
+      "carnoustie",
+      "forfar",
+      "inverkeithing",
+      "arbroath",
+      "beauly",
+      "perth",
+      "brechin"
+    ],
+    "regionHub": "perth"
+  },
+  {
+    "slug": "carnoustie",
+    "name": "Carnoustie",
+    "council_area": "Angus",
+    "region": "tayside",
+    "postcode_area": "DD",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 56.613,
+    "lng": -3.294,
+    "nearestCities": [
+      "perth",
+      "dundee",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "forfar",
+      "arbroath",
+      "inverkeithing",
+      "montrose",
+      "monifieth",
+      "kirriemuir",
+      "scone",
+      "perth"
+    ],
+    "regionHub": "perth"
+  },
+  {
+    "slug": "brechin",
+    "name": "Brechin",
+    "council_area": "Angus",
+    "region": "tayside",
+    "postcode_area": "DD",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 56.835,
+    "lng": -2.8881,
+    "nearestCities": [
+      "dundee",
+      "perth",
+      "aberdeen"
+    ],
+    "nearestLocations": [
+      "crieff",
+      "ballater",
+      "monifieth",
+      "blairgowrie",
+      "kirriemuir",
+      "carnoustie",
+      "forres",
+      "pitlochry"
+    ],
+    "regionHub": "dundee"
+  },
+  {
+    "slug": "kirriemuir",
+    "name": "Kirriemuir",
+    "council_area": "Angus",
+    "region": "tayside",
+    "postcode_area": "DD",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 56.5254,
+    "lng": -2.9601,
+    "nearestCities": [
+      "dundee",
+      "perth",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "scone",
+      "rosyth",
+      "pitlochry",
+      "dundee",
+      "blairgowrie",
+      "cupar",
+      "coupar-angus",
+      "arbroath"
+    ],
+    "regionHub": "dundee"
+  },
+  {
+    "slug": "monifieth",
+    "name": "Monifieth",
+    "council_area": "Angus",
+    "region": "tayside",
+    "postcode_area": "DD",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 56.8074,
+    "lng": -3.3894,
+    "nearestCities": [
+      "perth",
+      "dundee",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "montrose",
+      "carnoustie",
+      "forfar",
+      "brechin",
+      "crieff",
+      "arbroath",
+      "inverkeithing",
+      "kirriemuir"
+    ],
+    "regionHub": "perth"
+  },
+  {
+    "slug": "aberdeen",
+    "name": "Aberdeen",
+    "council_area": "Aberdeen City",
+    "region": "north-east",
+    "postcode_area": "AB",
+    "tier": "1",
+    "island": "N",
+    "ferry": "NO",
+    "lat": 57.1497,
+    "lng": -2.0943,
+    "confidence": "high",
+    "nearestCities": [
+      "aberdeen",
+      "dundee",
+      "perth"
+    ],
+    "nearestLocations": [
+      "inverurie",
+      "aboyne",
+      "turriff",
+      "portlethen",
+      "macduff",
+      "mintlaw",
+      "keith",
+      "fraserburgh"
+    ],
+    "regionHub": "aberdeen"
+  },
+  {
+    "slug": "peterhead",
+    "name": "Peterhead",
+    "council_area": "Aberdeenshire",
+    "region": "north-east",
+    "postcode_area": "AB",
+    "tier": "2",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 57.3844,
+    "lng": -2.1038,
+    "nearestCities": [
+      "aberdeen",
+      "dundee",
+      "inverness"
+    ],
+    "nearestLocations": [
+      "westhill",
+      "kintore",
+      "lossiemouth",
+      "oldmeldrum",
+      "huntly",
+      "portlethen",
+      "macduff",
+      "banff"
+    ],
+    "regionHub": "aberdeen"
+  },
+  {
+    "slug": "fraserburgh",
+    "name": "Fraserburgh",
+    "council_area": "Aberdeenshire",
+    "region": "north-east",
+    "postcode_area": "AB",
+    "tier": "2",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 57.0058,
+    "lng": -2.1785,
+    "nearestCities": [
+      "aberdeen",
+      "dundee",
+      "perth"
+    ],
+    "nearestLocations": [
+      "keith",
+      "aboyne",
+      "inverurie",
+      "turriff",
+      "buckie",
+      "aberdeen",
+      "mintlaw",
+      "forres"
+    ],
+    "regionHub": "aberdeen"
+  },
+  {
+    "slug": "inverurie",
+    "name": "Inverurie",
+    "council_area": "Aberdeenshire",
+    "region": "north-east",
+    "postcode_area": "AB",
+    "tier": "2",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 57.127,
+    "lng": -2.1191,
+    "nearestCities": [
+      "aberdeen",
+      "dundee",
+      "perth"
+    ],
+    "nearestLocations": [
+      "aboyne",
+      "aberdeen",
+      "turriff",
+      "keith",
+      "mintlaw",
+      "portlethen",
+      "macduff",
+      "fraserburgh"
+    ],
+    "regionHub": "aberdeen"
+  },
+  {
+    "slug": "westhill",
+    "name": "Westhill",
+    "council_area": "Aberdeenshire",
+    "region": "north-east",
+    "postcode_area": "AB",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 57.3388,
+    "lng": -2.2424,
+    "nearestCities": [
+      "aberdeen",
+      "dundee",
+      "inverness"
+    ],
+    "nearestLocations": [
+      "huntly",
+      "oldmeldrum",
+      "peterhead",
+      "lossiemouth",
+      "portlethen",
+      "kintore",
+      "laurencekirk",
+      "banff"
+    ],
+    "regionHub": "aberdeen"
+  },
+  {
+    "slug": "stonehaven",
+    "name": "Stonehaven",
+    "council_area": "Aberdeenshire",
+    "region": "north-east",
+    "postcode_area": "AB",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 57.5314,
+    "lng": -2.4026,
+    "nearestCities": [
+      "aberdeen",
+      "inverness",
+      "dundee"
+    ],
+    "nearestLocations": [
+      "lossiemouth",
+      "banchory",
+      "banff",
+      "oldmeldrum",
+      "westhill",
+      "huntly",
+      "peterhead",
+      "kintore"
+    ],
+    "regionHub": "aberdeen"
+  },
+  {
+    "slug": "ellon",
+    "name": "Ellon",
+    "council_area": "Aberdeenshire",
+    "region": "north-east",
+    "postcode_area": "AB",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 57.1828,
+    "lng": -2.4476,
+    "nearestCities": [
+      "aberdeen",
+      "dundee",
+      "perth"
+    ],
+    "nearestLocations": [
+      "elgin",
+      "laurencekirk",
+      "buckie",
+      "forres",
+      "turriff",
+      "keith",
+      "huntly",
+      "ballater"
+    ],
+    "regionHub": "aberdeen"
+  },
+  {
+    "slug": "portlethen",
+    "name": "Portlethen",
+    "council_area": "Aberdeenshire",
+    "region": "north-east",
+    "postcode_area": "AB",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 57.2374,
+    "lng": -2.1218,
+    "nearestCities": [
+      "aberdeen",
+      "dundee",
+      "perth"
+    ],
+    "nearestLocations": [
+      "kintore",
+      "macduff",
+      "aberdeen",
+      "aboyne",
+      "inverurie",
+      "westhill",
+      "turriff",
+      "huntly"
+    ],
+    "regionHub": "aberdeen"
+  },
+  {
+    "slug": "banchory",
+    "name": "Banchory",
+    "council_area": "Aberdeenshire",
+    "region": "north-east",
+    "postcode_area": "AB",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 57.4936,
+    "lng": -2.6204,
+    "nearestCities": [
+      "aberdeen",
+      "inverness",
+      "dundee"
+    ],
+    "nearestLocations": [
+      "banff",
+      "stonehaven",
+      "oldmeldrum",
+      "lossiemouth",
+      "huntly",
+      "westhill",
+      "peterhead",
+      "laurencekirk"
+    ],
+    "regionHub": "aberdeen"
+  },
+  {
+    "slug": "turriff",
+    "name": "Turriff",
+    "council_area": "Aberdeenshire",
+    "region": "north-east",
+    "postcode_area": "AB",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 57.1276,
+    "lng": -2.2406,
+    "nearestCities": [
+      "aberdeen",
+      "dundee",
+      "perth"
+    ],
+    "nearestLocations": [
+      "keith",
+      "aboyne",
+      "inverurie",
+      "aberdeen",
+      "buckie",
+      "laurencekirk",
+      "ellon",
+      "fraserburgh"
+    ],
+    "regionHub": "aberdeen"
+  },
+  {
+    "slug": "huntly",
+    "name": "Huntly",
+    "council_area": "Aberdeenshire",
+    "region": "north-east",
+    "postcode_area": "AB",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 57.3196,
+    "lng": -2.318,
+    "nearestCities": [
+      "aberdeen",
+      "dundee",
+      "inverness"
+    ],
+    "nearestLocations": [
+      "westhill",
+      "oldmeldrum",
+      "laurencekirk",
+      "banff",
+      "lossiemouth",
+      "peterhead",
+      "portlethen",
+      "elgin"
+    ],
+    "regionHub": "aberdeen"
+  },
+  {
+    "slug": "kintore",
+    "name": "Kintore",
+    "council_area": "Aberdeenshire",
+    "region": "north-east",
+    "postcode_area": "AB",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 57.2992,
+    "lng": -2.0228,
+    "nearestCities": [
+      "aberdeen",
+      "dundee",
+      "perth"
+    ],
+    "nearestLocations": [
+      "portlethen",
+      "macduff",
+      "peterhead",
+      "westhill",
+      "aberdeen",
+      "huntly",
+      "inverurie",
+      "aboyne"
+    ],
+    "regionHub": "aberdeen"
+  },
+  {
+    "slug": "banff",
+    "name": "Banff",
+    "council_area": "Aberdeenshire",
+    "region": "north-east",
+    "postcode_area": "AB",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 57.4054,
+    "lng": -2.4692,
+    "nearestCities": [
+      "aberdeen",
+      "inverness",
+      "dundee"
+    ],
+    "nearestLocations": [
+      "oldmeldrum",
+      "lossiemouth",
+      "huntly",
+      "banchory",
+      "stonehaven",
+      "westhill",
+      "laurencekirk",
+      "peterhead"
+    ],
+    "regionHub": "aberdeen"
+  },
+  {
+    "slug": "macduff",
+    "name": "Macduff",
+    "council_area": "Aberdeenshire",
+    "region": "north-east",
+    "postcode_area": "AB",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 57.2188,
+    "lng": -1.9733,
+    "nearestCities": [
+      "aberdeen",
+      "dundee",
+      "perth"
+    ],
+    "nearestLocations": [
+      "portlethen",
+      "kintore",
+      "aberdeen",
+      "mintlaw",
+      "inverurie",
+      "aboyne",
+      "turriff",
+      "peterhead"
+    ],
+    "regionHub": "aberdeen"
+  },
+  {
+    "slug": "laurencekirk",
+    "name": "Laurencekirk",
+    "council_area": "Aberdeenshire",
+    "region": "north-east",
+    "postcode_area": "AB",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 57.2212,
+    "lng": -2.3792,
+    "nearestCities": [
+      "aberdeen",
+      "dundee",
+      "perth"
+    ],
+    "nearestLocations": [
+      "elgin",
+      "ellon",
+      "huntly",
+      "turriff",
+      "buckie",
+      "westhill",
+      "portlethen",
+      "keith"
+    ],
+    "regionHub": "aberdeen"
+  },
+  {
+    "slug": "aboyne",
+    "name": "Aboyne",
+    "council_area": "Aberdeenshire",
+    "region": "north-east",
+    "postcode_area": "AB",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 57.1288,
+    "lng": -2.1461,
+    "nearestCities": [
+      "aberdeen",
+      "dundee",
+      "perth"
+    ],
+    "nearestLocations": [
+      "inverurie",
+      "aberdeen",
+      "turriff",
+      "keith",
+      "portlethen",
+      "mintlaw",
+      "fraserburgh",
+      "macduff"
+    ],
+    "regionHub": "aberdeen"
+  },
+  {
+    "slug": "ballater",
+    "name": "Ballater",
+    "council_area": "Aberdeenshire",
+    "region": "north-east",
+    "postcode_area": "AB",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 57.0406,
+    "lng": -2.6195,
+    "nearestCities": [
+      "aberdeen",
+      "dundee",
+      "perth"
+    ],
+    "nearestLocations": [
+      "forres",
+      "buckie",
+      "ellon",
+      "elgin",
+      "keith",
+      "laurencekirk",
+      "turriff",
+      "fraserburgh"
+    ],
+    "regionHub": "aberdeen"
+  },
+  {
+    "slug": "mintlaw",
+    "name": "Mintlaw",
+    "council_area": "Aberdeenshire",
+    "region": "north-east",
+    "postcode_area": "AB",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 57.1036,
+    "lng": -1.9346,
+    "nearestCities": [
+      "aberdeen",
+      "dundee",
+      "perth"
+    ],
+    "nearestLocations": [
+      "aberdeen",
+      "inverurie",
+      "macduff",
+      "aboyne",
+      "fraserburgh",
+      "turriff",
+      "portlethen",
+      "keith"
+    ],
+    "regionHub": "aberdeen"
+  },
+  {
+    "slug": "oldmeldrum",
+    "name": "Oldmeldrum",
+    "council_area": "Aberdeenshire",
+    "region": "north-east",
+    "postcode_area": "AB",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 57.3886,
+    "lng": -2.3432,
+    "nearestCities": [
+      "aberdeen",
+      "dundee",
+      "inverness"
+    ],
+    "nearestLocations": [
+      "lossiemouth",
+      "banff",
+      "huntly",
+      "westhill",
+      "peterhead",
+      "stonehaven",
+      "laurencekirk",
+      "banchory"
+    ],
+    "regionHub": "aberdeen"
+  },
+  {
+    "slug": "elgin",
+    "name": "Elgin",
+    "council_area": "Moray",
+    "region": "north-east",
+    "postcode_area": "IV",
+    "tier": "2",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 57.1882,
+    "lng": -2.4521,
+    "nearestCities": [
+      "aberdeen",
+      "dundee",
+      "perth"
+    ],
+    "nearestLocations": [
+      "ellon",
+      "laurencekirk",
+      "buckie",
+      "forres",
+      "turriff",
+      "keith",
+      "huntly",
+      "ballater"
+    ],
+    "regionHub": "aberdeen"
+  },
+  {
+    "slug": "forres",
+    "name": "Forres",
+    "council_area": "Moray",
+    "region": "north-east",
+    "postcode_area": "IV",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 57.0742,
+    "lng": -2.5106,
+    "nearestCities": [
+      "aberdeen",
+      "dundee",
+      "perth"
+    ],
+    "nearestLocations": [
+      "ballater",
+      "buckie",
+      "ellon",
+      "elgin",
+      "keith",
+      "turriff",
+      "laurencekirk",
+      "fraserburgh"
+    ],
+    "regionHub": "aberdeen"
+  },
+  {
+    "slug": "buckie",
+    "name": "Buckie",
+    "council_area": "Moray",
+    "region": "north-east",
+    "postcode_area": "AB",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 57.0982,
+    "lng": -2.3882,
+    "nearestCities": [
+      "aberdeen",
+      "dundee",
+      "perth"
+    ],
+    "nearestLocations": [
+      "keith",
+      "forres",
+      "turriff",
+      "ellon",
+      "elgin",
+      "laurencekirk",
+      "aboyne",
+      "ballater"
+    ],
+    "regionHub": "aberdeen"
+  },
+  {
+    "slug": "lossiemouth",
+    "name": "Lossiemouth",
+    "council_area": "Moray",
+    "region": "north-east",
+    "postcode_area": "IV",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 57.4396,
+    "lng": -2.2757,
+    "nearestCities": [
+      "aberdeen",
+      "dundee",
+      "inverness"
+    ],
+    "nearestLocations": [
+      "oldmeldrum",
+      "westhill",
+      "peterhead",
+      "banff",
+      "stonehaven",
+      "huntly",
+      "banchory",
+      "kintore"
+    ],
+    "regionHub": "aberdeen"
+  },
+  {
+    "slug": "keith",
+    "name": "Keith",
+    "council_area": "Moray",
+    "region": "north-east",
+    "postcode_area": "AB",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 57.0958,
+    "lng": -2.2631,
+    "nearestCities": [
+      "aberdeen",
+      "dundee",
+      "perth"
+    ],
+    "nearestLocations": [
+      "turriff",
+      "buckie",
+      "aboyne",
+      "inverurie",
+      "fraserburgh",
+      "aberdeen",
+      "ellon",
+      "forres"
+    ],
+    "regionHub": "aberdeen"
+  },
+  {
+    "slug": "inverness",
+    "name": "Inverness",
+    "council_area": "Highland",
+    "region": "highlands",
+    "postcode_area": "IV",
+    "tier": "1",
+    "island": "N",
+    "ferry": "NO",
+    "lat": 57.4778,
+    "lng": -4.2247,
+    "confidence": "high",
+    "nearestCities": [
+      "inverness",
+      "perth",
+      "aberdeen"
+    ],
+    "nearestLocations": [
+      "invergordon",
+      "aviemore",
+      "broadford",
+      "grantown-on-spey",
+      "ullapool",
+      "alness",
+      "kingussie",
+      "dornoch"
+    ],
+    "regionHub": "inverness"
+  },
+  {
+    "slug": "fort-william",
+    "name": "Fort William",
+    "council_area": "Highland",
+    "region": "highlands",
+    "postcode_area": "PH",
+    "tier": "2",
+    "island": "N",
+    "ferry": "NO",
+    "lat": 56.8198,
+    "lng": -5.1052,
+    "confidence": "high",
+    "nearestCities": [
+      "inverness",
+      "stirling",
+      "perth"
+    ],
+    "nearestLocations": [
+      "muir-of-ord",
+      "portree",
+      "wick",
+      "tain",
+      "nairn",
+      "kyle-of-lochalsh",
+      "campbeltown",
+      "thurso"
+    ],
+    "regionHub": "inverness"
+  },
+  {
+    "slug": "nairn",
+    "name": "Nairn",
+    "council_area": "Highland",
+    "region": "highlands",
+    "postcode_area": "IV",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 57.3016,
+    "lng": -4.733,
+    "nearestCities": [
+      "inverness",
+      "perth",
+      "stirling"
+    ],
+    "nearestLocations": [
+      "kyle-of-lochalsh",
+      "muir-of-ord",
+      "thurso",
+      "dornoch",
+      "tain",
+      "grantown-on-spey",
+      "broadford",
+      "invergordon"
+    ],
+    "regionHub": "inverness"
+  },
+  {
+    "slug": "thurso",
+    "name": "Thurso",
+    "council_area": "Highland",
+    "region": "highlands",
+    "postcode_area": "KW",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 57.2362,
+    "lng": -4.4405,
+    "nearestCities": [
+      "inverness",
+      "perth",
+      "dundee"
+    ],
+    "nearestLocations": [
+      "tain",
+      "alness",
+      "ullapool",
+      "grantown-on-spey",
+      "wick",
+      "nairn",
+      "dingwall",
+      "muir-of-ord"
+    ],
+    "regionHub": "inverness"
+  },
+  {
+    "slug": "wick",
+    "name": "Wick",
+    "council_area": "Highland",
+    "region": "highlands",
+    "postcode_area": "KW",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 57.076,
+    "lng": -4.3433,
+    "nearestCities": [
+      "inverness",
+      "perth",
+      "dundee"
+    ],
+    "nearestLocations": [
+      "tain",
+      "portree",
+      "thurso",
+      "dingwall",
+      "beauly",
+      "muir-of-ord",
+      "alness",
+      "ullapool"
+    ],
+    "regionHub": "inverness"
+  },
+  {
+    "slug": "alness",
+    "name": "Alness",
+    "council_area": "Highland",
+    "region": "highlands",
+    "postcode_area": "IV",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 57.3496,
+    "lng": -4.2722,
+    "nearestCities": [
+      "inverness",
+      "perth",
+      "dundee"
+    ],
+    "nearestLocations": [
+      "ullapool",
+      "grantown-on-spey",
+      "kingussie",
+      "inverness",
+      "invergordon",
+      "golspie",
+      "broadford",
+      "thurso"
+    ],
+    "regionHub": "inverness"
+  },
+  {
+    "slug": "dingwall",
+    "name": "Dingwall",
+    "council_area": "Highland",
+    "region": "highlands",
+    "postcode_area": "IV",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 57.2092,
+    "lng": -4.1201,
+    "nearestCities": [
+      "inverness",
+      "perth",
+      "dundee"
+    ],
+    "nearestLocations": [
+      "golspie",
+      "kingussie",
+      "alness",
+      "ullapool",
+      "thurso",
+      "tain",
+      "wick",
+      "grantown-on-spey"
+    ],
+    "regionHub": "inverness"
+  },
+  {
+    "slug": "invergordon",
+    "name": "Invergordon",
+    "council_area": "Highland",
+    "region": "highlands",
+    "postcode_area": "IV",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 57.4678,
+    "lng": -4.3901,
+    "nearestCities": [
+      "inverness",
+      "perth",
+      "dundee"
+    ],
+    "nearestLocations": [
+      "broadford",
+      "dornoch",
+      "grantown-on-spey",
+      "inverness",
+      "ullapool",
+      "alness",
+      "aviemore",
+      "kingussie"
+    ],
+    "regionHub": "inverness"
+  },
+  {
+    "slug": "aviemore",
+    "name": "Aviemore",
+    "council_area": "Highland",
+    "region": "highlands",
+    "postcode_area": "PH",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 57.496,
+    "lng": -4.0562,
+    "nearestCities": [
+      "inverness",
+      "aberdeen",
+      "perth"
+    ],
+    "nearestLocations": [
+      "inverness",
+      "kingussie",
+      "ullapool",
+      "golspie",
+      "invergordon",
+      "alness",
+      "grantown-on-spey",
+      "broadford"
+    ],
+    "regionHub": "inverness"
+  },
+  {
+    "slug": "tain",
+    "name": "Tain",
+    "council_area": "Highland",
+    "region": "highlands",
+    "postcode_area": "IV",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 57.1528,
+    "lng": -4.4279,
+    "nearestCities": [
+      "inverness",
+      "perth",
+      "dundee"
+    ],
+    "nearestLocations": [
+      "thurso",
+      "wick",
+      "portree",
+      "muir-of-ord",
+      "dingwall",
+      "alness",
+      "nairn",
+      "ullapool"
+    ],
+    "regionHub": "inverness"
+  },
+  {
+    "slug": "portree",
+    "name": "Portree",
+    "council_area": "Highland",
+    "region": "highlands",
+    "postcode_area": "IV",
+    "tier": "3",
+    "island": "Y",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 57.0466,
+    "lng": -4.5107,
+    "nearestCities": [
+      "inverness",
+      "perth",
+      "stirling"
+    ],
+    "nearestLocations": [
+      "wick",
+      "tain",
+      "muir-of-ord",
+      "thurso",
+      "dingwall",
+      "beauly",
+      "nairn",
+      "kyle-of-lochalsh"
+    ],
+    "regionHub": "inverness"
+  },
+  {
+    "slug": "broadford",
+    "name": "Broadford",
+    "council_area": "Highland",
+    "region": "highlands",
+    "postcode_area": "IV",
+    "tier": "3",
+    "island": "Y",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 57.4618,
+    "lng": -4.427,
+    "nearestCities": [
+      "inverness",
+      "perth",
+      "dundee"
+    ],
+    "nearestLocations": [
+      "invergordon",
+      "dornoch",
+      "grantown-on-spey",
+      "inverness",
+      "ullapool",
+      "alness",
+      "aviemore",
+      "kingussie"
+    ],
+    "regionHub": "inverness"
+  },
+  {
+    "slug": "kingussie",
+    "name": "Kingussie",
+    "council_area": "Highland",
+    "region": "highlands",
+    "postcode_area": "PH",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 57.3544,
+    "lng": -4.0769,
+    "nearestCities": [
+      "inverness",
+      "perth",
+      "dundee"
+    ],
+    "nearestLocations": [
+      "golspie",
+      "ullapool",
+      "alness",
+      "aviemore",
+      "inverness",
+      "dingwall",
+      "grantown-on-spey",
+      "invergordon"
+    ],
+    "regionHub": "inverness"
+  },
+  {
+    "slug": "grantown-on-spey",
+    "name": "Grantown-on-Spey",
+    "council_area": "Highland",
+    "region": "highlands",
+    "postcode_area": "PH",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 57.3844,
+    "lng": -4.346,
+    "nearestCities": [
+      "inverness",
+      "perth",
+      "dundee"
+    ],
+    "nearestLocations": [
+      "ullapool",
+      "alness",
+      "invergordon",
+      "broadford",
+      "inverness",
+      "dornoch",
+      "kingussie",
+      "thurso"
+    ],
+    "regionHub": "inverness"
+  },
+  {
+    "slug": "ullapool",
+    "name": "Ullapool",
+    "council_area": "Highland",
+    "region": "highlands",
+    "postcode_area": "IV",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 57.358,
+    "lng": -4.2659,
+    "nearestCities": [
+      "inverness",
+      "perth",
+      "dundee"
+    ],
+    "nearestLocations": [
+      "alness",
+      "grantown-on-spey",
+      "kingussie",
+      "inverness",
+      "invergordon",
+      "golspie",
+      "broadford",
+      "thurso"
+    ],
+    "regionHub": "inverness"
+  },
+  {
+    "slug": "dornoch",
+    "name": "Dornoch",
+    "council_area": "Highland",
+    "region": "highlands",
+    "postcode_area": "IV",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 57.4858,
+    "lng": -4.5143,
+    "nearestCities": [
+      "inverness",
+      "perth",
+      "dundee"
+    ],
+    "nearestLocations": [
+      "broadford",
+      "invergordon",
+      "grantown-on-spey",
+      "inverness",
+      "ullapool",
+      "alness",
+      "kyle-of-lochalsh",
+      "nairn"
+    ],
+    "regionHub": "inverness"
+  },
+  {
+    "slug": "golspie",
+    "name": "Golspie",
+    "council_area": "Highland",
+    "region": "highlands",
+    "postcode_area": "KW",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 57.3178,
+    "lng": -4.0283,
+    "nearestCities": [
+      "inverness",
+      "perth",
+      "dundee"
+    ],
+    "nearestLocations": [
+      "kingussie",
+      "dingwall",
+      "ullapool",
+      "alness",
+      "aviemore",
+      "grantown-on-spey",
+      "inverness",
+      "thurso"
+    ],
+    "regionHub": "inverness"
+  },
+  {
+    "slug": "kyle-of-lochalsh",
+    "name": "Kyle of Lochalsh",
+    "council_area": "Highland",
+    "region": "highlands",
+    "postcode_area": "IV",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 57.3244,
+    "lng": -4.7402,
+    "nearestCities": [
+      "inverness",
+      "perth",
+      "stirling"
+    ],
+    "nearestLocations": [
+      "nairn",
+      "muir-of-ord",
+      "thurso",
+      "dornoch",
+      "broadford",
+      "grantown-on-spey",
+      "invergordon",
+      "tain"
+    ],
+    "regionHub": "inverness"
+  },
+  {
+    "slug": "muir-of-ord",
+    "name": "Muir of Ord",
+    "council_area": "Highland",
+    "region": "highlands",
+    "postcode_area": "IV",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 57.1606,
+    "lng": -4.7474,
+    "nearestCities": [
+      "inverness",
+      "perth",
+      "stirling"
+    ],
+    "nearestLocations": [
+      "nairn",
+      "kyle-of-lochalsh",
+      "portree",
+      "tain",
+      "thurso",
+      "wick",
+      "grantown-on-spey",
+      "alness"
+    ],
+    "regionHub": "inverness"
+  },
+  {
+    "slug": "beauly",
+    "name": "Beauly",
+    "council_area": "Highland",
+    "region": "highlands",
+    "postcode_area": "IV",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 56.9812,
+    "lng": -4.0193,
+    "nearestCities": [
+      "inverness",
+      "perth",
+      "dundee"
+    ],
+    "nearestLocations": [
+      "wick",
+      "dingwall",
+      "portree",
+      "tain",
+      "golspie",
+      "thurso",
+      "montrose",
+      "kingussie"
+    ],
+    "regionHub": "inverness"
+  },
+  {
+    "slug": "helensburgh",
+    "name": "Helensburgh",
+    "council_area": "Argyll and Bute",
+    "region": "argyll-and-bute",
+    "postcode_area": "G",
+    "tier": "2",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.9106,
+    "lng": -5.2435,
+    "nearestCities": [
+      "glasgow",
+      "stirling",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "oban",
+      "lochgilphead",
+      "inveraray",
+      "troon",
+      "dunoon",
+      "gourock",
+      "largs",
+      "tobermory"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "oban",
+    "name": "Oban",
+    "council_area": "Argyll and Bute",
+    "region": "argyll-and-bute",
+    "postcode_area": "PA",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.9076,
+    "lng": -5.2084,
+    "nearestCities": [
+      "glasgow",
+      "stirling",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "helensburgh",
+      "lochgilphead",
+      "inveraray",
+      "troon",
+      "dunoon",
+      "gourock",
+      "largs",
+      "tobermory"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "dunoon",
+    "name": "Dunoon",
+    "council_area": "Argyll and Bute",
+    "region": "argyll-and-bute",
+    "postcode_area": "PA",
+    "tier": "3",
+    "island": "N",
+    "ferry": "CHECK",
+    "confidence": "fallback",
+    "lat": 56.0234,
+    "lng": -4.9222,
+    "nearestCities": [
+      "glasgow",
+      "stirling",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "tobermory",
+      "bearsden",
+      "kirkintilloch",
+      "johnstone",
+      "oban",
+      "rothesay",
+      "helensburgh",
+      "gourock"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "campbeltown",
+    "name": "Campbeltown",
+    "council_area": "Argyll and Bute",
+    "region": "argyll-and-bute",
+    "postcode_area": "PA",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 56.2736,
+    "lng": -5.0329,
+    "nearestCities": [
+      "glasgow",
+      "stirling",
+      "perth"
+    ],
+    "nearestLocations": [
+      "rothesay",
+      "bearsden",
+      "tobermory",
+      "dunoon",
+      "kirkintilloch",
+      "johnstone",
+      "inveraray",
+      "oban"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "lochgilphead",
+    "name": "Lochgilphead",
+    "council_area": "Argyll and Bute",
+    "region": "argyll-and-bute",
+    "postcode_area": "PA",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.8776,
+    "lng": -5.3668,
+    "nearestCities": [
+      "glasgow",
+      "stirling",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "helensburgh",
+      "oban",
+      "inveraray",
+      "troon",
+      "dunoon",
+      "stevenston",
+      "gourock",
+      "largs"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "inveraray",
+    "name": "Inveraray",
+    "council_area": "Argyll and Bute",
+    "region": "argyll-and-bute",
+    "postcode_area": "PA",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.9982,
+    "lng": -5.3929,
+    "nearestCities": [
+      "glasgow",
+      "stirling",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "helensburgh",
+      "lochgilphead",
+      "oban",
+      "dunoon",
+      "troon",
+      "campbeltown",
+      "tobermory",
+      "bearsden"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "rothesay",
+    "name": "Rothesay",
+    "council_area": "Argyll and Bute",
+    "region": "argyll-and-bute",
+    "postcode_area": "PA",
+    "tier": "3",
+    "island": "Y",
+    "ferry": "YES",
+    "confidence": "fallback",
+    "lat": 56.2046,
+    "lng": -4.7503,
+    "nearestCities": [
+      "glasgow",
+      "stirling",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "bearsden",
+      "kirkintilloch",
+      "johnstone",
+      "tobermory",
+      "campbeltown",
+      "dunoon",
+      "bishopton",
+      "clarkston"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "tobermory",
+    "name": "Tobermory",
+    "council_area": "Argyll and Bute",
+    "region": "argyll-and-bute",
+    "postcode_area": "PA",
+    "tier": "3",
+    "island": "Y",
+    "ferry": "YES",
+    "confidence": "fallback",
+    "lat": 56.0738,
+    "lng": -4.789,
+    "nearestCities": [
+      "glasgow",
+      "stirling",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "bearsden",
+      "kirkintilloch",
+      "johnstone",
+      "dunoon",
+      "rothesay",
+      "bishopton",
+      "campbeltown",
+      "clarkston"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "ayr",
+    "name": "Ayr",
+    "council_area": "South Ayrshire",
+    "region": "ayrshire-and-arran",
+    "postcode_area": "KA",
+    "tier": "2",
+    "island": "N",
+    "ferry": "NO",
+    "lat": 55.4586,
+    "lng": -4.6292,
+    "confidence": "high",
+    "nearestCities": [
+      "glasgow",
+      "stirling",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "beith",
+      "bishopbriggs",
+      "prestwick",
+      "saltcoats",
+      "west-kilbride",
+      "kilmarnock",
+      "kilwinning",
+      "dalry"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "prestwick",
+    "name": "Prestwick",
+    "council_area": "South Ayrshire",
+    "region": "ayrshire-and-arran",
+    "postcode_area": "KA",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.3736,
+    "lng": -4.4268,
+    "nearestCities": [
+      "glasgow",
+      "stirling",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "kilwinning",
+      "stewarton",
+      "ayr",
+      "irvine",
+      "coatbridge",
+      "cumnock",
+      "kilmarnock",
+      "houston"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "troon",
+    "name": "Troon",
+    "council_area": "South Ayrshire",
+    "region": "ayrshire-and-arran",
+    "postcode_area": "KA",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.7492,
+    "lng": -5.0631,
+    "nearestCities": [
+      "glasgow",
+      "stirling",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "stevenston",
+      "largs",
+      "gourock",
+      "oban",
+      "helensburgh",
+      "lochgilphead",
+      "saltcoats",
+      "west-kilbride"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "girvan",
+    "name": "Girvan",
+    "council_area": "South Ayrshire",
+    "region": "ayrshire-and-arran",
+    "postcode_area": "KA",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.8182,
+    "lng": -4.3647,
+    "nearestCities": [
+      "glasgow",
+      "stirling",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "milngavie",
+      "giffnock",
+      "greenock",
+      "dumbarton",
+      "galston",
+      "glasgow",
+      "blantyre",
+      "brodick"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "maybole",
+    "name": "Maybole",
+    "council_area": "South Ayrshire",
+    "region": "ayrshire-and-arran",
+    "postcode_area": "KA",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.6982,
+    "lng": -4.5231,
+    "nearestCities": [
+      "glasgow",
+      "stirling",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "linwood",
+      "kilmarnock",
+      "greenock",
+      "dumbarton",
+      "galston",
+      "brodick",
+      "barrhead",
+      "milngavie"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "kilmarnock",
+    "name": "Kilmarnock",
+    "council_area": "East Ayrshire",
+    "region": "ayrshire-and-arran",
+    "postcode_area": "KA",
+    "tier": "2",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.625,
+    "lng": -4.4556,
+    "nearestCities": [
+      "glasgow",
+      "stirling",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "barrhead",
+      "maybole",
+      "linwood",
+      "brodick",
+      "cumnock",
+      "galston",
+      "greenock",
+      "bishopbriggs"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "cumnock",
+    "name": "Cumnock",
+    "council_area": "East Ayrshire",
+    "region": "ayrshire-and-arran",
+    "postcode_area": "KA",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.5596,
+    "lng": -4.281,
+    "nearestCities": [
+      "glasgow",
+      "stirling",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "coatbridge",
+      "houston",
+      "barrhead",
+      "kilmarnock",
+      "brodick",
+      "kilwinning",
+      "maybole",
+      "galston"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "stewarton",
+    "name": "Stewarton",
+    "council_area": "East Ayrshire",
+    "region": "ayrshire-and-arran",
+    "postcode_area": "KA",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.3598,
+    "lng": -4.236,
+    "nearestCities": [
+      "glasgow",
+      "stirling",
+      "edinburgh"
+    ],
+    "nearestLocations": [
+      "kilwinning",
+      "irvine",
+      "prestwick",
+      "coatbridge",
+      "cumnock",
+      "houston",
+      "ayr",
+      "cumbernauld"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "galston",
+    "name": "Galston",
+    "council_area": "East Ayrshire",
+    "region": "ayrshire-and-arran",
+    "postcode_area": "KA",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.7504,
+    "lng": -4.3737,
+    "nearestCities": [
+      "glasgow",
+      "stirling",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "greenock",
+      "milngavie",
+      "brodick",
+      "dumbarton",
+      "girvan",
+      "barrhead",
+      "maybole",
+      "linwood"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "irvine",
+    "name": "Irvine",
+    "council_area": "North Ayrshire",
+    "region": "ayrshire-and-arran",
+    "postcode_area": "KA",
+    "tier": "2",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.2518,
+    "lng": -4.2405,
+    "nearestCities": [
+      "glasgow",
+      "stirling",
+      "edinburgh"
+    ],
+    "nearestLocations": [
+      "stewarton",
+      "kilwinning",
+      "prestwick",
+      "coatbridge",
+      "ayr",
+      "cumnock",
+      "houston",
+      "cumbernauld"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "kilwinning",
+    "name": "Kilwinning",
+    "council_area": "North Ayrshire",
+    "region": "ayrshire-and-arran",
+    "postcode_area": "KA",
+    "tier": "2",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.3952,
+    "lng": -4.3035,
+    "nearestCities": [
+      "glasgow",
+      "stirling",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "stewarton",
+      "prestwick",
+      "coatbridge",
+      "irvine",
+      "cumnock",
+      "ayr",
+      "houston",
+      "kilmarnock"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "saltcoats",
+    "name": "Saltcoats",
+    "council_area": "North Ayrshire",
+    "region": "ayrshire-and-arran",
+    "postcode_area": "KA",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.5368,
+    "lng": -4.8957,
+    "nearestCities": [
+      "glasgow",
+      "stirling",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "beith",
+      "bishopbriggs",
+      "ardrossan",
+      "stevenston",
+      "dalry",
+      "west-kilbride",
+      "ayr",
+      "troon"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "ardrossan",
+    "name": "Ardrossan",
+    "council_area": "North Ayrshire",
+    "region": "ayrshire-and-arran",
+    "postcode_area": "KA",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.445,
+    "lng": -5.073,
+    "nearestCities": [
+      "glasgow",
+      "stirling",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "dalry",
+      "saltcoats",
+      "kilbirnie",
+      "beith",
+      "stevenston",
+      "ayr",
+      "bishopbriggs",
+      "west-kilbride"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "largs",
+    "name": "Largs",
+    "council_area": "North Ayrshire",
+    "region": "ayrshire-and-arran",
+    "postcode_area": "KA",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.7642,
+    "lng": -4.7994,
+    "nearestCities": [
+      "glasgow",
+      "stirling",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "gourock",
+      "stevenston",
+      "west-kilbride",
+      "troon",
+      "linwood",
+      "maybole",
+      "bishopbriggs",
+      "beith"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "stevenston",
+    "name": "Stevenston",
+    "council_area": "North Ayrshire",
+    "region": "ayrshire-and-arran",
+    "postcode_area": "KA",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.6742,
+    "lng": -4.9002,
+    "nearestCities": [
+      "glasgow",
+      "stirling",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "largs",
+      "west-kilbride",
+      "troon",
+      "gourock",
+      "saltcoats",
+      "beith",
+      "bishopbriggs",
+      "linwood"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "kilbirnie",
+    "name": "Kilbirnie",
+    "council_area": "North Ayrshire",
+    "region": "ayrshire-and-arran",
+    "postcode_area": "KA",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.253,
+    "lng": -5.001,
+    "nearestCities": [
+      "glasgow",
+      "stirling",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "dalry",
+      "ardrossan",
+      "saltcoats",
+      "ayr",
+      "prestwick",
+      "beith",
+      "bishopbriggs",
+      "west-kilbride"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "dalry",
+    "name": "Dalry",
+    "council_area": "North Ayrshire",
+    "region": "ayrshire-and-arran",
+    "postcode_area": "KA",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.412,
+    "lng": -4.9974,
+    "nearestCities": [
+      "glasgow",
+      "stirling",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "ardrossan",
+      "saltcoats",
+      "kilbirnie",
+      "ayr",
+      "beith",
+      "bishopbriggs",
+      "stevenston",
+      "west-kilbride"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "beith",
+    "name": "Beith",
+    "council_area": "North Ayrshire",
+    "region": "ayrshire-and-arran",
+    "postcode_area": "KA",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.5824,
+    "lng": -4.7184,
+    "nearestCities": [
+      "glasgow",
+      "stirling",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "bishopbriggs",
+      "west-kilbride",
+      "saltcoats",
+      "ayr",
+      "stevenston",
+      "kilmarnock",
+      "maybole",
+      "linwood"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "west-kilbride",
+    "name": "West Kilbride",
+    "council_area": "North Ayrshire",
+    "region": "ayrshire-and-arran",
+    "postcode_area": "KA",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.6304,
+    "lng": -4.7076,
+    "nearestCities": [
+      "glasgow",
+      "stirling",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "bishopbriggs",
+      "beith",
+      "stevenston",
+      "linwood",
+      "maybole",
+      "saltcoats",
+      "kilmarnock",
+      "largs"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "brodick",
+    "name": "Brodick",
+    "council_area": "North Ayrshire",
+    "region": "ayrshire-and-arran",
+    "postcode_area": "KA",
+    "tier": "3",
+    "island": "Y",
+    "ferry": "YES",
+    "confidence": "fallback",
+    "lat": 55.6988,
+    "lng": -4.344,
+    "nearestCities": [
+      "glasgow",
+      "stirling",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "barrhead",
+      "galston",
+      "greenock",
+      "kilmarnock",
+      "milngavie",
+      "maybole",
+      "dumbarton",
+      "linwood"
+    ],
+    "regionHub": "glasgow"
+  },
+  {
+    "slug": "dumfries",
+    "name": "Dumfries",
+    "council_area": "Dumfries and Galloway",
+    "region": "south-of-scotland",
+    "postcode_area": "DG",
+    "tier": "2",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.4678,
+    "lng": -2.8749,
+    "nearestCities": [
+      "edinburgh",
+      "dunfermline",
+      "glasgow"
+    ],
+    "nearestLocations": [
+      "gretna",
+      "peebles",
+      "castle-douglas",
+      "eyemouth",
+      "selkirk",
+      "jedburgh",
+      "innerleithen",
+      "newton-stewart"
+    ],
+    "regionHub": "edinburgh"
+  },
+  {
+    "slug": "stranraer",
+    "name": "Stranraer",
+    "council_area": "Dumfries and Galloway",
+    "region": "south-of-scotland",
+    "postcode_area": "DG",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.148,
+    "lng": -3.3465,
+    "nearestCities": [
+      "edinburgh",
+      "glasgow",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "dalbeattie",
+      "melrose",
+      "duns",
+      "lockerbie",
+      "kirkcudbright",
+      "kelso",
+      "moffat",
+      "galashiels"
+    ],
+    "regionHub": "edinburgh"
+  },
+  {
+    "slug": "annan",
+    "name": "Annan",
+    "council_area": "Dumfries and Galloway",
+    "region": "south-of-scotland",
+    "postcode_area": "DG",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.1744,
+    "lng": -2.7408,
+    "nearestCities": [
+      "edinburgh",
+      "dunfermline",
+      "glasgow"
+    ],
+    "nearestLocations": [
+      "hawick",
+      "moffat",
+      "eyemouth",
+      "lockerbie",
+      "kelso",
+      "castle-douglas",
+      "gretna",
+      "melrose"
+    ],
+    "regionHub": "edinburgh"
+  },
+  {
+    "slug": "lockerbie",
+    "name": "Lockerbie",
+    "council_area": "Dumfries and Galloway",
+    "region": "south-of-scotland",
+    "postcode_area": "DG",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.0496,
+    "lng": -3.0216,
+    "nearestCities": [
+      "edinburgh",
+      "dunfermline",
+      "glasgow"
+    ],
+    "nearestLocations": [
+      "kelso",
+      "moffat",
+      "dalbeattie",
+      "annan",
+      "hawick",
+      "stranraer",
+      "melrose",
+      "duns"
+    ],
+    "regionHub": "edinburgh"
+  },
+  {
+    "slug": "castle-douglas",
+    "name": "Castle Douglas",
+    "council_area": "Dumfries and Galloway",
+    "region": "south-of-scotland",
+    "postcode_area": "DG",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.4132,
+    "lng": -2.9739,
+    "nearestCities": [
+      "edinburgh",
+      "dunfermline",
+      "glasgow"
+    ],
+    "nearestLocations": [
+      "gretna",
+      "peebles",
+      "dumfries",
+      "eyemouth",
+      "innerleithen",
+      "jedburgh",
+      "newton-stewart",
+      "kirkcudbright"
+    ],
+    "regionHub": "edinburgh"
+  },
+  {
+    "slug": "dalbeattie",
+    "name": "Dalbeattie",
+    "council_area": "Dumfries and Galloway",
+    "region": "south-of-scotland",
+    "postcode_area": "DG",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.1054,
+    "lng": -3.3159,
+    "nearestCities": [
+      "edinburgh",
+      "glasgow",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "stranraer",
+      "melrose",
+      "duns",
+      "lockerbie",
+      "kelso",
+      "moffat",
+      "kirkcudbright",
+      "hawick"
+    ],
+    "regionHub": "edinburgh"
+  },
+  {
+    "slug": "newton-stewart",
+    "name": "Newton Stewart",
+    "council_area": "Dumfries and Galloway",
+    "region": "south-of-scotland",
+    "postcode_area": "DG",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.4912,
+    "lng": -3.216,
+    "nearestCities": [
+      "edinburgh",
+      "dunfermline",
+      "glasgow"
+    ],
+    "nearestLocations": [
+      "jedburgh",
+      "coldstream",
+      "innerleithen",
+      "langholm",
+      "galashiels",
+      "lesmahagow",
+      "kirkcudbright",
+      "peebles"
+    ],
+    "regionHub": "edinburgh"
+  },
+  {
+    "slug": "kirkcudbright",
+    "name": "Kirkcudbright",
+    "council_area": "Dumfries and Galloway",
+    "region": "south-of-scotland",
+    "postcode_area": "DG",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.3658,
+    "lng": -3.288,
+    "nearestCities": [
+      "edinburgh",
+      "dunfermline",
+      "glasgow"
+    ],
+    "nearestLocations": [
+      "galashiels",
+      "lesmahagow",
+      "innerleithen",
+      "coldstream",
+      "newton-stewart",
+      "melrose",
+      "jedburgh",
+      "langholm"
+    ],
+    "regionHub": "edinburgh"
+  },
+  {
+    "slug": "gretna",
+    "name": "Gretna",
+    "council_area": "Dumfries and Galloway",
+    "region": "south-of-scotland",
+    "postcode_area": "DG",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.4426,
+    "lng": -2.9514,
+    "nearestCities": [
+      "edinburgh",
+      "dunfermline",
+      "glasgow"
+    ],
+    "nearestLocations": [
+      "castle-douglas",
+      "peebles",
+      "dumfries",
+      "eyemouth",
+      "jedburgh",
+      "innerleithen",
+      "newton-stewart",
+      "selkirk"
+    ],
+    "regionHub": "edinburgh"
+  },
+  {
+    "slug": "moffat",
+    "name": "Moffat",
+    "council_area": "Dumfries and Galloway",
+    "region": "south-of-scotland",
+    "postcode_area": "DG",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.0202,
+    "lng": -2.8983,
+    "nearestCities": [
+      "edinburgh",
+      "dunfermline",
+      "glasgow"
+    ],
+    "nearestLocations": [
+      "kelso",
+      "lockerbie",
+      "annan",
+      "hawick",
+      "dalbeattie",
+      "melrose",
+      "stranraer",
+      "duns"
+    ],
+    "regionHub": "edinburgh"
+  },
+  {
+    "slug": "langholm",
+    "name": "Langholm",
+    "council_area": "Dumfries and Galloway",
+    "region": "south-of-scotland",
+    "postcode_area": "DG",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.5248,
+    "lng": -3.2997,
+    "nearestCities": [
+      "edinburgh",
+      "dunfermline",
+      "glasgow"
+    ],
+    "nearestLocations": [
+      "coldstream",
+      "newton-stewart",
+      "galashiels",
+      "jedburgh",
+      "lesmahagow",
+      "innerleithen",
+      "hamilton",
+      "kirkcudbright"
+    ],
+    "regionHub": "edinburgh"
+  },
+  {
+    "slug": "galashiels",
+    "name": "Galashiels",
+    "council_area": "Scottish Borders",
+    "region": "south-of-scotland",
+    "postcode_area": "TD",
+    "tier": "2",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.439,
+    "lng": -3.3447,
+    "nearestCities": [
+      "edinburgh",
+      "dunfermline",
+      "glasgow"
+    ],
+    "nearestLocations": [
+      "lesmahagow",
+      "coldstream",
+      "kirkcudbright",
+      "langholm",
+      "newton-stewart",
+      "innerleithen",
+      "hamilton",
+      "jedburgh"
+    ],
+    "regionHub": "edinburgh"
+  },
+  {
+    "slug": "hawick",
+    "name": "Hawick",
+    "council_area": "Scottish Borders",
+    "region": "south-of-scotland",
+    "postcode_area": "TD",
+    "tier": "2",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.2206,
+    "lng": -2.8263,
+    "nearestCities": [
+      "edinburgh",
+      "dunfermline",
+      "glasgow"
+    ],
+    "nearestLocations": [
+      "annan",
+      "eyemouth",
+      "lockerbie",
+      "moffat",
+      "castle-douglas",
+      "kelso",
+      "gretna",
+      "melrose"
+    ],
+    "regionHub": "edinburgh"
+  },
+  {
+    "slug": "peebles",
+    "name": "Peebles",
+    "council_area": "Scottish Borders",
+    "region": "south-of-scotland",
+    "postcode_area": "EH",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.4828,
+    "lng": -2.9631,
+    "nearestCities": [
+      "edinburgh",
+      "dunfermline",
+      "glasgow"
+    ],
+    "nearestLocations": [
+      "gretna",
+      "dumfries",
+      "castle-douglas",
+      "jedburgh",
+      "innerleithen",
+      "newton-stewart",
+      "eyemouth",
+      "coldstream"
+    ],
+    "regionHub": "edinburgh"
+  },
+  {
+    "slug": "kelso",
+    "name": "Kelso",
+    "council_area": "Scottish Borders",
+    "region": "south-of-scotland",
+    "postcode_area": "TD",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.0112,
+    "lng": -2.9604,
+    "nearestCities": [
+      "edinburgh",
+      "dunfermline",
+      "glasgow"
+    ],
+    "nearestLocations": [
+      "moffat",
+      "lockerbie",
+      "annan",
+      "hawick",
+      "dalbeattie",
+      "stranraer",
+      "melrose",
+      "duns"
+    ],
+    "regionHub": "edinburgh"
+  },
+  {
+    "slug": "selkirk",
+    "name": "Selkirk",
+    "council_area": "Scottish Borders",
+    "region": "south-of-scotland",
+    "postcode_area": "TD",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.4978,
+    "lng": -2.6238,
+    "nearestCities": [
+      "edinburgh",
+      "dunfermline",
+      "stirling"
+    ],
+    "nearestLocations": [
+      "dumfries",
+      "eyemouth",
+      "peebles",
+      "gretna",
+      "dalkeith",
+      "castle-douglas",
+      "jedburgh",
+      "hawick"
+    ],
+    "regionHub": "edinburgh"
+  },
+  {
+    "slug": "jedburgh",
+    "name": "Jedburgh",
+    "council_area": "Scottish Borders",
+    "region": "south-of-scotland",
+    "postcode_area": "TD",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.4918,
+    "lng": -3.1422,
+    "nearestCities": [
+      "edinburgh",
+      "dunfermline",
+      "glasgow"
+    ],
+    "nearestLocations": [
+      "innerleithen",
+      "newton-stewart",
+      "coldstream",
+      "langholm",
+      "peebles",
+      "gretna",
+      "castle-douglas",
+      "galashiels"
+    ],
+    "regionHub": "edinburgh"
+  },
+  {
+    "slug": "eyemouth",
+    "name": "Eyemouth",
+    "council_area": "Scottish Borders",
+    "region": "south-of-scotland",
+    "postcode_area": "TD",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.3568,
+    "lng": -2.8362,
+    "nearestCities": [
+      "edinburgh",
+      "dunfermline",
+      "glasgow"
+    ],
+    "nearestLocations": [
+      "castle-douglas",
+      "gretna",
+      "dumfries",
+      "hawick",
+      "peebles",
+      "selkirk",
+      "annan",
+      "innerleithen"
+    ],
+    "regionHub": "edinburgh"
+  },
+  {
+    "slug": "melrose",
+    "name": "Melrose",
+    "council_area": "Scottish Borders",
+    "region": "south-of-scotland",
+    "postcode_area": "TD",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.2206,
+    "lng": -3.2565,
+    "nearestCities": [
+      "edinburgh",
+      "glasgow",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "stranraer",
+      "dalbeattie",
+      "kirkcudbright",
+      "lockerbie",
+      "galashiels",
+      "innerleithen",
+      "lesmahagow",
+      "hawick"
+    ],
+    "regionHub": "edinburgh"
+  },
+  {
+    "slug": "duns",
+    "name": "Duns",
+    "council_area": "Scottish Borders",
+    "region": "south-of-scotland",
+    "postcode_area": "TD",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 54.9872,
+    "lng": -3.4302,
+    "nearestCities": [
+      "edinburgh",
+      "glasgow",
+      "dunfermline"
+    ],
+    "nearestLocations": [
+      "dalbeattie",
+      "stranraer",
+      "lockerbie",
+      "melrose",
+      "kelso",
+      "moffat",
+      "kirkcudbright",
+      "hawick"
+    ],
+    "regionHub": "edinburgh"
+  },
+  {
+    "slug": "innerleithen",
+    "name": "Innerleithen",
+    "council_area": "Scottish Borders",
+    "region": "south-of-scotland",
+    "postcode_area": "EH",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.4534,
+    "lng": -3.1665,
+    "nearestCities": [
+      "edinburgh",
+      "dunfermline",
+      "glasgow"
+    ],
+    "nearestLocations": [
+      "jedburgh",
+      "newton-stewart",
+      "coldstream",
+      "galashiels",
+      "langholm",
+      "kirkcudbright",
+      "castle-douglas",
+      "peebles"
+    ],
+    "regionHub": "edinburgh"
+  },
+  {
+    "slug": "coldstream",
+    "name": "Coldstream",
+    "council_area": "Scottish Borders",
+    "region": "south-of-scotland",
+    "postcode_area": "TD",
+    "tier": "3",
+    "island": "N",
+    "ferry": "NO",
+    "confidence": "fallback",
+    "lat": 55.49,
+    "lng": -3.2988,
+    "nearestCities": [
+      "edinburgh",
+      "dunfermline",
+      "glasgow"
+    ],
+    "nearestLocations": [
+      "langholm",
+      "newton-stewart",
+      "galashiels",
+      "lesmahagow",
+      "innerleithen",
+      "jedburgh",
+      "hamilton",
+      "kirkcudbright"
+    ],
+    "regionHub": "edinburgh"
+  },
+  {
+    "slug": "stornoway",
+    "name": "Stornoway",
+    "council_area": "Na h-Eileanan Siar",
+    "region": "islands",
+    "postcode_area": "HS",
+    "tier": "3",
+    "island": "Y",
+    "ferry": "YES",
+    "confidence": "fallback",
+    "lat": 58.5536,
+    "lng": -4.4439,
+    "nearestCities": [
+      "inverness",
+      "aberdeen",
+      "perth"
+    ],
+    "nearestLocations": [
+      "lerwick",
+      "kirkwall",
+      "stromness",
+      "dornoch",
+      "aviemore",
+      "inverness",
+      "invergordon",
+      "broadford"
+    ],
+    "regionHub": "inverness"
+  },
+  {
+    "slug": "kirkwall",
+    "name": "Kirkwall",
+    "council_area": "Orkney Islands",
+    "region": "islands",
+    "postcode_area": "KW",
+    "tier": "3",
+    "island": "Y",
+    "ferry": "YES",
+    "confidence": "fallback",
+    "lat": 58.7738,
+    "lng": -4.3026,
+    "nearestCities": [
+      "inverness",
+      "aberdeen",
+      "dundee"
+    ],
+    "nearestLocations": [
+      "lerwick",
+      "stornoway",
+      "stromness",
+      "aviemore",
+      "dornoch",
+      "inverness",
+      "invergordon",
+      "broadford"
+    ],
+    "regionHub": "inverness"
+  },
+  {
+    "slug": "stromness",
+    "name": "Stromness",
+    "council_area": "Orkney Islands",
+    "region": "islands",
+    "postcode_area": "KW",
+    "tier": "3",
+    "island": "Y",
+    "ferry": "YES",
+    "confidence": "fallback",
+    "lat": 58.2728,
+    "lng": -4.1865,
+    "nearestCities": [
+      "inverness",
+      "aberdeen",
+      "perth"
+    ],
+    "nearestLocations": [
+      "stornoway",
+      "lerwick",
+      "kirkwall",
+      "aviemore",
+      "inverness",
+      "dornoch",
+      "invergordon",
+      "broadford"
+    ],
+    "regionHub": "inverness"
+  },
+  {
+    "slug": "lerwick",
+    "name": "Lerwick",
+    "council_area": "Shetland Islands",
+    "region": "islands",
+    "postcode_area": "ZE",
+    "tier": "3",
+    "island": "Y",
+    "ferry": "YES",
+    "confidence": "fallback",
+    "lat": 58.607,
+    "lng": -4.5933,
+    "nearestCities": [
+      "inverness",
+      "aberdeen",
+      "perth"
+    ],
+    "nearestLocations": [
+      "stornoway",
+      "kirkwall",
+      "stromness",
+      "dornoch",
+      "invergordon",
+      "inverness",
+      "aviemore",
+      "broadford"
+    ],
+    "regionHub": "inverness"
+  }
+]
