@@ -200,7 +200,17 @@ _Verify (2026-10-13):_ `npm run -w apps/admin typecheck` passed. `npm run -w app
 
 ## Phase 14 — Driver API & Driver iOS app
 _Plan:_
-- [ ] Driver endpoints (05 §8) · [ ] Today · [ ] Jobs (offers, upcoming, past) · [ ] Offer detail · [ ] Job detail + navigate · [ ] Job stepper (all stages, undo, service paths) · [ ] report problem · [ ] extra items · [ ] camera + compression · [ ] signature · [ ] offline queue + sync · [ ] background location · [ ] Earnings · [ ] Me + availability · [ ] EAS profiles
+- [x] Implement `/api/v1/driver/*` catch-all routes for every `05-api.md` §8 endpoint with DRIVER auth, ownership checks, idempotent sync, stage validation and location-write guards.
+- [x] Add driver API tests proving a driver cannot read or act on another driver's job, sync idempotency and rejected transitions.
+- [x] Scaffold `apps/driver` as an Expo SDK 57 / Expo Router workspace with nested AGENTS.md, app config, icon/sound, EAS profiles and strict scripts.
+- [x] Align driver dependencies with the Phase 13 Expo SDK stack and add allowed driver libraries: location, task manager, camera, image manipulator, SQLite, maps, signature canvas and WebView.
+- [x] Build shared driver app primitives/theme from `@sv/tokens`, branded fonts, app gates, notification/location permission banners and app-lock behavior.
+- [x] Implement tabs and screens: Today, Jobs/offers/upcoming/history, job detail, run stepper, report problem, extra items, camera, signature, Earnings and Me/availability.
+- [x] Implement offline SQLite queue/cache helpers, ordered sync handling, photo/signature local records, and location task registration with background buffering.
+- [x] Add jest-expo tests for queue ordering/dedupe, sync result handling, stage path/undo rules, photo compression call, location task writes and earnings formatting.
+- [x] Run driver app typecheck/tests, `npx expo-doctor` in `apps/driver`, driver API tests, root `npm run verify`, then update docs and commit.
+
+_Verify (2026-10-13):_ `npm run -w apps/driver lint`, `npm run -w apps/driver typecheck`, `npm run -w apps/driver test` passed (6 jest-expo tests). `npx expo-doctor` in `apps/driver` passed all 21 checks after pinning `react-native-webview` and `react-native-maps` to Expo SDK 57-compatible versions. `npm run -w apps/web lint`, `npm run -w apps/web typecheck`, and `npm run -w apps/web test -- test/driver-api.test.ts` passed (3 API tests). Final `npm ci` passed from the updated lockfile and reported the known audit-warning boundary documented in D36. Final `npm run verify` passed across lint, typecheck, tests and build for all packages.
 
 ## Phase 15 — Notifications & real-time
 _Plan:_
