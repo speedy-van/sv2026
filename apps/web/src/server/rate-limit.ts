@@ -13,7 +13,8 @@ export type PublicRateLimitKind =
   | 'catalogue'
   | 'mapStatic'
   | 'quote'
-  | 'manualQuote';
+  | 'manualQuote'
+  | 'booking';
 
 interface LimitRule {
   limit: number;
@@ -33,6 +34,7 @@ const rules = {
     { limit: 60, windowSeconds: 3600 },
   ],
   manualQuote: [{ limit: 5, windowSeconds: 3600 }],
+  booking: [{ limit: 10, windowSeconds: 3600 }],
 } as const satisfies Record<PublicRateLimitKind, readonly LimitRule[]>;
 
 const memoryHits = new Map<string, number[]>();

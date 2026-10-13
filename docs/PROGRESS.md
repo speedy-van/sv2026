@@ -92,7 +92,19 @@ _Verify (2026-10-12):_ `npm run verify` passed across lint, typecheck, test and 
 
 ## Phase 7 — Booking, payments, outbox, emails
 _Plan:_
-- [ ] `POST /bookings` (all 8 steps) · [ ] status endpoint · [ ] Stripe webhook (all events) · [ ] late-payment handling · [ ] hold-expiry cron · [ ] refunds via outbox · [ ] outbox processor + cron · [ ] notification matrix · [ ] `.ics` · [ ] email templates: booking-confirmed, manage-link, driver-assigned, reminder, on-the-way, completed, rescheduled, cancelled, refund-issued, payment-received, manual-quote ×3, extra-charge, payment-link, after-expiry-refund, contact-received, staff ×7
+- [x] Add Phase 7 dependencies for Stripe, Resend and React Email with exact pins recorded in `docs/DECISIONS.md`.
+- [x] Implement booking creation from quotes: idempotency, stored/expired quote pricing checks, availability rules, slot-capacity transaction, customer upsert, booking/payment rows, deferred PaymentIntent and status token.
+- [x] Add booking status polling and signed status tokens for the confirmation page.
+- [x] Add Stripe integration helpers, webhook verification/replay handling, booking confirmation, money recomputation, mismatch alerts and late-payment auto-refund handling.
+- [x] Add hold-expiry cron for pending booking holds and expired slot holds.
+- [x] Add refund allocation plus `payment.refund` outbox execution.
+- [x] Add outbox processor with `SKIP LOCKED`, retries/backoff, cron route, and notification fan-out from the Phase 7 subset of the event matrix.
+- [x] Add Resend integration, admin/customer recipient resolution and stubbed push sending until Phase 15.
+- [x] Implement `.ics` generation and email templates for every customer/staff template listed in `11-emails.md`.
+- [x] Add tests for double booking submit, webhook replay, late payment refund path, price mismatch, ICS boundaries, email rendering, and notification matrix.
+- [x] Run `npm run verify` until green, update docs, commit, merge Phase 7 fast-forward to `main`, then continue with Phase 8.
+
+_Verify (2026-10-13):_ `npm ci` passed from the committed lockfile; it reports the known Prisma audit warnings documented in D29. Final `npm run verify` passed across lint, typecheck, tests and build for all current packages. `@sv/web` Phase 7 integration tests passed: double-submit returns the same reference/client secret and one Payment row; stale expected price returns `PRICE_CHANGED`; Stripe webhook replay is a no-op; expired hold + late payment with the slot taken keeps the booking `EXPIRED` and creates a full pending refund plus `payment.refund` outbox job; `booking.confirmed` expands to two email jobs, one admin notification and one push stub. `.ics` generation passed BST/GMT UTC conversion checks. `@sv/emails` rendered all 24 customer/staff templates without unresolved placeholders.
 
 ## Phase 8 — Booking flow UI
 _Plan:_

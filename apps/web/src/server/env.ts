@@ -4,11 +4,17 @@ import { z } from 'zod';
 
 const EnvSchema = z
   .object({
+    CRON_SECRET: z.string().optional(),
+    CUSTOMER_LINK_SECRET: z.string().optional(),
+    EMAIL_FROM: z.string().optional(),
     IP_HASH_SALT: z.string().optional(),
     MAPBOX_MODE: z.enum(['live', 'mock']).default('live'),
     MAPBOX_SECRET_TOKEN: z.string().optional(),
+    RESEND_API_KEY: z.string().optional(),
+    STRIPE_SECRET_KEY: z.string().optional(),
+    STRIPE_WEBHOOK_SECRET: z.string().optional(),
     UPSTASH_REDIS_REST_TOKEN: z.string().optional(),
-  UPSTASH_REDIS_REST_URL: z.url().optional(),
+    UPSTASH_REDIS_REST_URL: z.url().optional(),
   })
   .strict();
 
@@ -16,9 +22,15 @@ export type ServerEnv = z.infer<typeof EnvSchema>;
 
 export function serverEnv(): ServerEnv {
   return EnvSchema.parse({
+    CRON_SECRET: process.env.CRON_SECRET || undefined,
+    CUSTOMER_LINK_SECRET: process.env.CUSTOMER_LINK_SECRET || undefined,
+    EMAIL_FROM: process.env.EMAIL_FROM || undefined,
     IP_HASH_SALT: process.env.IP_HASH_SALT || undefined,
     MAPBOX_MODE: process.env.MAPBOX_MODE || undefined,
     MAPBOX_SECRET_TOKEN: process.env.MAPBOX_SECRET_TOKEN || undefined,
+    RESEND_API_KEY: process.env.RESEND_API_KEY || undefined,
+    STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || undefined,
+    STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET || undefined,
     UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN || undefined,
     UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL || undefined,
   });

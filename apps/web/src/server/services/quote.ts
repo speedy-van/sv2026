@@ -11,7 +11,7 @@ import {
   type ManualQuoteRequestSchema,
   type QuoteRequestSchema,
 } from '@sv/contracts';
-import { Prisma, prisma } from '@sv/db';
+import { Prisma, enqueueOutbox, prisma } from '@sv/db';
 import {
   PricingError,
   computeQuote,
@@ -395,18 +395,27 @@ export async function requestManualQuote(publicId: string, input: ManualQuoteReq
   if (quote.manualQuote) {
     return { reference: `MQ-${quote.manualQuote.id.slice(-8).toUpperCase()}` };
   }
-  const created = await prisma.manualQuote.create({
-    data: {
-      contactEmail: input.contact.email,
-      contactName: input.contact.name,
-      contactPhone: input.contact.phone,
-      ...(input.details ? { details: input.details } : {}),
-      ...(input.preferredDate ? { preferredDate: dateOnly(input.preferredDate) } : {}),
-      ...(input.preferredSlot ? { preferredSlot: input.preferredSlot } : {}),
-      quoteId: quote.id,
-      reasons: quote.manualReasons.length > 0 ? quote.manualReasons : ['VARIANT_REQUIRES_SURVEY'],
-    },
-    select: { id: true },
+  const saved = await prisma.$transaction(async (tx) => {
+    const manualQuote = await tx.manualQuote.create({
+      data: {
+        contactEmail: input.contact.email,
+        contactName: input.contact.name,
+        contactPhone: input.contact.phone,
+        ...(input.details ? { details: input.details } : {}),
+        ...(input.preferredDate ? { preferredDate: dateOnly(input.preferredDate) } : {}),
+        ...(input.preferredSlot ? { preferredSlot: input.preferredSlot } : {}),
+        quoteId: quote.id,
+        reasons: quote.manualReasons.length > 0 ? quote.manualReasons : ['VARIANT_REQUIRES_SURVEY'],
+      },
+      select: { id: true },
+    });
+    await enqueueOutbox(
+      tx,
+      'manual_quote.requested',
+      asJson({ manualQuoteId: manualQuote.id, quoteId: quote.id }),
+      `manual_quote.requested:${manualQuote.id}`,
+    );
+    return manualQuote;
   });
-  return { reference: `MQ-${created.id.slice(-8).toUpperCase()}` };
+  return { reference: `MQ-${saved.id.slice(-8).toUpperCase()}` };
 }
