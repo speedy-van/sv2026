@@ -95,14 +95,55 @@ function scanEmptyHandlers(file: string, text: string, findings: StubFinding[]):
   }
 }
 
-function scanFixtureImports(file: string, text: string, findings: StubFinding[]): void {
-  if (!file.startsWith('apps/') || isTestPath(file)) return;
-  if (/^apps\/[^/]+\/src\/data\//.test(file)) {
-    addFinding(findings, file, 0, text, 'fixture-module', 'App source data modules are fixture shells until replaced by API data.');
+function isFixtureDataModule(file: string, text: string): boolean {
+  if (!file.startsWith('apps/') || isTestPath(file)) return false;
+  if (!/^apps\/[^/]+\/src\/data\//.test(file)) return false;
+  const exportedLiteral = /\bexport\s+const\s+[A-Za-z_$][\w$]*[^=]*=\s*(?:\[[\s\S]*?\]|\{[\s\S]*?\})\s*(?:as\s+const)?\s*;/g;
+  const sampleRecord =
+    /\b(?:bookingId|customer|name|reference|route|pricePence|amountPence|earningPence|paidPence|unpaidPence|totalPence|count|total)\s*:\s*(?:['"`]|\d)/;
+  const samplePerson = /\b(?:Sarah|David|Jane|John|Alex|Demo|Example|Sample)\b|[A-Z][a-z]+ [A-Z]\./;
+  const sampleMoneyOrCount = /\b(?:pricePence|amountPence|earningPence|paidPence|unpaidPence|totalPence|count|total)\s*:\s*\d/;
+  for (const match of text.matchAll(exportedLiteral)) {
+    const literal = match[0];
+    if (sampleMoneyOrCount.test(literal) || (sampleRecord.test(literal) && samplePerson.test(literal))) {
+      return true;
+    }
   }
+  return false;
+}
+
+function possibleModulePaths(file: string, source: string): string[] {
+  const normalizedSource = normalizePath(source);
+  const [appsDirectory, appName] = file.split('/');
+  if (appsDirectory !== 'apps' || !appName) return [];
+  const candidates: string[] = [];
+  if (normalizedSource.startsWith('@/data/')) {
+    candidates.push(`apps/${appName}/src/${normalizedSource.slice(2)}`);
+  } else if (normalizedSource === '@/data') {
+    candidates.push(`apps/${appName}/src/data`);
+  } else if (normalizedSource.includes('/src/data/')) {
+    const srcIndex = normalizedSource.indexOf('/src/data/');
+    candidates.push(`apps/${appName}${normalizedSource.slice(srcIndex)}`);
+  }
+  return candidates.flatMap((candidate) => [candidate, `${candidate}.ts`, `${candidate}.tsx`, `${candidate}/index.ts`, `${candidate}/index.tsx`]);
+}
+
+function scanFixtureImports(file: string, text: string, findings: StubFinding[], fixtureModules: ReadonlySet<string>, includeNamedFixtures: boolean): void {
+  if (!file.startsWith('apps/') || isTestPath(file)) return;
   const fixtureImport = /\bimport\s+(?:type\s+)?(?:[^'"]+\s+from\s+)?['"]([^'"]*(?:@\/data|\/src\/data|fixtures?|fixture)[^'"]*)['"]/g;
   for (const match of text.matchAll(fixtureImport)) {
-    addFinding(findings, file, match.index, text, 'fixture-import', `Screen imports fixture/data module ${match[1] ?? ''}.`);
+    const source = match[1] ?? '';
+    const importsNamedFixture = /\bfixtures?\b|\bfixture\b/.test(source);
+    const importsFixtureData = possibleModulePaths(file, source).some((candidate) => fixtureModules.has(candidate));
+    if ((includeNamedFixtures && importsNamedFixture) || importsFixtureData) {
+      addFinding(findings, file, match.index, text, 'fixture-import', `Screen imports fixture/data module ${source}.`);
+    }
+  }
+}
+
+function scanFixtureModule(file: string, text: string, findings: StubFinding[]): void {
+  if (isFixtureDataModule(file, text)) {
+    addFinding(findings, file, 0, text, 'fixture-module', 'App source data module exports hard-coded sample records for screens.');
   }
 }
 
@@ -149,7 +190,8 @@ export function scanText(file: string, text: string): StubFinding[] {
   const normalized = normalizePath(file);
   const findings: StubFinding[] = [];
   scanEmptyHandlers(normalized, text, findings);
-  scanFixtureImports(normalized, text, findings);
+  scanFixtureModule(normalized, text, findings);
+  scanFixtureImports(normalized, text, findings, new Set(), true);
   scanAdminRoutes(normalized, text, findings);
   scanEmptyUploads(normalized, text, findings);
   scanFallbackLocations(normalized, text, findings);
@@ -168,14 +210,22 @@ export function scanRoot(root: string): StubFinding[] {
         return false;
       }
     });
-  const findings: StubFinding[] = [];
+  const texts = new Map<string, string>();
   for (const candidateRoot of candidateRoots) {
     for (const file of collectFiles(candidateRoot)) {
       const absoluteFile = resolve(candidateRoot, file);
       const repoRelative = normalizePath(relative(absoluteRoot, absoluteFile));
-      const text = readFileSync(absoluteFile, 'utf8');
-      findings.push(...scanText(repoRelative, text));
+      texts.set(repoRelative, readFileSync(absoluteFile, 'utf8'));
     }
+  }
+  const fixtureModules = new Set<string>();
+  for (const [file, text] of texts) {
+    if (isFixtureDataModule(file, text)) fixtureModules.add(file);
+  }
+  const findings: StubFinding[] = [];
+  for (const [file, text] of texts) {
+    findings.push(...scanText(file, text));
+    if (fixtureModules.size > 0) scanFixtureImports(file, text, findings, fixtureModules, false);
   }
   return findings.sort((left, right) => left.file.localeCompare(right.file) || left.line - right.line || left.rule.localeCompare(right.rule));
 }

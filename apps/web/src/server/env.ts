@@ -2,6 +2,8 @@ import 'server-only';
 
 import { z } from 'zod';
 
+const MapboxTokenSchema = z.string().regex(/^(?:pk|sk)\./u, 'MAPBOX_SECRET_TOKEN must start with pk. or sk.');
+
 const EnvSchema = z
   .object({
     CRON_SECRET: z.string().optional(),
@@ -11,7 +13,7 @@ const EnvSchema = z
     IP_HASH_SALT: z.string().optional(),
     JWT_ACCESS_SECRET: z.string().optional(),
     MAPBOX_MODE: z.enum(['live', 'mock']).default('live'),
-    MAPBOX_SECRET_TOKEN: z.string().optional(),
+    MAPBOX_SECRET_TOKEN: MapboxTokenSchema.optional(),
     MIN_ADMIN_APP_VERSION: z.string().optional(),
     MIN_DRIVER_APP_VERSION: z.string().optional(),
     OTP_PEPPER: z.string().optional(),

@@ -1,7 +1,7 @@
 import { resolve } from 'node:path';
-import { haversineMiles, outputDir, readLocationsCsv, writeJson, coordinateFor, type GeneratedLocation } from './seo-data-lib';
+import { haversineMiles, outputDir, readGeneratedLocations, writeJson, type GeneratedLocation } from './seo-data-lib';
 
-const base = readLocationsCsv().map((location) => ({ ...location, ...coordinateFor(location) }));
+const base = readGeneratedLocations();
 const cities = base.filter((location) => location.tier === '1');
 
 const generated: GeneratedLocation[] = base.map((location) => {

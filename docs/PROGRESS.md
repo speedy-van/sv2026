@@ -245,3 +245,16 @@ _Verify (2026-10-13):_ `npm ci` passed after adding Phase 16 dependencies, with 
 
 ## Phase 17 — Launch
 - [ ] Owner checklist (17 §4) · [ ] `verify:launch` green · [ ] cutover steps · [ ] live smoke test · [ ] Search Console sitemap · [ ] 14-day watch started
+
+## Repair R1 — Website corrections
+_Plan:_
+- [x] Create `repair/R1-website-corrections` from `main` and read the required R1 docs before code changes.
+- [x] Fix `stub:check` so real API-backed data modules are not flagged by folder name, and add tests for fixture and API-module cases. Verified with `npm run test -w @sv/config` and `npm run stub:check` dropping from 328 to 316 with driver data/import findings gone.
+- [x] Accept `MAPBOX_SECRET_TOKEN` values that start with `pk.` or `sk.`, include the actual token value in client-bundle secret scans, and record the decision in D39.
+- [x] Run real Mapbox geocoding for all 221 locations, with zero fallback coordinates and any low-confidence results recorded in `docs/QUESTIONS.md`. Verified with `npm exec -- tsx scripts/geocode-locations.ts`: 221 locations, 218 `place/locality`, 3 Mapbox named-feature matches, 0 manual overrides and 0 fallback coordinates.
+- [x] Recompute the location graph and Mapbox Directions route distances with ferry detection. Verified with `npm exec -- tsx scripts/compute-location-graph.ts` and `npm exec -- tsx scripts/compute-route-distances.ts`.
+- [x] Add data-plausibility tests for named Scottish road distances, Scotland bounds and council-area matches in the geocode report. The new test intentionally fails against the old fallback data until Q2 is resolved and data is regenerated.
+- [x] Restore Bricolage Grotesque for display text and prices using the measured loading strategy in D40. Verified with `npm run lighthouse`: `/` 95, service/location/route pages 96.
+- [x] Rebuild, run `npm run seo:check`, `npm run lighthouse`, `npm run verify`, and `npm run stub:check`; record results, commit, and fast-forward merge to `main`.
+
+_Verify (2026-10-13):_ `npm run verify` passed across lint, typecheck, tests and build. `npm run seo:check` passed for 126 sitemap URLs and 269 internal links. `npm run lighthouse` passed with performance scores `/` 96, `/services/house-removals` 97, `/removals/paisley` 97 and `/removals/glasgow-to-edinburgh` 97; `/` JS transfer was 156780 bytes. `npm run stub:check` reports 106 issues, down from 316: admin-canned-route 87, descriptive-ui-text 4, empty-handler 6, empty-upload-payload 1, fixture-import 7, fixture-module 1.

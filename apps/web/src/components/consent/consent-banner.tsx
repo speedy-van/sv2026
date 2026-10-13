@@ -48,7 +48,7 @@ function updateGoogleConsent(choice: ConsentChoice): void {
 }
 
 export function ConsentBanner(): ReactNode {
-  const [visible, setVisible] = useState(false);
+  const [visible, setVisible] = useState(true);
   const [choosing, setChoosing] = useState(false);
   const [choice, setChoice] = useState<ConsentChoice>({ advertising: false, analytics: false });
 

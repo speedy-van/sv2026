@@ -3,8 +3,8 @@ import type { Metadata } from 'next';
 import { NoPrefetchLink as Link } from '@/components/navigation/no-prefetch-link';
 import type { ReactNode } from 'react';
 import { BookingStartCard } from '@/components/booking/booking-start-card';
-import { StructuredData } from '@/components/marketing/structured-data';
 import { ScotlandRouteMap } from '@/components/maps/scotland-route-map';
+import { StructuredData } from '@/components/marketing/structured-data';
 import { cityMarketingLinks, howItWorksSteps, regionLinks } from '@/content/marketing';
 import { serviceContent } from '@/content/services';
 import { services as navServices } from '@/content/navigation';
@@ -50,12 +50,27 @@ export default async function HomePage(): Promise<ReactNode> {
     <>
       <StructuredData data={faqJson} />
       <section className="hero">
-        <div className="container hero-grid">
-          <div className="hero-copy">
-            <h1>Removals and man and van across Scotland</h1>
-            <p>See fixed prices for every day of the next four weeks and book online in a few minutes.</p>
-            <BookingStartCard />
-            <p className="field-help">Mainland Scotland is priced instantly. Ferry routes are priced by our team.</p>
+        <div className="container hero-grid home-hero-grid">
+          <div className="hero-main">
+            <div className="hero-copy">
+              <div className="hero-kicker">
+                <MapPin aria-hidden="true" size={16} />
+                Scotland-wide fixed-price removals
+              </div>
+              <h1>Removals and man and van across Scotland</h1>
+              <p>See fixed prices for every day of the next four weeks and book online in a few minutes.</p>
+            </div>
+            <div className="hero-booking-panel">
+              <BookingStartCard />
+              <div className="hero-support-row">
+                <p className="field-help">Mainland Scotland is priced instantly. Ferry routes are priced by our team.</p>
+                <div className="hero-proof" aria-label="Booking highlights">
+                  <span>Live address search</span>
+                  <span>Four-week prices</span>
+                  <span>Secure checkout</span>
+                </div>
+              </div>
+            </div>
           </div>
           <ScotlandRouteMap />
         </div>

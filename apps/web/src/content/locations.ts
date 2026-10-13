@@ -23,7 +23,7 @@ export type RegionSlug =
 
 export interface LocationPage {
   cityDistances: Array<{ miles: number; minutes: number; slug: string }>;
-  confidence: 'fallback' | 'mapbox' | 'seed';
+  confidence: 'manual' | 'mapbox';
   latitude: number;
   longitude: number;
   name: string;
@@ -63,7 +63,7 @@ export const regionLabels: Record<RegionSlug, string> = {
 export const citySlugs = ['glasgow', 'edinburgh', 'aberdeen', 'dundee', 'inverness', 'perth', 'stirling', 'dunfermline'] as const;
 
 interface GeneratedLocationRow {
-  confidence: 'fallback' | 'mapbox' | 'seed';
+  confidence: 'manual' | 'mapbox';
   lat: number;
   lng: number;
   name: string;

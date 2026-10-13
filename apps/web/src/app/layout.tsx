@@ -1,4 +1,3 @@
-import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Bricolage_Grotesque, Manrope } from 'next/font/google';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
@@ -17,6 +16,7 @@ const body = Manrope({
 });
 
 const display = Bricolage_Grotesque({
+  axes: ['opsz'],
   display: 'swap',
   subsets: ['latin'],
   variable: '--font-display',
@@ -32,6 +32,11 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: { children: ReactNode }): Promise<ReactNode> {
+  let speedInsights: ReactNode = null;
+  if (process.env.VERCEL) {
+    const { SpeedInsights } = await import('@vercel/speed-insights/next');
+    speedInsights = <SpeedInsights />;
+  }
   const settings = await getPublicSettings();
   const phoneHref = settings.contact.phoneE164 ? `tel:${settings.contact.phoneE164}` : null;
   const origin = settings.web.canonicalOrigin;
@@ -66,7 +71,7 @@ export default async function RootLayout({ children }: { children: ReactNode }):
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify([organizationJson, websiteJson]).replaceAll('<', '\\u003c') }}
         />
-        <SpeedInsights />
+        {speedInsights}
       </body>
     </html>
   );

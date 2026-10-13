@@ -2,7 +2,6 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import { BookingStartCard } from '@/components/booking/booking-start-card';
-import { ScotlandRouteMap } from '@/components/maps/scotland-route-map';
 import { EmptyState, ErrorState, SkeletonCard } from '@/components/ui/states';
 
 export const metadata: Metadata = {
@@ -50,10 +49,6 @@ export default function StyleguidePage(): ReactNode {
           <article className="component-card">
             <h2>Inputs and chips</h2>
             <BookingStartCard />
-          </article>
-          <article className="component-card">
-            <h2>Route map</h2>
-            <ScotlandRouteMap />
           </article>
           <article className="component-card">
             <h2>States</h2>
