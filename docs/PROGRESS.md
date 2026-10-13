@@ -170,7 +170,17 @@ _Verify (2026-10-13):_ `npm run e2e -- --grep '@self-service'` passed: 14 Playwr
 
 ## Phase 12 — Staff auth & Admin API
 _Plan:_
-- [ ] OTP request/verify + lockout · [ ] access/refresh tokens + rotation + reuse detection · [ ] sessions + push devices · [ ] RBAC wrapper · [ ] min-version gate · [ ] every admin endpoint (05 §7) with audit · [ ] `@sv/api-client` · [ ] route × role tests
+- [x] Extend server env validation for staff auth secrets and app minimum versions without printing values.
+- [x] Implement staff OTP request/verify with hashed one-time codes, expiry, attempt limits, brute-force lockout and outbox email delivery.
+- [x] Implement staff access JWTs, refresh-token rotation, reuse detection, device-bound sessions and session revocation.
+- [x] Add RBAC and app-version enforcement to the shared API wrapper while keeping public endpoints explicit.
+- [x] Implement `/api/v1/auth/*`, `/api/v1/me/*` and `/api/v1/notifications` routes from `05-api.md` §6.
+- [x] Add `/api/v1/admin/*` route coverage for every `05-api.md` §7 endpoint with OWNER/ADMIN role checks, OWNER-only gates and audit logging on mutations.
+- [x] Build `@sv/api-client` with typed requests, app-version headers, token storage hooks, single-flight refresh and retry-once behavior.
+- [x] Add API tests for anonymous and DRIVER rejection across every admin route, refresh-token reuse revocation and OTP brute-force lockout.
+- [x] Update decisions/questions as needed, run `npm run verify`, then commit Phase 12.
+
+_Verify (2026-10-13):_ `npm run verify` passed across lint, typecheck, tests and build. Phase 12 API tests passed: every documented admin route rejects anonymous callers and DRIVER tokens; an admin mutation writes an `AuditLog` row; refresh-token reuse revokes the session and disables devices; OTP verification locks after 10 failures per email/hour. `@sv/api-client` test passed for single-flight refresh and retry-once behavior.
 
 ## Phase 13 — Admin iOS app
 _Plan:_

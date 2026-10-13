@@ -11,5 +11,9 @@
     "lint": "eslint . --max-warnings=0",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
+  },
+  "dependencies": {
+    "@sv/contracts": "0.0.0",
+    "zod": "4.6.7"
   }
 }

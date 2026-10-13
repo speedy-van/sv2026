@@ -10,6 +10,9 @@ import { serverEnv } from './env';
 export type PublicRateLimitKind =
   | 'addressSuggest'
   | 'addressRetrieve'
+  | 'authOtpRequest'
+  | 'authOtpVerify'
+  | 'authRefresh'
   | 'catalogue'
   | 'contact'
   | 'mapStatic'
@@ -29,6 +32,9 @@ const rules = {
     { limit: 600, windowSeconds: 3600 },
   ],
   addressRetrieve: [{ limit: 30, windowSeconds: 60 }],
+  authOtpRequest: [{ limit: 10, windowSeconds: 3600 }],
+  authOtpVerify: [{ limit: 10, windowSeconds: 3600 }],
+  authRefresh: [{ limit: 60, windowSeconds: 3600 }],
   catalogue: [{ limit: 120, windowSeconds: 60 }],
   contact: [
     { limit: 5, windowSeconds: 3600 },

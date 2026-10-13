@@ -3,9 +3,11 @@ import 'server-only';
 import { AppError, errorEnvelope } from '@sv/contracts';
 import { randomUUID } from 'node:crypto';
 import { z, type ZodError, type ZodType } from 'zod';
+import { authenticateStaffRequest, type StaffAuthOptions, type StaffContext } from './auth/staff';
 import { enforceRateLimit, type PublicRateLimitKind } from './rate-limit';
 
 export interface ApiOptions<TInput> {
+  auth?: StaffAuthOptions;
   input?: ZodType<TInput>;
   rateLimit?: PublicRateLimitKind;
 }
@@ -14,6 +16,7 @@ export interface ApiContext<TInput> {
   input: TInput;
   request: Request;
   requestId: string;
+  staff: StaffContext | null;
 }
 
 export type ApiHandler<TInput> = (context: ApiContext<TInput>) => Promise<Response>;
@@ -71,8 +74,9 @@ export async function withApi<TInput>(
     if (options.rateLimit) {
       await enforceRateLimit(request, options.rateLimit);
     }
+    const staff = options.auth ? await authenticateStaffRequest(request, options.auth) : null;
     const input = options.input ? await parseJson(request, options.input) : (undefined as TInput);
-    const response = await handler({ input, request, requestId });
+    const response = await handler({ input, request, requestId, staff });
     response.headers.set('x-request-id', requestId);
     response.headers.set('Cache-Control', response.headers.get('Cache-Control') ?? noStoreHeaders['Cache-Control']);
     return response;
