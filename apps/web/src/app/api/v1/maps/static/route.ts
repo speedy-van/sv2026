@@ -17,7 +17,7 @@ const StaticMapQuerySchema = z
   .strict();
 
 export async function GET(request: Request): Promise<Response> {
-  return withApi(request, { rateLimit: 'mapStatic' }, async ({ request }) => {
+  return withApi(request, { auth: false, rateLimit: 'mapStatic' }, async ({ request }) => {
     const url = new URL(request.url);
     const parsed = StaticMapQuerySchema.safeParse({
       dpr: url.searchParams.get('dpr') ?? undefined,

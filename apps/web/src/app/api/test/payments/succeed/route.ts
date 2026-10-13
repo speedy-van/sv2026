@@ -9,7 +9,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request): Promise<Response> {
-  return withApi(request, {}, async ({ request, requestId }) => {
+  return withApi(request, { auth: false }, async ({ request, requestId }) => {
     if (process.env.NODE_ENV === 'production' && process.env.E2E !== '1') {
       throw new AppError('FORBIDDEN', 'Test payment hook is disabled.');
     }

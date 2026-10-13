@@ -6,7 +6,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request, context: { params: Promise<{ publicId: string }> }): Promise<Response> {
-  return withApi(request, { input: ManualQuoteRequestSchema, rateLimit: 'manualQuote' }, async ({ input, requestId }) => {
+  return withApi(request, { auth: false, input: ManualQuoteRequestSchema, rateLimit: 'manualQuote' }, async ({ input, requestId }) => {
     const params = await context.params;
     const parsed = PublicIdSchema.safeParse(params.publicId);
     if (!parsed.success) throw new AppError('VALIDATION_ERROR', 'Expected a valid quote id.');

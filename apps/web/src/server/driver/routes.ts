@@ -20,6 +20,8 @@ import {
 } from '@sv/contracts';
 import { DEFAULT_PRICING_CONFIG, type ServiceKey } from '@sv/pricing';
 import { Prisma, prisma } from '@sv/db';
+import { randomUUID } from 'node:crypto';
+import sharp from 'sharp';
 import type { z, ZodType } from 'zod';
 import { apiJson, withApi } from '../request';
 
@@ -348,13 +350,22 @@ async function uploadPhoto(driverId: string, bookingId: string, request: Request
   if (file.size > 4_000_000) throw new AppError('VALIDATION_ERROR', 'Photo must be 4 MB or less.');
   const existing = await prisma.jobPhoto.findUnique({ where: { clientId: fields.clientId } });
   if (existing) return { id: existing.id, ok: true };
+  const original = Buffer.from(await file.arrayBuffer());
+  const isJpeg = original.length >= 3 && original[0] === 0xff && original[1] === 0xd8 && original[2] === 0xff;
+  const isPng = original.length >= 8 && original.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
+  if (!isJpeg && !isPng) throw new AppError('VALIDATION_ERROR', 'Photo must be a JPEG or PNG image.');
+  const processed = isPng
+    ? await sharp(original).rotate().png({ compressionLevel: 9 }).toBuffer()
+    : await sharp(original).rotate().jpeg({ quality: 85 }).toBuffer();
+  if (processed.length > 4_000_000) throw new AppError('VALIDATION_ERROR', 'Processed photo must be 4 MB or less.');
+  const extension = isPng ? 'png' : 'jpg';
   const photo = await prisma.jobPhoto.create({
     data: {
-      blobKey: `driver-uploads/${bookingId}/${fields.clientId}.jpg`,
+      blobKey: `driver-uploads/${bookingId}/${randomUUID()}.${extension}`,
       bookingId,
-      bytes: file.size,
+      bytes: processed.length,
       clientId: fields.clientId,
-      contentType: file.type || 'image/jpeg',
+      contentType: isPng ? 'image/png' : 'image/jpeg',
       kind: fields.kind === 'ISSUE' ? 'DAMAGE' : fields.kind,
       takenAt: new Date(fields.takenAt),
       uploadedById: driverId,

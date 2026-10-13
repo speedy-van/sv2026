@@ -16,11 +16,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
 
       - name: Create Neon branch
         id: create-branch
-        uses: neondatabase/create-branch-action@v6
+        uses: neondatabase/create-branch-action@fb620d43d4c565abaf088b848a4e28e5c4ea4d9c
         with:
           project_id: ${{ secrets.NEON_PROJECT_ID }}
           branch_name: ci-${{ github.run_id }}-${{ github.run_attempt }}
@@ -29,7 +29,7 @@ jobs:
           api_key: ${{ secrets.NEON_API_KEY }}
 
       - name: Setup Node
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -55,9 +55,61 @@ jobs:
           SEED_OWNER_EMAIL: ${{ secrets.SEED_OWNER_EMAIL }}
           SEED_OWNER_NAME: ${{ secrets.SEED_OWNER_NAME }}
 
+      - name: Full E2E
+        run: npm run e2e
+        env:
+          DATABASE_URL: ${{ steps.create-branch.outputs.db_url_pooled }}
+          DATABASE_URL_UNPOOLED: ${{ steps.create-branch.outputs.db_url }}
+          SEED_OWNER_EMAIL: ${{ secrets.SEED_OWNER_EMAIL }}
+          SEED_OWNER_NAME: ${{ secrets.SEED_OWNER_NAME }}
+          E2E: "1"
+          MAPBOX_MODE: mock
+          PUSH_MODE: capture
+
+      - name: Lighthouse budgets
+        run: npm run lighthouse
+        env:
+          DATABASE_URL: ${{ steps.create-branch.outputs.db_url_pooled }}
+          DATABASE_URL_UNPOOLED: ${{ steps.create-branch.outputs.db_url }}
+          SEED_OWNER_EMAIL: ${{ secrets.SEED_OWNER_EMAIL }}
+          SEED_OWNER_NAME: ${{ secrets.SEED_OWNER_NAME }}
+          E2E: "1"
+          MAPBOX_MODE: mock
+          PUSH_MODE: capture
+
+      - name: SEO check
+        run: npm run seo:check
+        env:
+          DATABASE_URL: ${{ steps.create-branch.outputs.db_url_pooled }}
+          DATABASE_URL_UNPOOLED: ${{ steps.create-branch.outputs.db_url }}
+          SEED_OWNER_EMAIL: ${{ secrets.SEED_OWNER_EMAIL }}
+          SEED_OWNER_NAME: ${{ secrets.SEED_OWNER_NAME }}
+          E2E: "1"
+          MAPBOX_MODE: mock
+          PUSH_MODE: capture
+
+      - name: Security gate
+        run: npm run security:check
+        env:
+          DATABASE_URL: ${{ steps.create-branch.outputs.db_url_pooled }}
+          DATABASE_URL_UNPOOLED: ${{ steps.create-branch.outputs.db_url }}
+
+      - name: Quote load smoke
+        run: npm run load:quote
+        env:
+          DATABASE_URL: ${{ steps.create-branch.outputs.db_url_pooled }}
+          DATABASE_URL_UNPOOLED: ${{ steps.create-branch.outputs.db_url }}
+          E2E: "1"
+          LOAD_CONNECTIONS: "5"
+          LOAD_DURATION_SECONDS: "10"
+          LOAD_P95_MS: "1500"
+          LOAD_RATE: "5"
+          MAPBOX_MODE: mock
+          PUSH_MODE: capture
+
       - name: Delete Neon branch
         if: ${{ always() }}
-        uses: neondatabase/delete-branch-action@v3
+        uses: neondatabase/delete-branch-action@4468d825d5a88ef4012f1705a82f02ec3072f776
         with:
           project_id: ${{ secrets.NEON_PROJECT_ID }}
           branch: ci-${{ github.run_id }}-${{ github.run_attempt }}

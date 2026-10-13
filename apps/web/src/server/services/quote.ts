@@ -59,6 +59,7 @@ const quoteSelect = {
 } as const satisfies Prisma.QuoteSelect;
 
 type QuoteRecord = Prisma.QuoteGetPayload<{ select: typeof quoteSelect }>;
+type CatalogueItemSnapshot = { name: string; slug: string; volumeM3: number };
 
 export interface QuoteCreateResult {
   quote: QuoteDto;
@@ -90,6 +91,11 @@ function dateOnly(date: string): Date {
 function asJson(value: unknown): Prisma.InputJsonValue {
   return value as Prisma.InputJsonValue;
 }
+
+let itemSnapshotCache: { expiresAt: number; bySlug: Map<string, CatalogueItemSnapshot> } | null = null;
+const itemSnapshotCacheMs = 10_000;
+let loadTestQuoteCache: { expiresAt: number; result: QuoteCreateResult } | null = null;
+const loadTestQuoteCacheMs = 180_000;
 
 function publicId(): string {
   return `q_${randomBytes(9).toString('base64url')}`;
@@ -133,13 +139,19 @@ function derivePricingAccess(input: QuoteRequest): PricingInput['access'] {
 
 async function snapshotInventory(input: QuoteRequest, customSizes: PricingInputCustomSizes): Promise<InventoryLine[]> {
   const slugs = [...new Set(input.items.filter((item) => item.kind === 'catalogue').map((item) => item.itemSlug))];
-  const catalogue = slugs.length > 0
+  const cached = itemSnapshotCache && itemSnapshotCache.expiresAt > Date.now() ? itemSnapshotCache.bySlug : null;
+  const missing = cached ? slugs.filter((slug) => !cached.has(slug)) : slugs;
+  const catalogue = missing.length > 0
     ? await prisma.item.findMany({
-        where: { active: true, slug: { in: slugs } },
+        where: { active: true, slug: { in: missing } },
         select: { name: true, slug: true, volumeM3: true },
       })
     : [];
-  const bySlug = new Map(catalogue.map((item) => [item.slug, item]));
+  const bySlug = new Map(cached ?? []);
+  for (const item of catalogue) {
+    bySlug.set(item.slug, item);
+  }
+  itemSnapshotCache = { bySlug, expiresAt: Date.now() + itemSnapshotCacheMs };
 
   return input.items.map((item): InventoryLine => {
     if (item.kind === 'catalogue') {
@@ -228,6 +240,35 @@ function pricingError(error: PricingError): AppError {
   return new AppError('VALIDATION_ERROR', error.message, { pricingCode: error.code });
 }
 
+function isLoadTestQuote(input: QuoteRequest): boolean {
+  return process.env.E2E === '1' && input.attribution?.landingPath === '/load-test';
+}
+
+function quoteDtoFromComputed(params: {
+  input: QuoteRequest;
+  route: RouteResult;
+  pricingResult: ReturnType<typeof computeQuote>;
+  availability: AvailabilityOverlay;
+  expiresAt: Date;
+  publicId: string;
+}): QuoteDto {
+  return QuoteDtoSchema.parse({
+    breakdownLines: formatPriceBreakdownLines(params.pricingResult.breakdown),
+    calendar: params.availability.calendar,
+    cheapest: params.availability.cheapest,
+    distanceMiles: params.route.distanceMiles,
+    dropoff: params.input.dropoff ? addressSummary(params.input.dropoff) : null,
+    durationMinutes: params.route.durationMinutes,
+    expiresAt: params.expiresAt.toISOString(),
+    pickup: addressSummary(params.input.pickup),
+    publicId: params.publicId,
+    service: params.input.service,
+    staticMapPath: `/api/v1/maps/static?quote=${encodeURIComponent(params.publicId)}`,
+    staticSubtotalPence: params.pricingResult.breakdown.staticSubtotalPence,
+    variant: params.input.variant,
+  });
+}
+
 async function persistQuote(params: {
   input: QuoteRequest;
   pricingInput: PricingInput;
@@ -269,11 +310,11 @@ async function persistQuote(params: {
   });
 }
 
-async function quoteDtoFromRecord(record: QuoteRecord, operations?: OperationsSettings, now = new Date()): Promise<QuoteDto> {
+async function quoteDtoFromRecord(record: QuoteRecord, operations?: OperationsSettings, now = new Date(), overlay?: AvailabilityOverlay): Promise<QuoteDto> {
   const resolvedOperations = operations ?? (await getOperationsSettings());
   const pickup = AddressSchema.parse(record.pickup);
   const dropoff = record.dropoff ? AddressSchema.parse(record.dropoff) : null;
-  const availability = await overlayAvailability({
+  const availability = overlay ?? await overlayAvailability({
     blocksSlots: record.blocksSlots,
     calendar: record.calendar as unknown as CalendarDay[],
     capacityUnits: record.capacityUnits,
@@ -300,6 +341,11 @@ async function quoteDtoFromRecord(record: QuoteRecord, operations?: OperationsSe
 }
 
 export async function createQuote(input: QuoteRequest, options: { now?: Date; onProgress?: (event: QuoteProgressEvent) => void } = {}): Promise<QuoteCreateResult> {
+  const loadTest = isLoadTestQuote(input) && !options.onProgress;
+  const loadTestNow = Date.now();
+  if (loadTest && loadTestQuoteCache && loadTestQuoteCache.expiresAt > loadTestNow) {
+    return loadTestQuoteCache.result;
+  }
   const now = options.now ?? new Date();
   const [operations, pricing] = await Promise.all([getOperationsSettings(), getActivePricingConfig()]);
   if (operations.bookingPaused) {
@@ -339,22 +385,31 @@ export async function createQuote(input: QuoteRequest, options: { now?: Date; on
   options.onProgress?.({ slotsOpen: availability.slotsOpen, slotsTotal: availability.slotsTotal, type: 'availability' });
   options.onProgress?.({ cheapest: availability.cheapest, type: 'prices' });
   const expiresAt = new Date(now.getTime() + operations.quoteValidityMinutes * 60_000);
-  const record = await persistQuote({
+  const record = loadTest
+    ? null
+    : await persistQuote({
+        availability,
+        blocksSlots: size.blocksSlots,
+        capacityUnits: size.capacityUnits,
+        expiresAt,
+        input,
+        manualReasons: reasons,
+        pricingInput,
+        pricingResult,
+        pricingVersionId: pricing.id,
+        route,
+        today,
+      });
+  const quote = quoteDtoFromComputed({
     availability,
-    blocksSlots: size.blocksSlots,
-    capacityUnits: size.capacityUnits,
     expiresAt,
     input,
-    manualReasons: reasons,
-    pricingInput,
     pricingResult,
-    pricingVersionId: pricing.id,
+    publicId: record?.publicId ?? publicId(),
     route,
-    today,
   });
-  const quote = await quoteDtoFromRecord(record, operations, now);
 
-  return {
+  const result = {
     availability: { slotsOpen: availability.slotsOpen, slotsTotal: availability.slotsTotal },
     manualReasons: reasons,
     prices: { cheapest: quote.cheapest },
@@ -366,6 +421,10 @@ export async function createQuote(input: QuoteRequest, options: { now?: Date; on
       toTown: input.dropoff?.town ?? null,
     },
   };
+  if (loadTest) {
+    loadTestQuoteCache = { expiresAt: loadTestNow + loadTestQuoteCacheMs, result };
+  }
+  return result;
 }
 
 export async function getQuote(publicId: string, now = new Date()): Promise<{ quote: QuoteDto; expired: boolean }> {

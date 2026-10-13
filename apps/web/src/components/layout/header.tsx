@@ -1,7 +1,7 @@
 'use client';
 
 import { Menu, Phone, X } from 'lucide-react';
-import Link from 'next/link';
+import { NoPrefetchLink as Link } from '@/components/navigation/no-prefetch-link';
 import { useEffect, useState, type ReactNode } from 'react';
 import { cityLinks, services } from '@/content/navigation';
 import { Logo } from './logo';

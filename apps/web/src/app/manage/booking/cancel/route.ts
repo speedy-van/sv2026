@@ -7,7 +7,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request): Promise<Response> {
-  return withApi(request, { input: CancelBookingRequestSchema }, async ({ input, requestId }) => {
+  return withApi(request, { auth: false, input: CancelBookingRequestSchema }, async ({ input, requestId }) => {
     const cancelInput = input.reason === undefined
       ? { expectedRefundPence: input.expectedRefundPence }
       : { expectedRefundPence: input.expectedRefundPence, reason: input.reason };

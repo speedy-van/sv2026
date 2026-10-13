@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { expectA11yClean } from './support/a11y';
 
 async function expectOneH1(page: Page, name: RegExp | string): Promise<void> {
   await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
@@ -23,6 +24,7 @@ test('@marketing landing page renders required sections without missing facts', 
   await expect(main.getByRole('heading', { name: 'Questions' })).toBeVisible();
   await expect(page.locator('[data-booking-card]')).toHaveCount(2);
   await expectNoMissingFacts(page);
+  await expectA11yClean(page);
 });
 
 test('@marketing service pages include price, FAQ and structured content', async ({ page }) => {
@@ -34,6 +36,7 @@ test('@marketing service pages include price, FAQ and structured content', async
   await expect(page.locator('.price-line')).toContainText(/From £|Price shown/);
   await expect(page.locator('#main-content').getByRole('link', { name: 'Man and van' })).toBeVisible();
   await expectNoMissingFacts(page);
+  await expectA11yClean(page);
 });
 
 test('@marketing help search filters FAQs', async ({ page }) => {
@@ -42,6 +45,7 @@ test('@marketing help search filters FAQs', async ({ page }) => {
   await page.getByPlaceholder('Search questions').fill('payment');
   await expect(page.locator('#main-content').getByText('When do I pay?')).toBeVisible();
   await expectNoMissingFacts(page);
+  await expectA11yClean(page);
 });
 
 test('@marketing contact form submits with user-visible sent state', async ({ page }, testInfo) => {
@@ -50,6 +54,7 @@ test('@marketing contact form submits with user-visible sent state', async ({ pa
   if (testInfo.project.name.includes('mobile')) {
     await expect(page.getByRole('button', { name: 'Send message' })).toBeVisible();
     await expectNoMissingFacts(page);
+    await expectA11yClean(page);
     return;
   }
   await page.getByLabel('Name').fill('Marketing Test');
@@ -58,6 +63,7 @@ test('@marketing contact form submits with user-visible sent state', async ({ pa
   await page.getByRole('button', { name: 'Send message' }).click();
   await expect(page.getByText("Thanks - we'll reply by email.")).toBeVisible();
   await expectNoMissingFacts(page);
+  await expectA11yClean(page);
 });
 
 test('@marketing legal, pricing and reviews pages render stable states', async ({ page }) => {
@@ -65,13 +71,16 @@ test('@marketing legal, pricing and reviews pages render stable states', async (
   await expectOneH1(page, 'How our prices work');
   await expect(page.getByRole('heading', { name: 'Base prices' })).toBeVisible();
   await expectNoMissingFacts(page);
+  await expectA11yClean(page);
 
   await page.goto('/reviews');
   await expectOneH1(page, 'Reviews');
   await expect(page.getByText(/Published reviews will appear|average from/)).toBeVisible();
   await expectNoMissingFacts(page);
+  await expectA11yClean(page);
 
   await page.goto('/legal/privacy');
   await expectOneH1(page, 'Privacy policy');
   await expect(page.getByText('Draft for Speedy Van')).toBeVisible();
+  await expectA11yClean(page);
 });

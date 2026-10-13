@@ -44,6 +44,9 @@ interface CapacityContext {
   usage: Map<string, number>;
 }
 
+let capacityContextCache: { expiresAt: number; key: string; value: CapacityContext } | null = null;
+const capacityContextCacheMs = 1_000;
+
 function dateOnly(date: string): Date {
   return new Date(`${toDbDate(date)}T00:00:00.000Z`);
 }
@@ -120,6 +123,11 @@ function addUsage(usage: Map<string, number>, date: string, slot: SlotKey, capac
 
 async function loadCapacityContext(input: AvailabilityInput, now: Date): Promise<CapacityContext> {
   const dates = input.calendar.map((day) => day.date);
+  const cacheKey = dates.join(',');
+  const cacheNow = Date.now();
+  if (capacityContextCache && capacityContextCache.key === cacheKey && capacityContextCache.expiresAt > cacheNow) {
+    return capacityContextCache.value;
+  }
   const dbDates = dates.map(dateOnly);
   const [overrides, rules, bookings, holds] = await Promise.all([
     prisma.capacityOverride.findMany({
@@ -153,12 +161,14 @@ async function loadCapacityContext(input: AvailabilityInput, now: Date): Promise
     addUsage(usage, fromDbDate(hold.date), hold.slot, hold.capacityUnits, hold.blocksSlots);
   }
 
-  return {
+  const value = {
     operations: input.operations,
     overrides: new Map(overrides.map((override) => [capacityKey(fromDbDate(override.date), override.slot), override.capacity])),
     rules: new Map(rules.map((rule) => [ruleKey(rule.weekday, rule.slot), rule.capacity])),
     usage,
   };
+  capacityContextCache = { expiresAt: cacheNow + capacityContextCacheMs, key: cacheKey, value };
+  return value;
 }
 
 function capacityState(date: string, slot: SlotKey, context: CapacityContext): CapacityState {

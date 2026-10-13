@@ -8,7 +8,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request): Promise<Response> {
-  return withApi(request, { input: BookingCreateSchema, rateLimit: 'booking' }, async ({ input, requestId }) => {
+  return withApi(request, { auth: false, input: BookingCreateSchema, rateLimit: 'booking' }, async ({ input, requestId }) => {
     const response = await createBookingFromQuote(input);
     if (process.env.NODE_ENV !== 'test') {
       try {

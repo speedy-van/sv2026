@@ -1,5 +1,5 @@
 import type { PublicSettings } from '@sv/contracts';
-import Link from 'next/link';
+import { NoPrefetchLink as Link } from '@/components/navigation/no-prefetch-link';
 import type { ReactNode } from 'react';
 
 export function SiteBanner({ banner }: { banner: PublicSettings['siteBanner'] }): ReactNode {

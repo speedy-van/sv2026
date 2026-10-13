@@ -1,6 +1,6 @@
 import { Receipt } from 'lucide-react';
 import type { Metadata } from 'next';
-import Link from 'next/link';
+import { NoPrefetchLink as Link } from '@/components/navigation/no-prefetch-link';
 import type { ReactNode } from 'react';
 import { BookingStartCard } from '@/components/booking/booking-start-card';
 import { serviceContent } from '@/content/services';

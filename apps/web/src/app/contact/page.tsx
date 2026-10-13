@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
+import { NoPrefetchLink as Link } from '@/components/navigation/no-prefetch-link';
 import type { ReactNode } from 'react';
 import { ContactForm } from '@/components/marketing/contact-form';
 import { getPublicSettings } from '@/server/settings';

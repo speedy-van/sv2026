@@ -14,7 +14,14 @@ const PresetItemsSchema = z.array(
     .strict(),
 );
 
+let activePricingCache: { expiresAt: number; value: { config: PricingConfig; id: string; version: number } } | null = null;
+const activePricingCacheMs = 10_000;
+
 export async function getActivePricingConfig(): Promise<{ config: PricingConfig; id: string; version: number }> {
+  const now = Date.now();
+  if (activePricingCache && activePricingCache.expiresAt > now) {
+    return activePricingCache.value;
+  }
   const active = await prisma.pricingConfigVersion.findFirst({
     where: { status: 'ACTIVE' },
     orderBy: { version: 'desc' },
@@ -28,7 +35,9 @@ export async function getActivePricingConfig(): Promise<{ config: PricingConfig;
   if (problems.length > 0) {
     throw new AppError('INTERNAL', 'The active pricing config is invalid.', { problems });
   }
-  return { config, id: active.id, version: active.version };
+  const value = { config, id: active.id, version: active.version };
+  activePricingCache = { expiresAt: now + activePricingCacheMs, value };
+  return value;
 }
 
 export async function getCatalogue() {

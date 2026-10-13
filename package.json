@@ -26,6 +26,9 @@
     "db:deploy": "npm run db:deploy -w @sv/db",
     "db:seed": "npm run db:seed -w @sv/db",
     "db:studio": "npm run db:studio -w @sv/db",
+    "lighthouse": "npm run build && npm run lighthouse -w @sv/web",
+    "load:quote": "npm run build && tsx scripts/load/quote.ts",
+    "security:check": "tsx scripts/security-check.ts",
     "verify": "npm run lint && npm run typecheck && npm run test && npm run build",
     "verify:launch": "tsx scripts/launch-check.ts"
   },
@@ -36,6 +39,7 @@
     "@rolldown/binding-wasm32-wasi": "^1.2.13",
     "@types/node": "26.6.5",
     "@vitest/coverage-v8": "5.0.4",
+    "autocannon": "8.0.0",
     "eslint": "9.39.5",
     "eslint-config-prettier": "10.1.8",
     "eslint-plugin-react": "7.37.5",

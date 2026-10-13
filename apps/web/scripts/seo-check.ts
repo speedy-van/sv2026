@@ -104,13 +104,13 @@ function assertPage(check: PageCheck, expectedUrl: string): string[] {
   return errors;
 }
 
-const exitCode = await withNextServer(async () => {
-  const urls = await parseSitemap(localServerUrl);
+async function runSeoCheck(baseUrl: string): Promise<number> {
+  const urls = await parseSitemap(baseUrl);
   const checks: PageCheck[] = [];
   const errors: string[] = [];
   const brokenLinks = new Map<string, number>();
   for (const url of urls) {
-    const { check, links } = await checkPage(url, localServerUrl);
+    const { check, links } = await checkPage(url, baseUrl);
     checks.push(check);
     errors.push(...assertPage(check, url));
     for (const link of links) {
@@ -129,6 +129,10 @@ const exitCode = await withNextServer(async () => {
   }
   process.stdout.write(`SEO check passed for ${String(checks.length)} sitemap URLs and ${String(brokenLinks.size)} internal links.\n`);
   return 0;
-});
+}
+
+const exitCode = process.env.SEO_BASE_URL
+  ? await runSeoCheck(process.env.SEO_BASE_URL.replace(/\/$/, ''))
+  : await withNextServer(async () => runSeoCheck(localServerUrl));
 
 process.exitCode = exitCode;

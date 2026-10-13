@@ -61,7 +61,7 @@ async function completeMoveDetails(page: Page, service: string, from = 'Glasgow'
 test('@booking customer can complete a mock-paid booking', async ({ page }, testInfo) => {
   await page.goto('/');
   await page.getByRole('link', { name: 'See my prices' }).first().click();
-  await expect(page.getByRole('heading', { name: 'Your move' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /^Your move$/ })).toBeVisible();
   await checkA11y(page);
 
   await completeMoveDetails(page, 'Man and van');

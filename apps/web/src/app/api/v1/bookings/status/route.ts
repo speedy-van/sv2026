@@ -6,7 +6,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request): Promise<Response> {
-  return withApi(request, {}, async ({ requestId }) => {
+  return withApi(request, { auth: false }, async ({ requestId }) => {
     const token = new URL(request.url).searchParams.get('token');
     if (!token) throw new AppError('VALIDATION_ERROR', 'Missing status token.');
     const status = await bookingStatusFromToken(token);

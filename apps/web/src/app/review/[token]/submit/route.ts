@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request, { params }: { params: Promise<{ token: string }> }): Promise<Response> {
   const { token } = await params;
-  return withApi(request, { input: ReviewSubmitSchema.omit({ token: true }) }, async ({ input, requestId }) => {
+  return withApi(request, { auth: false, input: ReviewSubmitSchema.omit({ token: true }) }, async ({ input, requestId }) => {
     const reviewInput = {
       ...(input.comment === undefined ? {} : { comment: input.comment }),
       displayName: input.displayName,

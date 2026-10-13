@@ -176,11 +176,114 @@ async function runDocumentExpiry(today: string): Promise<number> {
   return alerts;
 }
 
-export async function runHourlyCron(now = new Date()): Promise<{ dailySummaries: number; documentAlerts: number; hour: number; reminders: number }> {
+async function queueSystemAlert(key: string, issue: string): Promise<boolean> {
+  await prisma.outboxEvent.create({
+    data: {
+      dedupeKey: key,
+      payload: json({ issue }),
+      type: 'system.alert',
+    },
+  });
+  return true;
+}
+
+async function tryQueueSystemAlert(key: string, issue: string): Promise<boolean> {
+  return queueSystemAlert(key, issue).catch(() => false);
+}
+
+function rate(numerator: number, denominator: number): number {
+  return denominator === 0 ? 0 : numerator / denominator;
+}
+
+export async function runBusinessAlarms(now = new Date()): Promise<{
+  alertsQueued: number;
+  checkoutConversionRate: number | null;
+  pushFailureRate: number | null;
+  webhookSilenceHours: number | null;
+}> {
+  const sixHoursAgo = new Date(now.getTime() - 6 * 60 * 60_000);
+  const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60_000);
+  const eightDaysAgo = new Date(now.getTime() - 8 * 24 * 60 * 60_000);
+  const dedupeHour = now.toISOString().slice(0, 13);
+  let alertsQueued = 0;
+
+  const [recentBookings, lastWebhook, recentTickets, failedTickets, currentCheckouts, currentPaid, baselineCheckouts, baselinePaid] =
+    await Promise.all([
+      prisma.booking.count({ where: { createdAt: { gte: sixHoursAgo } } }),
+      prisma.stripeEvent.findFirst({ orderBy: { receivedAt: 'desc' }, select: { receivedAt: true } }),
+      prisma.pushTicket.count({ where: { createdAt: { gte: sixHoursAgo } } }),
+      prisma.pushTicket.count({
+        where: {
+          createdAt: { gte: sixHoursAgo },
+          OR: [{ error: { not: null } }, { status: 'error' }],
+        },
+      }),
+      prisma.booking.count({ where: { createdAt: { gte: oneDayAgo } } }),
+      prisma.booking.count({ where: { createdAt: { gte: oneDayAgo }, status: { in: ['CONFIRMED', 'IN_PROGRESS', 'COMPLETED'] } } }),
+      prisma.booking.count({ where: { createdAt: { gte: eightDaysAgo, lt: oneDayAgo } } }),
+      prisma.booking.count({
+        where: {
+          createdAt: { gte: eightDaysAgo, lt: oneDayAgo },
+          status: { in: ['CONFIRMED', 'IN_PROGRESS', 'COMPLETED'] },
+        },
+      }),
+    ]);
+
+  const webhookSilenceHours = lastWebhook ? (now.getTime() - lastWebhook.receivedAt.getTime()) / 3_600_000 : null;
+  if (recentBookings > 0 && (webhookSilenceHours === null || webhookSilenceHours > 6)) {
+    const queued = await tryQueueSystemAlert(
+      `system.alert:business:webhook-silence:${dedupeHour}`,
+      'No Stripe webhook has been received for over 6 hours while bookings were created.',
+    );
+    if (queued) alertsQueued += 1;
+  }
+
+  const pushFailureRate = recentTickets >= 10 ? rate(failedTickets, recentTickets) : null;
+  if (pushFailureRate !== null && pushFailureRate > 0.1) {
+    const queued = await tryQueueSystemAlert(
+      `system.alert:business:push-failure-rate:${dedupeHour}`,
+      `Push failure rate is ${String(Math.round(pushFailureRate * 100))}% over the last 6 hours.`,
+    );
+    if (queued) alertsQueued += 1;
+  }
+
+  const checkoutConversionRate = currentCheckouts >= 10 ? rate(currentPaid, currentCheckouts) : null;
+  const baselineConversionRate = baselineCheckouts >= 10 ? rate(baselinePaid, baselineCheckouts) : null;
+  if (
+    checkoutConversionRate !== null &&
+    baselineConversionRate !== null &&
+    baselineConversionRate > 0 &&
+    checkoutConversionRate < baselineConversionRate / 2
+  ) {
+    const queued = await tryQueueSystemAlert(
+      `system.alert:business:checkout-conversion:${dedupeHour}`,
+      `Checkout conversion dropped to ${String(Math.round(checkoutConversionRate * 100))}%, less than half the 7-day baseline.`,
+    );
+    if (queued) alertsQueued += 1;
+  }
+
+  return {
+    alertsQueued,
+    checkoutConversionRate,
+    pushFailureRate,
+    webhookSilenceHours,
+  };
+}
+
+export async function runHourlyCron(now = new Date()): Promise<{
+  businessAlerts: number;
+  dailySummaries: number;
+  documentAlerts: number;
+  hour: number;
+  reminders: number;
+}> {
   const today = londonToday(now);
   const hour = londonHour(now);
-  const reminders = hour === 17 ? await runReminders(today) : 0;
-  const dailySummaries = hour === 7 ? await runDailySummary(today) : 0;
-  const documentAlerts = hour === 6 ? await runDocumentExpiry(today) : 0;
-  return { dailySummaries, documentAlerts, hour, reminders };
+  const [reminders, dailySummaries, documentAlerts, businessAlarms] = await Promise.all([
+    hour === 17 ? runReminders(today) : Promise.resolve(0),
+    hour === 7 ? runDailySummary(today) : Promise.resolve(0),
+    hour === 6 ? runDocumentExpiry(today) : Promise.resolve(0),
+    runBusinessAlarms(now),
+  ]);
+  return { businessAlerts: businessAlarms.alertsQueued, dailySummaries, documentAlerts, hour, reminders };
 }

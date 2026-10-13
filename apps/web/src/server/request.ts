@@ -7,7 +7,7 @@ import { authenticateStaffRequest, type StaffAuthOptions, type StaffContext } fr
 import { enforceRateLimit, type PublicRateLimitKind } from './rate-limit';
 
 export interface ApiOptions<TInput> {
-  auth?: StaffAuthOptions;
+  auth: StaffAuthOptions | false;
   input?: ZodType<TInput>;
   rateLimit?: PublicRateLimitKind;
 }
@@ -74,7 +74,7 @@ export async function withApi<TInput>(
     if (options.rateLimit) {
       await enforceRateLimit(request, options.rateLimit);
     }
-    const staff = options.auth ? await authenticateStaffRequest(request, options.auth) : null;
+    const staff = options.auth === false ? null : await authenticateStaffRequest(request, options.auth);
     const input = options.input ? await parseJson(request, options.input) : (undefined as TInput);
     const response = await handler({ input, request, requestId, staff });
     response.headers.set('x-request-id', requestId);

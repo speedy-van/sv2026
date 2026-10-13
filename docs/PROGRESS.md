@@ -227,7 +227,19 @@ _Verify (2026-10-13):_ `npm run verify` passed across lint, typecheck, tests and
 
 ## Phase 16 — QA hardening
 _Plan:_
-- [ ] Full E2E suites · [ ] axe on every page type · [ ] Lighthouse CI · [ ] load tests · [ ] security checklist (12 §8) · [ ] Sentry alerts + uptime · [ ] health endpoint + business alarms · [ ] `docs/INCIDENTS.md`
+- [x] Make `npm run e2e` run the full Phase 16 web suite by default, across foundation, booking, marketing, self-service and SEO page-type checks.
+- [x] Ensure every E2E page-type visit runs axe WCAG 2.2 AA checks and add any missing route/page-type coverage.
+- [x] Extend Lighthouse to the documented Phase 16 URL set and enforce category/resource budgets locally and in CI.
+- [x] Add the quote endpoint load-test script from `16-testing-observability.md` §5, with a documented command and thresholds.
+- [x] Add `GET /api/v1/health` with DB, outbox backlog/age, last webhook and version reporting, including 503 rules.
+- [x] Add hourly business alarms for webhook silence, checkout conversion drop and push failure rate, and record the quote-error-rate boundary.
+- [x] Add Phase 16 security gate tests/check scripts for route auth declarations, cron secrets, CSP/headers, public mutation rate limits and bundle secret scanning.
+- [x] Review upload, DTO, Stripe replay/signature and staff-auth tests against the `12-auth-security.md` §8 checklist and fill remaining gaps.
+- [x] Add `docs/INCIDENTS.md` with incident contacts, pausing booking, revoking staff sessions, secret rotation, DB restore, outbox replay, customer messaging and post-incident checklist.
+- [x] Update CI to run database-backed verify, full E2E, Lighthouse budgets, SEO check and security/load gate commands without printing secrets.
+- [x] Run the full Phase 16 release gate commands until green, then update progress/decisions/questions and commit.
+
+_Verify (2026-10-13):_ `npm ci` passed after adding Phase 16 dependencies, with only the known audit-warning boundary recorded in D38. Final `npm run verify` passed across lint, typecheck, tests and build. `npm run e2e` passed 48 Playwright checks across desktop and mobile for booking, foundation, marketing, self-service and SEO, with axe checks on exercised page types. `npm run lighthouse` passed the Phase 16 URL set: `/` performance/accessibility/best-practices/SEO 96/100/96/100, JS transfer 157245 bytes and total transfer 249703 bytes; `/services/house-removals` 96/100/96/100 and 243547 bytes; `/removals/paisley` 97/100/96/100 and 243047 bytes; `/removals/glasgow-to-edinburgh` 97/100/96/100 and 242336 bytes. `npm run seo:check` passed for 126 sitemap URLs and 269 internal links. `npm run security:check` passed explicit API auth, cron secret, public mutation rate-limit, CSP/header, bundle secret-scan, GitHub SHA pin and reviewed audit-exception gates. `npm run load:quote` passed with 3585 requests in 120.25s, 30 req/s average and p95 30.608ms.
 
 ## Phase 17 — Launch
 - [ ] Owner checklist (17 §4) · [ ] `verify:launch` green · [ ] cutover steps · [ ] live smoke test · [ ] Search Console sitemap · [ ] 14-day watch started

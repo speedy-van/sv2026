@@ -5,7 +5,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request): Promise<Response> {
-  return withApi(request, { rateLimit: 'catalogue' }, async ({ requestId }) => {
+  return withApi(request, { auth: false, rateLimit: 'catalogue' }, async ({ requestId }) => {
     return apiJson(await getCatalogue(), {
       headers: {
         'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=3600',

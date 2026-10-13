@@ -7,7 +7,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request): Promise<Response> {
-  return withApi(request, { input: RescheduleApplyRequestSchema }, async ({ input, requestId }) => {
+  return withApi(request, { auth: false, input: RescheduleApplyRequestSchema }, async ({ input, requestId }) => {
     const result = await applyReschedule(await manageTokenFromCookie(), input);
     const body = result.result === 'PAYMENT_REQUIRED'
       ? { clientSecret: result.clientSecret, result: result.result }

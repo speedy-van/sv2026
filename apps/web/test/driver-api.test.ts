@@ -1,6 +1,7 @@
 import { londonToday } from '@sv/contracts';
 import { prisma, type Prisma } from '@sv/db';
 import { randomUUID } from 'node:crypto';
+import sharp from 'sharp';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { handleDriverRoute, type DriverMethod } from '../src/server/driver/routes';
 import { requestStaffOtp, verifyStaffOtp, type StaffApp } from '../src/server/auth/staff';
@@ -87,6 +88,31 @@ function requestFor(method: DriverMethod, path: string, token: string, body?: un
 
 async function callDriver(method: DriverMethod, path: string, token: string, body?: unknown): Promise<Response> {
   return handleDriverRoute(requestFor(method, path, token, body), method, path);
+}
+
+function formRequestFor(path: string, token: string, form: FormData): Request {
+  return new Request(`http://localhost/api/v1/driver/${path}`, {
+    body: form,
+    headers: {
+      'x-request-id': `req_phase14_form_${path.replace(/[^a-z0-9]/gi, '_')}`,
+      'x-sv-app': 'driver@1.0.0',
+      authorization: `Bearer ${token}`,
+    },
+    method: 'POST',
+  });
+}
+
+async function callDriverForm(path: string, token: string, form: FormData): Promise<Response> {
+  return handleDriverRoute(formRequestFor(path, token, form), 'POST', path);
+}
+
+function photoForm(file: Blob, clientId = randomUUID()): FormData {
+  const form = new FormData();
+  form.append('clientId', clientId);
+  form.append('kind', 'BEFORE');
+  form.append('takenAt', new Date().toISOString());
+  form.append('file', file, 'upload.bin');
+  return form;
 }
 
 async function cleanup(): Promise<void> {
@@ -269,5 +295,37 @@ describe('Phase 14 driver API', () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ events: [{ clientEventId, error: 'INVALID_TRANSITION', result: 'REJECTED' }] });
     await expect(prisma.jobEvent.findUnique({ where: { clientEventId } })).resolves.toBeNull();
+  });
+
+  it('rejects unsafe photo uploads and stores re-encoded image metadata', async () => {
+    const driverId = await seedUser(`${emailPrefix}photo-driver@example.test`, 'DRIVER');
+    const booking = await seedBooking(`${referencePrefix}IMG`, driverId);
+    const token = await tokenFor(`${emailPrefix}photo-driver@example.test`, 'driver', 'phase14-driver-device-photo');
+
+    const nonImage = await callDriverForm(`jobs/${booking.id}/photos`, token, photoForm(new Blob(['not an image'], { type: 'text/plain' })));
+    expect(nonImage.status).toBe(400);
+    await expect(nonImage.json()).resolves.toMatchObject({ error: { code: 'VALIDATION_ERROR' } });
+
+    const oversize = await callDriverForm(`jobs/${booking.id}/photos`, token, photoForm(new Blob([new Uint8Array(4_000_001)], { type: 'image/jpeg' })));
+    expect(oversize.status).toBe(400);
+    await expect(oversize.json()).resolves.toMatchObject({ error: { code: 'VALIDATION_ERROR' } });
+
+    const clientId = randomUUID();
+    const png = await sharp({
+      create: {
+        background: { alpha: 1, b: 0, g: 0, r: 255 },
+        channels: 4,
+        height: 1,
+        width: 1,
+      },
+    }).png().toBuffer();
+    const accepted = await callDriverForm(`jobs/${booking.id}/photos`, token, photoForm(new Blob([png], { type: 'image/png' }), clientId));
+    expect(accepted.status).toBe(201);
+    const body = await accepted.json() as { id: string };
+    const stored = await prisma.jobPhoto.findUniqueOrThrow({ where: { id: body.id } });
+    expect(stored).toMatchObject({ clientId, contentType: 'image/png', uploadedById: driverId });
+    expect(stored.bytes).toBeGreaterThan(0);
+    expect(stored.blobKey).toMatch(/driver-uploads\/.+\.png$/);
+    expect(stored.blobKey).not.toContain(clientId);
   });
 });

@@ -6,7 +6,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request, context: { params: Promise<{ postcode: string }> }): Promise<Response> {
-  return withApi(request, { rateLimit: 'addressRetrieve' }, async ({ requestId }) => {
+  return withApi(request, { auth: false, rateLimit: 'addressRetrieve' }, async ({ requestId }) => {
     const params = await context.params;
     const parsed = UkPostcodeSchema.safeParse(decodeURIComponent(params.postcode));
     if (!parsed.success) throw new AppError('VALIDATION_ERROR', 'Expected a valid UK postcode.');

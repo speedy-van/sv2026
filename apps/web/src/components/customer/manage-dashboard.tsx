@@ -225,7 +225,10 @@ export function ManageDashboard({ initialData }: { initialData: ManageView }): R
       <section className="component-card">
         <FileText aria-hidden="true" color="#6D3BD7" size={24} />
         <h2>Notes for your driver</h2>
-        <textarea className="text-input textarea-input" onChange={(event) => { setNotes(event.target.value); }} value={notes} />
+        <label className="field-group" htmlFor="customer-driver-notes">
+          <span>Notes</span>
+          <textarea id="customer-driver-notes" className="text-input textarea-input" onChange={(event) => { setNotes(event.target.value); }} value={notes} />
+        </label>
         <button className="button button-secondary" disabled={busy} onClick={() => void saveNotes()} type="button">Save notes</button>
       </section>
 

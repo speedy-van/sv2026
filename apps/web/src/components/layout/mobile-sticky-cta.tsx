@@ -1,7 +1,7 @@
 'use client';
 
 import { Phone } from 'lucide-react';
-import Link from 'next/link';
+import { NoPrefetchLink as Link } from '@/components/navigation/no-prefetch-link';
 import { useEffect, useState, type ReactNode } from 'react';
 
 export function MobileStickyCta({ phoneDisplay, phoneHref }: { phoneDisplay: string | null; phoneHref: string | null }): ReactNode {

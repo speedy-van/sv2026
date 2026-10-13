@@ -463,6 +463,10 @@ svg {
   color: white;
 }
 
+.route-map .field-help {
+  color: white;
+}
+
 .route-map svg {
   width: 100%;
   height: 100%;
@@ -1089,7 +1093,7 @@ svg {
   grid-template-columns: 44px 1fr;
   align-items: center;
   gap: 10px;
-  margin: 0 auto 18px;
+  margin: 0 auto 28px;
   border: 1px solid var(--sv-ink-100);
   border-radius: var(--sv-radius-lg);
   background: rgb(255 255 255 / 0.96);
@@ -1116,7 +1120,7 @@ svg {
   display: grid;
   grid-column: 1 / -1;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 6px;
+  gap: 8px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -1125,7 +1129,7 @@ svg {
 .booking-progress button {
   display: flex;
   width: 100%;
-  min-height: 44px;
+  min-height: 48px;
   align-items: center;
   justify-content: center;
   gap: 6px;
@@ -1135,6 +1139,7 @@ svg {
   color: var(--sv-ink-500);
   font-size: 0.82rem;
   font-weight: 800;
+  padding: 8px 4px;
 }
 
 .booking-progress span {
@@ -1619,6 +1624,7 @@ svg {
 
   .booking-wizard-header {
     grid-template-columns: 44px minmax(180px, 0.55fr) 1fr;
+    margin-bottom: 18px;
   }
 
   .booking-progress {

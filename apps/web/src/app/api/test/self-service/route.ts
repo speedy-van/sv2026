@@ -183,7 +183,7 @@ async function createBooking(params: {
 }
 
 export async function GET(request: Request): Promise<Response> {
-  return withApi(request, {}, async ({ requestId }) => {
+  return withApi(request, { auth: false }, async ({ requestId }) => {
     if (process.env.NODE_ENV === 'production' && process.env.E2E !== '1') {
       throw new AppError('FORBIDDEN', 'Self-service test fixture is disabled.');
     }

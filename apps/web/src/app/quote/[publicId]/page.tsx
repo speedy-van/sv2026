@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { NoPrefetchLink as Link } from '@/components/navigation/no-prefetch-link';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 

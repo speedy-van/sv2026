@@ -685,3 +685,13 @@ export const DriverAvailabilitySchema = z
 export const DriverProfilePatchSchema = z.object({ name: z.string().min(1).max(80).optional(), phone: UkPhoneSchema.optional(), homePostcode: UkPostcodeSchema.optional() }).strict();
 
 export const CronAuthResponseSchema = z.object({ ok: z.literal(true), requestId: z.string().min(1) }).strict();
+
+export const HealthResponseSchema = z
+  .object({
+    db: z.enum(['ok']),
+    lastWebhookAt: IsoTimestampSchema.nullable(),
+    oldestPendingSeconds: z.number().int().nonnegative().nullable(),
+    outboxBacklog: z.number().int().nonnegative(),
+    version: z.string().min(1),
+  })
+  .strict();

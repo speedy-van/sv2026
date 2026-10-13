@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
+import { NoPrefetchLink as Link } from '@/components/navigation/no-prefetch-link';
 import type { ReactNode } from 'react';
 import { FaqSearch } from '@/components/marketing/faq-search';
 import { StructuredData } from '@/components/marketing/structured-data';

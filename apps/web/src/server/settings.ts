@@ -14,6 +14,9 @@ import type { z } from 'zod';
 
 export type OperationsSettings = z.infer<typeof OperationsSettingsSchema>;
 
+let operationsCache: { expiresAt: number; value: OperationsSettings } | null = null;
+const operationsCacheMs = 10_000;
+
 const publicSettings: PublicSettings = {
   cancellation: {
     freeCancellationHours: null,
@@ -98,7 +101,13 @@ export async function getSetting<K extends SettingKey>(key: K): Promise<z.infer<
 }
 
 export async function getOperationsSettings(): Promise<OperationsSettings> {
-  return getSetting('operations');
+  const now = Date.now();
+  if (operationsCache && operationsCache.expiresAt > now) {
+    return operationsCache.value;
+  }
+  const value = await getSetting('operations');
+  operationsCache = { expiresAt: now + operationsCacheMs, value };
+  return value;
 }
 
 export async function getPublicSettings(): Promise<PublicSettings> {

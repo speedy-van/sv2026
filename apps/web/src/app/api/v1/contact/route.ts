@@ -7,7 +7,7 @@ function json(value: unknown): Prisma.InputJsonValue {
 }
 
 export async function POST(request: Request): Promise<Response> {
-  return withApi(request, { input: ContactRequestSchema, rateLimit: 'contact' }, async ({ input, requestId }) => {
+  return withApi(request, { auth: false, input: ContactRequestSchema, rateLimit: 'contact' }, async ({ input, requestId }) => {
     if (input.company && input.company.length > 0) {
       return apiJson(ContactResponseSchema.parse({ ok: true }), { status: 202 }, requestId);
     }
