@@ -15,7 +15,12 @@ Codex adds a question here instead of guessing about money, prices, legal text, 
 
 ## Open
 
-_(none currently)_
+### Q2 — Production launch prerequisites   (Phase 17, 2026-10-13)
+**Blocking:** yes — production launch, `npm run verify:launch` green status, live smoke test, DNS/Search Console cutover, and 14-day watch start are blocked by external owner-controlled production setup.
+**Context:** Phase 17 requires production live secrets, solicitor approval, complete owner facts, approved active pricing, at least one active OWNER, at least one enabled OWNER/ADMIN push device, Resend/Stripe/Mapbox/Upstash/Sentry/Vercel production configuration, and a live booking/refund smoke test on the owner's own card. This workspace only has a dev database connection and no production live credentials or physical iPhones.
+**Options:** A) Owner completes the Phase 17 checklist in `docs/LAUNCH.md` / `docs/workflows/17-deployment-launch.md`, pulls production env into a temporary local file or runs `npm run verify:launch` in Vercel/CI, then shares the pass/fail summary. B) Keep the project pre-launch with the new launch gate committed and rerun after production setup. Recommendation: A when ready to cut over.
+**Owner answer:**
+**Resolved:**
 
 ## Resolved
 
