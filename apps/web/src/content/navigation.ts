@@ -46,6 +46,7 @@ export const companyLinks = [
 
 export const helpLinks = [
   { href: '/help', label: 'FAQs' },
+  { href: '/manage', label: 'Manage a booking' },
   { href: '/contact', label: 'Existing booking help' },
   { href: '/legal/cancellation', label: 'Cancellation policy' },
 ] as const;

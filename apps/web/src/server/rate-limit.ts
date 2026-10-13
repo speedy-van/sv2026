@@ -13,6 +13,7 @@ export type PublicRateLimitKind =
   | 'catalogue'
   | 'contact'
   | 'mapStatic'
+  | 'manageLink'
   | 'quote'
   | 'manualQuote'
   | 'booking';
@@ -34,6 +35,7 @@ const rules = {
     { limit: 20, windowSeconds: 86400 },
   ],
   mapStatic: [{ limit: 60, windowSeconds: 60 }],
+  manageLink: [{ limit: 5, windowSeconds: 3600 }],
   quote: [
     { limit: 10, windowSeconds: 60 },
     { limit: 60, windowSeconds: 3600 },

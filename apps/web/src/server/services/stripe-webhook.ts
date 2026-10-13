@@ -125,6 +125,104 @@ async function confirmBookingPayment(paymentId: string, now: Date): Promise<void
   });
 }
 
+async function applyReschedulePayment(paymentId: string, now: Date): Promise<void> {
+  await prisma.$transaction(async (tx) => {
+    const payment = await tx.payment.findUnique({
+      where: { id: paymentId },
+      select: {
+        amountPence: true,
+        bookingId: true,
+        id: true,
+      },
+    });
+    if (!payment) throw new AppError('NOT_FOUND', 'Payment not found.');
+    const hold = await tx.slotHold.findUnique({
+      where: { paymentId },
+      select: { blocksSlots: true, bookingId: true, capacityUnits: true, date: true, expiresAt: true, id: true, slot: true },
+    });
+    if (!hold) {
+      await recomputeBookingMoney(tx, payment.bookingId);
+      return;
+    }
+    await tx.slotHold.delete({ where: { id: hold.id } });
+    if (hold.expiresAt.getTime() <= now.getTime()) {
+      await recomputeBookingMoney(tx, payment.bookingId);
+      await requestRefund(tx, payment.bookingId, payment.amountPence, 'Paid after the reschedule hold expired.', {
+        dedupePrefix: 'expired-reschedule-refund',
+        notifyCustomer: false,
+      });
+      await enqueueOutbox(
+        tx,
+        'payment.after_expiry_refunded',
+        json({ bookingId: payment.bookingId, paymentId: payment.id }),
+        `payment.after_expiry_refunded:${payment.id}`,
+      );
+      return;
+    }
+    try {
+      await assertSlotCapacity(tx, {
+        blocksSlots: hold.blocksSlots,
+        capacityUnits: hold.capacityUnits,
+        moveDate: hold.date,
+        now,
+        slot: hold.slot,
+      });
+    } catch (error) {
+      if (!(error instanceof AppError) || error.code !== 'SLOT_UNAVAILABLE') throw error;
+      await recomputeBookingMoney(tx, payment.bookingId);
+      await requestRefund(tx, payment.bookingId, payment.amountPence, 'Paid after the reschedule slot was taken.', {
+        dedupePrefix: 'taken-reschedule-refund',
+        notifyCustomer: false,
+      });
+      await enqueueOutbox(
+        tx,
+        'payment.after_expiry_refunded',
+        json({ bookingId: payment.bookingId, paymentId: payment.id }),
+        `payment.after_expiry_refunded:${payment.id}`,
+      );
+      return;
+    }
+    await tx.booking.update({
+      data: {
+        dispatchStatus: 'UNASSIGNED',
+        driverId: null,
+        moveDate: hold.date,
+        slot: hold.slot,
+        totalPence: { increment: payment.amountPence },
+        vanId: null,
+        version: { increment: 1 },
+      },
+      where: { id: payment.bookingId },
+    });
+    await tx.assignment.updateMany({ data: { status: 'WITHDRAWN' }, where: { bookingId: payment.bookingId, status: { in: ['ACCEPTED', 'OFFERED'] } } });
+    await recomputeBookingMoney(tx, payment.bookingId);
+    await enqueueOutbox(tx, 'booking.rescheduled', json({ bookingId: payment.bookingId }), `booking.rescheduled:${payment.id}`);
+  });
+}
+
+async function applyExtraChargePayment(paymentId: string): Promise<void> {
+  await prisma.$transaction(async (tx) => {
+    const payment = await tx.payment.findUnique({
+      where: { id: paymentId },
+      select: { amountPence: true, bookingId: true, extraCharge: { select: { id: true, status: true } }, id: true },
+    });
+    if (!payment) throw new AppError('NOT_FOUND', 'Payment not found.');
+    if (payment.extraCharge?.status === 'PAID') {
+      await recomputeBookingMoney(tx, payment.bookingId);
+      return;
+    }
+    if (payment.extraCharge) {
+      await tx.extraCharge.update({ data: { status: 'PAID' }, where: { id: payment.extraCharge.id } });
+    }
+    await tx.booking.update({
+      data: { totalPence: { increment: payment.amountPence }, version: { increment: 1 } },
+      where: { id: payment.bookingId },
+    });
+    await recomputeBookingMoney(tx, payment.bookingId);
+    await enqueueOutbox(tx, 'booking.extra_paid', json({ bookingId: payment.bookingId, paymentId: payment.id }), `booking.extra_paid:${payment.id}`);
+  });
+}
+
 async function handlePaymentIntentSucceeded(intent: Stripe.PaymentIntent, now: Date): Promise<void> {
   const payment = await findPayment(intent);
   if (!payment) throw new AppError('NOT_FOUND', 'Payment not found.');
@@ -158,10 +256,10 @@ async function handlePaymentIntentSucceeded(intent: Stripe.PaymentIntent, now: D
   });
   if (payment.kind === 'BOOKING' || payment.kind === 'ADMIN_BOOKING' || payment.kind === 'MANUAL_QUOTE') {
     await confirmBookingPayment(payment.id, now);
+  } else if (payment.kind === 'RESCHEDULE_DIFFERENCE') {
+    await applyReschedulePayment(payment.id, now);
   } else {
-    await prisma.$transaction(async (tx) => {
-      await recomputeBookingMoney(tx, payment.bookingId);
-    });
+    await applyExtraChargePayment(payment.id);
   }
 }
 

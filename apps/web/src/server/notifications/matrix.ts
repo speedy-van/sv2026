@@ -24,7 +24,11 @@ export const NOTIFICATION_MATRIX: Record<string, MatrixChannels> = {
     adminPush: { category: 'NEW_BOOKING', sound: 'new-job.wav', timeSensitive: true },
     customerEmail: 'booking-confirmed',
   },
+  'booking.cancelled': { adminNotification: true, customerEmail: 'cancelled' },
+  'booking.extra_paid': { adminNotification: true, customerEmail: 'payment-received' },
+  'booking.rescheduled': { adminNotification: true, customerEmail: 'rescheduled' },
   'contact.received': { adminNotification: true, customerEmail: 'contact-received' },
+  'extra_charge.awaiting_payment': { adminNotification: true, customerEmail: 'extra-charge-request' },
   'manual_quote.requested': {
     adminEmail: 'admin-manual-quote',
     adminNotification: true,

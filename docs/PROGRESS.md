@@ -155,7 +155,18 @@ _Verify (2026-10-13):_ `npm run seo:check` passed after building the app: 126 si
 
 ## Phase 11 — Customer self-service
 _Plan:_
-- [ ] Signed links (6 purposes) · [ ] find my booking · [ ] manage page (all cards) · [ ] notes edit · [ ] receipt page · [ ] reschedule (cheaper / dearer / same) · [ ] cancel (3 bands) · [ ] tracking page (all states) · [ ] review page · [ ] pay page (3 kinds, all states) · [ ] E2E
+- [x] Add `jose` and implement customer signed-link helpers for manage, status, track, review, pay and file purposes with email-hash invalidation.
+- [x] Build find-my-booking request-link flow with neutral response, IP/email rate limiting and outbox email delivery.
+- [x] Add manage session cookie route and server-rendered `/manage`, receipt, notes, reschedule preview/apply and cancellation preview/apply services.
+- [x] Reuse the pricing engine, live availability, advisory slot locks, Stripe PaymentIntent helper and refund allocation for self-service reschedule/cancel flows.
+- [x] Build tracking token route/page with polling-safe DTOs, driver/location visibility rules and noindex/no-store behavior.
+- [x] Build review token route/page with pending review creation, duplicate handling and optional Google review CTA.
+- [x] Build `/pay/[token]` for manual quote, extra charge and phone booking payment requests with idempotent PaymentIntent reuse.
+- [x] Update email/outbox links to use the new customer link purposes and implemented routes.
+- [x] Add `@self-service` Playwright coverage for neutral find-my-booking, manage, reschedule, cancel, tracking, review and pay states using deterministic local fixtures.
+- [x] Run `npm run verify` and `npm run e2e -- --grep @self-service`, then update docs and commit.
+
+_Verify (2026-10-13):_ `npm run e2e -- --grep '@self-service'` passed: 14 Playwright checks across desktop and mobile for neutral find-my-booking, manage session, notes, contact-email link invalidation, cheaper/dearer reschedule, all cancellation policy bands, tracking location visibility, review single-use behavior, and expired/paid/active pay links. `npm run verify` passed across lint, typecheck, tests and build for all packages.
 
 ## Phase 12 — Staff auth & Admin API
 _Plan:_

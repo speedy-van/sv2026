@@ -13,11 +13,17 @@ export async function POST(request: Request): Promise<Response> {
     if (process.env.NODE_ENV === 'production' && process.env.E2E !== '1') {
       throw new AppError('FORBIDDEN', 'Test payment hook is disabled.');
     }
-    const body = await request.json() as { token?: string };
-    if (!body.token) throw new AppError('VALIDATION_ERROR', 'Missing token.');
-    const token = verifyBookingStatusToken(body.token);
+    const body = await request.json() as { clientSecret?: string; paymentId?: string; token?: string };
+    const paymentIntentId = body.clientSecret?.split('_secret_')[0];
+    const token = body.token ? verifyBookingStatusToken(body.token) : null;
     const payment = await prisma.payment.findFirst({
-      where: { bookingId: token.bookingId, kind: 'BOOKING' },
+      where: body.paymentId
+        ? { id: body.paymentId }
+        : paymentIntentId
+          ? { OR: [{ stripePaymentIntentId: paymentIntentId }, { id: paymentIntentId.replace(/^pi_mock_/, '') }] }
+          : token
+            ? { bookingId: token.bookingId, kind: 'BOOKING' }
+            : { id: '__missing__' },
       select: { amountPence: true, bookingId: true, id: true, stripePaymentIntentId: true },
     });
     if (!payment) throw new AppError('NOT_FOUND', 'Payment not found.');

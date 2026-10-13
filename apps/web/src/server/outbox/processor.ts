@@ -6,8 +6,9 @@ import type { EmailTemplateData, EmailTemplateKey } from '@sv/emails';
 import { sendTransactionalEmail, type EmailSendPayload } from '../integrations/resend';
 import { dbDateLabel, slotLabel } from '../london-time';
 import { channelsForEvent } from '../notifications/matrix';
-import { bookingStatusToken } from '../status-token';
 import { getSetting } from '../settings';
+import { bookingPurposeLink, manageLinkForBooking } from '../auth/customer-links';
+import { payLinkForExtraCharge, payLinkForManualQuote } from '../services/customer-self-service';
 import { runRefundOutbox } from '../services/payments';
 
 interface ClaimedOutboxEvent {
@@ -19,11 +20,13 @@ interface ClaimedOutboxEvent {
 
 interface EventPayload {
   bookingId?: string;
+  extraChargeId?: string;
   issue?: string;
   manualQuoteId?: string;
   paymentId?: string;
   quoteId?: string;
   refundId?: string;
+  refundPence?: number;
 }
 
 const BACKOFF_MINUTES = [1, 5, 15, 60, 360] as const;
@@ -40,6 +43,10 @@ function routeLabel(pickup: unknown, dropoff: unknown): string {
   const pickupTown = pickup && typeof pickup === 'object' && 'town' in pickup ? String(pickup.town) : 'Pickup';
   const dropoffTown = dropoff && typeof dropoff === 'object' && 'town' in dropoff ? String(dropoff.town) : null;
   return dropoffTown ? `${pickupTown} to ${dropoffTown}` : pickupTown;
+}
+
+function addDays(date: Date, days: number): Date {
+  return new Date(date.getTime() + days * 86_400_000);
 }
 
 async function adminUsers(tx: DbTx) {
@@ -61,6 +68,7 @@ async function bookingEmailData(tx: DbTx, bookingId: string, extra: Partial<Emai
     where: { id: bookingId },
     select: {
       contactEmail: true,
+      completedAt: true,
       dropoff: true,
       id: true,
       moveDate: true,
@@ -73,19 +81,24 @@ async function bookingEmailData(tx: DbTx, bookingId: string, extra: Partial<Emai
   });
   if (!booking) throw new Error(`Booking ${bookingId} not found`);
   const [web, contact, company] = await Promise.all([getSetting('web'), getSetting('contact'), getSetting('company')]);
-  const token = bookingStatusToken({ bookingId: booking.id, reference: booking.reference });
+  const [manageToken, trackToken, reviewToken] = await Promise.all([
+    manageLinkForBooking(booking),
+    bookingPurposeLink(booking, 'track', addDays(booking.moveDate, 2)),
+    booking.completedAt ? bookingPurposeLink(booking, 'review', addDays(booking.completedAt, 60)) : Promise.resolve(null),
+  ]);
   const data: EmailTemplateData = {
     amountPence: booking.totalPence,
     canonicalOrigin: web.canonicalOrigin,
     contactEmail: contact.emailBookings ?? contact.emailPublic,
     legalLine: company.legalName ? `${company.legalName}. Booking reference ${booking.reference}.` : `Booking reference ${booking.reference}.`,
-    manageUrl: `/manage?token=${encodeURIComponent(token)}`,
+    manageUrl: `/manage/session?token=${encodeURIComponent(manageToken)}`,
     moveDateLabel: dbDateLabel(booking.moveDate),
     reference: booking.reference,
     routeLabel: routeLabel(booking.pickup, booking.dropoff),
     serviceLabel: booking.service,
     slotLabel: slotLabel(booking.slot),
-    trackingUrl: `/track?token=${encodeURIComponent(token)}`,
+    ...(reviewToken ? { reviewUrl: `/review/${encodeURIComponent(reviewToken)}` } : {}),
+    trackingUrl: `/track/${encodeURIComponent(trackToken)}`,
     ...extra,
   };
   return { customerEmail: booking.contactEmail, data };
@@ -102,6 +115,7 @@ async function manualQuoteEmailData(tx: DbTx, payload: EventPayload): Promise<{ 
       id: true,
       pricePence: true,
       quoteId: true,
+      validUntil: true,
     },
   });
   if (!manualQuote) throw new Error('Manual quote not found');
@@ -112,13 +126,14 @@ async function manualQuoteEmailData(tx: DbTx, payload: EventPayload): Promise<{ 
   if (!quote) throw new Error('Manual quote source quote not found');
   const [web, contact] = await Promise.all([getSetting('web'), getSetting('contact')]);
   const details = manualQuote.details ?? undefined;
+  const payToken = manualQuote.pricePence && manualQuote.validUntil ? await payLinkForManualQuote(manualQuote) : null;
   return {
     customerEmail: manualQuote.contactEmail,
     data: {
       amountPence: manualQuote.pricePence ?? 0,
       canonicalOrigin: web.canonicalOrigin,
       contactEmail: contact.emailBookings ?? contact.emailPublic,
-      payUrl: `/pay/manual-quote/${manualQuote.id}`,
+      ...(payToken ? { payUrl: `/pay/${encodeURIComponent(payToken)}` } : {}),
       reference: `MQ-${manualQuote.id.slice(-8).toUpperCase()}`,
       routeLabel: routeLabel(quote.pickup, quote.dropoff),
       ...(details ? { message: details } : {}),
@@ -181,8 +196,18 @@ async function expandDomainEvent(tx: DbTx, event: ClaimedOutboxEvent): Promise<v
     const refund = payload.refundId
       ? await tx.refund.findUnique({ where: { id: payload.refundId }, select: { amountPence: true } })
       : null;
+    const extraCharge = payload.extraChargeId
+      ? await tx.extraCharge.findUnique({
+          where: { id: payload.extraChargeId },
+          include: { booking: { select: { contactEmail: true } } },
+        })
+      : null;
+    const extraPayToken = extraCharge ? await payLinkForExtraCharge(extraCharge) : null;
     await enqueueEmail(tx, event, channels.customerEmail as EmailTemplateKey, customer.customerEmail, {
       ...customer.data,
+      ...(extraCharge ? { amountPence: extraCharge.amountPence, message: extraCharge.description } : {}),
+      ...(extraPayToken ? { payUrl: `/pay/${encodeURIComponent(extraPayToken)}` } : {}),
+      ...(typeof payload.refundPence === 'number' ? { refundPence: payload.refundPence } : {}),
       ...(refund ? { refundPence: refund.amountPence } : {}),
     });
   }

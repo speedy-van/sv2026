@@ -443,6 +443,7 @@ export const ReviewSubmitSchema = z
     rating: z.number().int().min(1).max(5),
     comment: z.string().trim().max(1000).optional(),
     displayName: z.string().trim().min(1).max(80),
+    town: z.string().trim().max(80).optional(),
   })
   .strict();
 

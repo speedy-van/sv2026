@@ -24,6 +24,7 @@ import { randomInt } from 'node:crypto';
 import type { z } from 'zod';
 import { createOrRetrievePaymentIntent } from '../integrations/stripe';
 import { bookingStatusToken, verifyBookingStatusToken } from '../status-token';
+import { manageLinkForBooking } from '../auth/customer-links';
 import { getSetting, getOperationsSettings } from '../settings';
 import { dbDateLabel, slotLabel } from '../london-time';
 import { overlayAvailability } from './availability';
@@ -356,6 +357,7 @@ export async function bookingStatusFromToken(token: string) {
     where: { id: payload.bookingId },
     select: {
       dropoff: true,
+      contactEmail: true,
       id: true,
       moveDate: true,
       pickup: true,
@@ -369,7 +371,9 @@ export async function bookingStatusFromToken(token: string) {
   if (!booking || booking.reference !== payload.reference) {
     throw new AppError('NOT_FOUND', 'Booking not found.');
   }
-  const manageUrl = booking.status === 'CONFIRMED' ? `https://www.speedyvan.uk/manage?token=${encodeURIComponent(token)}` : undefined;
+  const web = await getSetting('web');
+  const manageToken = booking.status === 'CONFIRMED' ? await manageLinkForBooking(booking) : null;
+  const manageUrl = manageToken ? new URL(`/manage/session?token=${encodeURIComponent(manageToken)}`, web.canonicalOrigin).toString() : undefined;
   return BookingStatusResponseSchema.parse({
     manageUrl,
     reference: booking.reference,
