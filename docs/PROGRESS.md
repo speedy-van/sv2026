@@ -108,7 +108,7 @@ _Verify (2026-10-13):_ `npm ci` passed from the committed lockfile; it reports t
 
 ## Phase 8 — Booking flow UI
 _Plan:_
-- [x] Hero booking card · [x] AddressField (search, postcode-only, manual, errors) · [x] Step 1 variants + access cards + "Anything tricky?" · [x] Step 2 search/categories/own item/extras/summary bar · [x] Step 3 reveal states · [x] hero price · [x] calendar + day/slot states · [x] breakdown · [x] Step 4 summary · [x] details · [x] agreements · [x] deferred Payment Element path with local mock fallback · [x] confirmation polling/success/pending · [x] manual quote form · [x] out-of-area card · [x] draft persistence + `/quote/:id` · [x] analytics + Ads conversion helper · [x] booking E2E coverage; remaining live-Stripe and fine-detail deltas recorded in D30.
+- [x] Hero booking card · [x] AddressField (search, postcode-only, manual, errors) · [x] Step 1 variants + access cards + "Anything tricky?" · [x] Step 2 search/categories/own item/extras/summary bar · [x] Step 3 reveal states · [x] hero price · [x] calendar + day/slot states · [x] breakdown · [x] Step 4 summary · [x] details · [x] agreements · [ ] real Stripe Payment Element path (R2: current E2E uses local mock fallback; not proven with Stripe test keys/webhooks) · [x] confirmation polling/success/pending · [x] manual quote form · [x] out-of-area card · [x] draft persistence + `/quote/:id` · [x] analytics + Ads conversion helper · [ ] real-card booking E2E coverage (R2: only mock-paid booking was proven).
 - [x] Add Phase 8 client dependencies from the approved stack: React Hook Form, zod resolver, React Query, Zustand, Stripe browser packages, and axe Playwright.
 - [x] Add booking content/constants for service labels, variants, access defaults, item category labels and customer-facing error copy.
 - [x] Build the persisted booking draft store with versioning and step-prerequisite guards.
@@ -141,8 +141,8 @@ _Verify (2026-10-13):_ `npm run verify` passed across lint, typecheck, tests and
 
 ## Phase 10 — SEO
 _Plan:_
-- [x] Add Phase 10 location data pipeline scripts for geocoding, nearest-location graph, route distances and reports.
-- [x] Commit generated location and distance JSON used by the website, with manual-review notes.
+- [ ] Add Phase 10 location data pipeline scripts for geocoding, nearest-location graph, route distances and reports. R0: scripts exist, but generated data still contains fallback coordinates and must be rerun with real Mapbox in R1.
+- [ ] Commit generated location and distance JSON used by the website, with manual-review notes. R0: current generated JSON is not real enough; `stub:check` reports fallback locations and D32 records the boundary.
 - [x] Add shared SEO content/data helpers for locations, regions, routes, indexability, prices, metadata and JSON-LD.
 - [x] Build `/areas`, 12 region hubs, 221 town pages, 8 city man-and-van pages and 26 route pages.
 - [x] Add sitemap/robots generation, canonical metadata, breadcrumbs, structured data and internal linking.
@@ -175,7 +175,7 @@ _Plan:_
 - [x] Implement staff access JWTs, refresh-token rotation, reuse detection, device-bound sessions and session revocation.
 - [x] Add RBAC and app-version enforcement to the shared API wrapper while keeping public endpoints explicit.
 - [x] Implement `/api/v1/auth/*`, `/api/v1/me/*` and `/api/v1/notifications` routes from `05-api.md` §6.
-- [x] Add `/api/v1/admin/*` route coverage for every `05-api.md` §7 endpoint with OWNER/ADMIN role checks, OWNER-only gates and audit logging on mutations.
+- [ ] Add `/api/v1/admin/*` route coverage for every `05-api.md` §7 endpoint with OWNER/ADMIN role checks, OWNER-only gates and audit logging on mutations. R0: auth/audit surface exists, but admin endpoints return canned responses except test-push; R3-R5 replace them with real handlers.
 - [x] Build `@sv/api-client` with typed requests, app-version headers, token storage hooks, single-flight refresh and retry-once behavior.
 - [x] Add API tests for anonymous and DRIVER rejection across every admin route, refresh-token reuse revocation and OTP brute-force lockout.
 - [x] Update decisions/questions as needed, run `npm run verify`, then commit Phase 12.
@@ -188,9 +188,9 @@ _Plan:_
 - [x] Build the app theme from `@sv/tokens` with light/dark palettes, Bricolage/Manrope font loading and reusable primitives (`ScreenState`, buttons, cards, badges, sheets).
 - [x] Implement auth/update/app-lock/notification-permission gates, OTP sign-in/code screens, secure token storage and API client wiring.
 - [x] Implement the tab shell: Today, Bookings, Schedule, Drivers and More, with iPhone and iPad-responsive layouts.
-- [x] Build every documented Admin screen/menu surface from `14-admin-app.md` with loading, empty, error, success and disabled/submitting states.
-- [x] Build booking detail actions and sheets: assign/offer, unassign, edit, re-price, reschedule, cancel, refund, extra charge, offline payment and resend email.
-- [x] Build new phone booking wizard using the quote/catalogue endpoints and payment-mode branch.
+- [ ] Build every documented Admin screen/menu surface from `14-admin-app.md` with loading, empty, error, success and disabled/submitting states. R0: several screens are fixture-driven or describe future surfaces; R6-R8 replace them.
+- [ ] Build booking detail actions and sheets: assign/offer, unassign, edit, re-price, reschedule, cancel, refund, extra charge, offline payment and resend email. R0: current app has placeholders/empty handlers and canned API underneath; R6 implements core sheets after R3.
+- [ ] Build new phone booking wizard using the quote/catalogue endpoints and payment-mode branch. R0: current wizard is a UI shell using fixture/static step data; R6 wires the real endpoints.
 - [x] Implement push registration, notification categories, deep-link routing, foreground `NewJobModal`, sounds/haptics and feed polling fallback.
 - [x] Add React Query polling/invalidation rules, offline banner behavior and permission/role gating.
 - [x] Add jest-expo tests for api-client integration, `ScreenState`, permission gates, deep-link routing and `NewJobModal` stacking/dedupe.
@@ -205,8 +205,8 @@ _Plan:_
 - [x] Scaffold `apps/driver` as an Expo SDK 57 / Expo Router workspace with nested AGENTS.md, app config, icon/sound, EAS profiles and strict scripts.
 - [x] Align driver dependencies with the Phase 13 Expo SDK stack and add allowed driver libraries: location, task manager, camera, image manipulator, SQLite, maps, signature canvas and WebView.
 - [x] Build shared driver app primitives/theme from `@sv/tokens`, branded fonts, app gates, notification/location permission banners and app-lock behavior.
-- [x] Implement tabs and screens: Today, Jobs/offers/upcoming/history, job detail, run stepper, report problem, extra items, camera, signature, Earnings and Me/availability.
-- [x] Implement offline SQLite queue/cache helpers, ordered sync handling, photo/signature local records, and location task registration with background buffering.
+- [ ] Implement tabs and screens: Today, Jobs/offers/upcoming/history, job detail, run stepper, report problem, extra items, camera, signature, Earnings and Me/availability. R0: driver screens still import fixture data and signature upload is empty; R9 finishes the app.
+- [ ] Implement offline SQLite queue/cache helpers, ordered sync handling, photo/signature local records, and location task registration with background buffering. R0: helpers exist, but full offline evidence upload/flight-mode end-to-end proof is missing; R9 covers it.
 - [x] Add jest-expo tests for queue ordering/dedupe, sync result handling, stage path/undo rules, photo compression call, location task writes and earnings formatting.
 - [x] Run driver app typecheck/tests, `npx expo-doctor` in `apps/driver`, driver API tests, root `npm run verify`, then update docs and commit.
 
@@ -219,6 +219,7 @@ _Plan:_
 - [x] Implement Expo push sending with chunking, stored `PushTicket` rows, capture-mode support, immediate dead-token cleanup and receipt polling.
 - [x] Wire `push.send` outbox handling, admin/driver recipient resolution, quiet-hours delaying and admin test-push.
 - [x] Add repeat-until-seen alerts, push receipts, hourly, data-retention and integrity cron routes and register every cron in `apps/web/vercel.json`.
+- [ ] Add Sentry cron monitor check-ins for every cron. R0: D37 records this is not emitted in code yet; R10 implements it.
 - [x] Add app-side Expo push token registration for Admin and Driver.
 - [x] Add end-to-end event-matrix tests proving email, push and in-app fan-out rows are exact for documented domain events.
 - [x] Run `npm run verify`, fix failures, update docs, commit, merge Phase 15 to `main`, then continue to Phase 16.
@@ -232,12 +233,13 @@ _Plan:_
 - [x] Extend Lighthouse to the documented Phase 16 URL set and enforce category/resource budgets locally and in CI.
 - [x] Add the quote endpoint load-test script from `16-testing-observability.md` §5, with a documented command and thresholds.
 - [x] Add `GET /api/v1/health` with DB, outbox backlog/age, last webhook and version reporting, including 503 rules.
-- [x] Add hourly business alarms for webhook silence, checkout conversion drop and push failure rate, and record the quote-error-rate boundary.
+- [ ] Add hourly business alarms including quote error rate. R0: webhook silence, checkout conversion drop and push failure rate exist, but D38 records quote success/failure metrics and quote error-rate alarm are missing; R10 implements them.
 - [x] Add Phase 16 security gate tests/check scripts for route auth declarations, cron secrets, CSP/headers, public mutation rate limits and bundle secret scanning.
 - [x] Review upload, DTO, Stripe replay/signature and staff-auth tests against the `12-auth-security.md` §8 checklist and fill remaining gaps.
 - [x] Add `docs/INCIDENTS.md` with incident contacts, pausing booking, revoking staff sessions, secret rotation, DB restore, outbox replay, customer messaging and post-incident checklist.
 - [x] Update CI to run database-backed verify, full E2E, Lighthouse budgets, SEO check and security/load gate commands without printing secrets.
 - [x] Run the full Phase 16 release gate commands until green, then update progress/decisions/questions and commit.
+- [ ] Run the full release gate against staging with real backing services. R0: local gates passed, but staging was skipped and real Stripe/load evidence is deferred to S/R10.
 
 _Verify (2026-10-13):_ `npm ci` passed after adding Phase 16 dependencies, with only the known audit-warning boundary recorded in D38. Final `npm run verify` passed across lint, typecheck, tests and build. `npm run e2e` passed 48 Playwright checks across desktop and mobile for booking, foundation, marketing, self-service and SEO, with axe checks on exercised page types. `npm run lighthouse` passed the Phase 16 URL set: `/` performance/accessibility/best-practices/SEO 96/100/96/100, JS transfer 157245 bytes and total transfer 249703 bytes; `/services/house-removals` 96/100/96/100 and 243547 bytes; `/removals/paisley` 97/100/96/100 and 243047 bytes; `/removals/glasgow-to-edinburgh` 97/100/96/100 and 242336 bytes. `npm run seo:check` passed for 126 sitemap URLs and 269 internal links. `npm run security:check` passed explicit API auth, cron secret, public mutation rate-limit, CSP/header, bundle secret-scan, GitHub SHA pin and reviewed audit-exception gates. `npm run load:quote` passed with 3585 requests in 120.25s, 30 req/s average and p95 30.608ms.
 

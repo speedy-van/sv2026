@@ -3,6 +3,7 @@ node_modules/
 
 # build output
 .next/
+apps/web/next-env.d.ts
 dist/
 build/
 coverage/
