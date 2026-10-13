@@ -16,7 +16,7 @@
     "@expo-google-fonts/manrope": "0.4.2",
     "@expo/metro-runtime": "57.0.16",
     "@react-native-community/netinfo": "12.0.1",
-    "@react-native/assets-registry": "0.86.3",
+    "@react-native/assets-registry": "0.87.1",
     "@sentry/react-native": "7.11.0",
     "@sv/api-client": "0.0.0",
     "@sv/contracts": "0.0.0",
@@ -42,16 +42,16 @@
     "lucide-react-native": "1.56.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "react-native": "0.86.3",
+    "react-native": "0.87.1",
     "react-native-gesture-handler": "2.32.0",
-    "react-native-maps": "1.27.2",
-    "react-native-reanimated": "4.5.1",
-    "react-native-safe-area-context": "5.7.0",
-    "react-native-screens": "4.26.0",
+    "react-native-maps": "1.29.11",
+    "react-native-reanimated": "4.7.1",
+    "react-native-safe-area-context": "5.10.1",
+    "react-native-screens": "4.29.0",
     "react-native-signature-canvas": "5.1.1",
     "react-native-web": "0.21.4",
     "react-native-webview": "13.16.1",
-    "react-native-worklets": "0.10.1",
+    "react-native-worklets": "0.13.0",
     "zustand": "5.0.15"
   },
   "devDependencies": {
@@ -60,7 +60,7 @@
     "@types/react": "19.2.4",
     "expo-doctor": "1.20.4",
     "jest-expo": "57.0.6",
-    "react-test-renderer": "19.2.3"
+    "react-test-renderer": "19.3.0"
   },
   "jest": {
     "preset": "jest-expo",
