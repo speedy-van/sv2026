@@ -14,6 +14,7 @@ import { OfflineBanner } from '@/components/offline-banner';
 import { NotificationPermissionGate } from '@/components/notification-permission-gate';
 import { NewJobModal } from '@/notifications/new-job-modal';
 import { type NewJobAlert } from '@/notifications/new-job-queue';
+import { registerPushDevice } from '@/notifications/register-push';
 import { routeFromNotificationData, type NotificationData } from '@/notifications/routing';
 import { AuthProvider, useAuth } from '@/state/auth';
 
@@ -63,6 +64,24 @@ export function RootShell(props: { children: React.ReactNode }): React.ReactElem
 function RuntimeGates(props: { children: React.ReactNode }): React.ReactElement {
   const auth = useAuth();
   const [alerts, setAlerts] = useState<NewJobAlert[]>([]);
+  useEffect(() => {
+    if (auth.status !== 'signed-in') return;
+    let cleanup: (() => void) | undefined;
+    let cancelled = false;
+    void registerPushDevice(auth.api)
+      .then((dispose) => {
+        if (cancelled) {
+          dispose();
+        } else {
+          cleanup = dispose;
+        }
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+      cleanup?.();
+    };
+  }, [auth.api, auth.status]);
   useEffect(() => {
     void Notifications.setNotificationCategoryAsync('NEW_BOOKING', [
       { buttonTitle: 'Open', identifier: 'OPEN', options: { opensAppToForeground: true } },

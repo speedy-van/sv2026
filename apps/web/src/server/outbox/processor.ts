@@ -1,11 +1,12 @@
 import 'server-only';
 
-import { formatGBP } from '@sv/contracts';
+import { addDays as addLondonDays, formatGBP, fromDbDate, londonToday } from '@sv/contracts';
 import { enqueueOutbox, Prisma, prisma, type DbTx } from '@sv/db';
 import type { EmailTemplateData, EmailTemplateKey } from '@sv/emails';
+import { sendPushOutbox, type PushSendPayload } from '../integrations/expo-push';
 import { sendTransactionalEmail, type EmailSendPayload } from '../integrations/resend';
-import { dbDateLabel, slotLabel } from '../london-time';
-import { channelsForEvent } from '../notifications/matrix';
+import { dbDateLabel, londonDateTimeToUtc, slotLabel } from '../london-time';
+import { channelsForEvent, type MatrixChannels } from '../notifications/matrix';
 import { getSetting } from '../settings';
 import { bookingPurposeLink, manageLinkForBooking } from '../auth/customer-links';
 import { payLinkForExtraCharge, payLinkForManualQuote } from '../services/customer-self-service';
@@ -20,14 +21,22 @@ interface ClaimedOutboxEvent {
 
 interface EventPayload {
   bookingId?: string;
+  contactMessageId?: string;
+  driverId?: string;
   extraChargeId?: string;
   issue?: string;
   manualQuoteId?: string;
   paymentId?: string;
+  payoutId?: string;
+  previousDriverId?: string;
   quoteId?: string;
   refundId?: string;
   refundPence?: number;
+  toStage?: string;
 }
+
+type AdminPushConfig = NonNullable<MatrixChannels['adminPush']>;
+type DriverPushTarget = NonNullable<MatrixChannels['driverPush']>['target'];
 
 const BACKOFF_MINUTES = [1, 5, 15, 60, 360] as const;
 
@@ -49,9 +58,9 @@ function addDays(date: Date, days: number): Date {
   return new Date(date.getTime() + days * 86_400_000);
 }
 
-async function adminUsers(tx: DbTx) {
+async function adminUsers(tx: DbTx, options: { ownerOnly?: boolean } = {}) {
   return tx.user.findMany({
-    where: { role: { in: ['OWNER', 'ADMIN'] }, status: 'ACTIVE' },
+    where: { role: options.ownerOnly ? 'OWNER' : { in: ['OWNER', 'ADMIN'] }, status: 'ACTIVE' },
     select: { email: true, id: true, name: true },
   });
 }
@@ -141,6 +150,25 @@ async function manualQuoteEmailData(tx: DbTx, payload: EventPayload): Promise<{ 
   };
 }
 
+async function contactEmailData(tx: DbTx, payload: EventPayload): Promise<{ customerEmail: string; data: EmailTemplateData } | null> {
+  if (!payload.contactMessageId) return null;
+  const message = await tx.contactMessage.findUnique({
+    where: { id: payload.contactMessageId },
+    select: { email: true, message: true },
+  });
+  if (!message) return null;
+  const [web, contact] = await Promise.all([getSetting('web'), getSetting('contact')]);
+  return {
+    customerEmail: message.email,
+    data: {
+      canonicalOrigin: web.canonicalOrigin,
+      contactEmail: contact.emailBookings ?? contact.emailPublic,
+      message: message.message,
+      reference: `CM-${payload.contactMessageId.slice(-8).toUpperCase()}`,
+    },
+  };
+}
+
 async function enqueueEmail(tx: DbTx, event: ClaimedOutboxEvent, template: EmailTemplateKey, to: string | string[], data: EmailTemplateData): Promise<void> {
   const recipients = Array.isArray(to) ? to : [to];
   if (recipients.length === 0) return;
@@ -152,8 +180,15 @@ async function enqueueEmail(tx: DbTx, event: ClaimedOutboxEvent, template: Email
   );
 }
 
-async function enqueueAdminNotification(tx: DbTx, event: ClaimedOutboxEvent, title: string, body: string, data: Record<string, unknown>): Promise<void> {
-  const users = await adminUsers(tx);
+async function enqueueAdminNotification(
+  tx: DbTx,
+  event: ClaimedOutboxEvent,
+  title: string,
+  body: string,
+  data: Record<string, unknown>,
+  options: { ownerOnly?: boolean } = {},
+): Promise<void> {
+  const users = await adminUsers(tx, options);
   for (const user of users) {
     await enqueueOutbox(
       tx,
@@ -164,14 +199,163 @@ async function enqueueAdminNotification(tx: DbTx, event: ClaimedOutboxEvent, tit
   }
 }
 
-async function enqueueAdminPush(tx: DbTx, event: ClaimedOutboxEvent, title: string, body: string, data: Record<string, unknown>): Promise<void> {
-  const users = await adminUsers(tx);
+async function enqueuePush(
+  tx: DbTx,
+  event: ClaimedOutboxEvent,
+  userId: string,
+  payload: Omit<PushSendPayload, 'userId'>,
+  options: { dedupeSuffix: string; nextAttemptAt?: Date },
+): Promise<void> {
+  await tx.outboxEvent.create({
+    data: {
+      ...(options.nextAttemptAt ? { nextAttemptAt: options.nextAttemptAt } : {}),
+      dedupeKey: `${event.id}:push:${options.dedupeSuffix}:${userId}`,
+      payload: json({ ...payload, userId } satisfies PushSendPayload),
+      type: 'push.send',
+    },
+  });
+}
+
+async function enqueueAdminPush(
+  tx: DbTx,
+  event: ClaimedOutboxEvent,
+  title: string,
+  body: string,
+  data: Record<string, unknown>,
+  push: AdminPushConfig | undefined,
+): Promise<void> {
+  if (!push) return;
+  const users = await adminUsers(tx, push.ownerOnly ? { ownerOnly: true } : {});
   for (const user of users) {
-    await enqueueOutbox(
+    await enqueuePush(
       tx,
-      'push.send',
-      json({ body, data, title, userId: user.id }),
-      `${event.id}:push:${user.id}`,
+      event,
+      user.id,
+      {
+        app: 'ADMIN',
+        body,
+        category: push.category,
+        data: { ...data, type: push.category },
+        sound: push.sound,
+        title,
+        ...(push.timeSensitive ? { timeSensitive: true } : {}),
+      },
+      { dedupeSuffix: push.category },
+    );
+  }
+}
+
+const SLOT_STARTS = {
+  AFTERNOON: '12:00',
+  EVENING: '17:00',
+  MORNING: '08:00',
+} as const;
+
+function londonMinutes(now: Date): number {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    hour: '2-digit',
+    hour12: false,
+    minute: '2-digit',
+    timeZone: 'Europe/London',
+  }).formatToParts(now);
+  const values = new Map(parts.map((part) => [part.type, Number(part.value)]));
+  return (values.get('hour') ?? 0) * 60 + (values.get('minute') ?? 0);
+}
+
+function minutesForTime(value: string): number {
+  const [hour, minute] = value.split(':').map(Number);
+  return (hour ?? 0) * 60 + (minute ?? 0);
+}
+
+function inQuietHours(now: Date, quiet: { end: string; start: string }): boolean {
+  const current = londonMinutes(now);
+  const start = minutesForTime(quiet.start);
+  const end = minutesForTime(quiet.end);
+  if (start === end) return false;
+  return start < end ? current >= start && current < end : current >= start || current < end;
+}
+
+function quietHoursEnd(now: Date, end: string): Date {
+  const current = londonMinutes(now);
+  const endMinutes = minutesForTime(end);
+  const today = londonToday(now);
+  const endDate = current < endMinutes ? today : addLondonDays(today, 1);
+  return londonDateTimeToUtc(endDate, end);
+}
+
+async function bookingStartsWithinHours(tx: DbTx, bookingId: string | undefined, hours: number, now = new Date()): Promise<boolean> {
+  if (!bookingId) return false;
+  const booking = await tx.booking.findUnique({ where: { id: bookingId }, select: { moveDate: true, slot: true } });
+  if (!booking) return false;
+  const startsAt = londonDateTimeToUtc(fromDbDate(booking.moveDate), SLOT_STARTS[booking.slot]);
+  return startsAt.getTime() <= now.getTime() + hours * 60 * 60_000;
+}
+
+async function driverPushDelay(tx: DbTx, event: ClaimedOutboxEvent, payload: EventPayload): Promise<Date | undefined> {
+  const channels = channelsForEvent(event.type);
+  const driverPush = channels?.driverPush;
+  if (!driverPush?.quietHours || driverPush.timeSensitive) return undefined;
+  if (driverPush.category === 'JOB_CHANGED' && await bookingStartsWithinHours(tx, payload.bookingId, 48)) return undefined;
+  const settings = await getSetting('notifications').catch(() => ({
+    driverQuietHours: { end: '07:00', start: '21:00' },
+    newBookingRepeatUntilSeen: true,
+  }));
+  const now = new Date();
+  return inQuietHours(now, settings.driverQuietHours) ? quietHoursEnd(now, settings.driverQuietHours.end) : undefined;
+}
+
+async function driverRecipients(tx: DbTx, payload: EventPayload, target: DriverPushTarget): Promise<string[]> {
+  if (target === 'payload-driver') return payload.driverId ? [payload.driverId] : [];
+  if (target === 'previous-driver') {
+    if (payload.previousDriverId) return [payload.previousDriverId];
+    if (!payload.bookingId) return [];
+    const assignment = await tx.assignment.findFirst({
+      orderBy: { respondedAt: 'desc' },
+      select: { driverId: true },
+      where: { bookingId: payload.bookingId, status: { in: ['ACCEPTED', 'WITHDRAWN'] } },
+    });
+    return assignment ? [assignment.driverId] : [];
+  }
+  if (!payload.bookingId) return [];
+  if (target === 'offered') {
+    const offers = await tx.assignment.findMany({
+      select: { driverId: true },
+      where: { bookingId: payload.bookingId, status: 'OFFERED' },
+    });
+    return offers.map((offer) => offer.driverId);
+  }
+  const booking = await tx.booking.findUnique({ where: { id: payload.bookingId }, select: { driverId: true } });
+  return booking?.driverId ? [booking.driverId] : [];
+}
+
+async function enqueueDriverPush(
+  tx: DbTx,
+  event: ClaimedOutboxEvent,
+  title: string,
+  body: string,
+  data: Record<string, unknown>,
+  payload: EventPayload,
+): Promise<void> {
+  const channels = channelsForEvent(event.type);
+  const driverPush = channels?.driverPush;
+  if (!driverPush) return;
+  const recipients = await driverRecipients(tx, payload, driverPush.target);
+  const nextAttemptAt = await driverPushDelay(tx, event, payload);
+  for (const userId of recipients) {
+    await enqueuePush(
+      tx,
+      event,
+      userId,
+      {
+        app: 'DRIVER',
+        body,
+        category: driverPush.category,
+        data: { ...data, type: driverPush.category },
+        sound: driverPush.sound,
+        title,
+        ...(driverPush.timeSensitive ? { timeSensitive: true } : {}),
+      },
+      { dedupeSuffix: driverPush.category, ...(nextAttemptAt ? { nextAttemptAt } : {}) },
     );
   }
 }
@@ -180,11 +364,24 @@ async function expandDomainEvent(tx: DbTx, event: ClaimedOutboxEvent): Promise<v
   const channels = channelsForEvent(event.type);
   if (!channels) return;
   const payload = asPayload(event.payload);
+  if (event.type === 'job.stage_changed' && payload.toStage !== 'EN_ROUTE_TO_PICKUP') return;
   let customer: { customerEmail: string; data: EmailTemplateData } | null = null;
   if (payload.bookingId) {
     customer = await bookingEmailData(tx, payload.bookingId);
   } else if (payload.manualQuoteId || payload.quoteId) {
     customer = await manualQuoteEmailData(tx, payload);
+  } else if (payload.contactMessageId) {
+    customer = await contactEmailData(tx, payload);
+  }
+
+  if (event.type === 'booking.driver_accepted' && payload.bookingId && customer) {
+    const booking = await tx.booking.findUnique({
+      where: { id: payload.bookingId },
+      select: { driver: { select: { user: { select: { name: true } } } } },
+    });
+    const driverName = booking?.driver?.user.name;
+    const firstName = driverName?.split(/\s+/)[0];
+    if (firstName) customer = { ...customer, data: { ...customer.data, driverFirstName: firstName } };
   }
 
   const title = event.type === 'booking.confirmed'
@@ -216,10 +413,20 @@ async function expandDomainEvent(tx: DbTx, event: ClaimedOutboxEvent): Promise<v
     await enqueueEmail(tx, event, channels.adminEmail as EmailTemplateKey, emails, customer?.data ?? { message: payload.issue ?? event.type });
   }
   if (channels.adminNotification) {
-    await enqueueAdminNotification(tx, event, title, body, { ...payload, eventType: event.type });
+    await enqueueAdminNotification(
+      tx,
+      event,
+      title,
+      body,
+      { ...payload, eventType: event.type },
+      channels.adminNotificationOwnerOnly ? { ownerOnly: true } : {},
+    );
   }
-  if (channels.adminPush) {
-    await enqueueAdminPush(tx, event, title, body, { ...payload, category: channels.adminPush.category, eventType: event.type });
+  if (channels.adminPush && (!channels.adminPush.onlyWithinHours || await bookingStartsWithinHours(tx, payload.bookingId, channels.adminPush.onlyWithinHours))) {
+    await enqueueAdminPush(tx, event, title, body, { ...payload, category: channels.adminPush.category, eventType: event.type }, channels.adminPush);
+  }
+  if (channels.driverPush) {
+    await enqueueDriverPush(tx, event, title, body, { ...payload, category: channels.driverPush.category, eventType: event.type }, payload);
   }
 }
 
@@ -242,6 +449,7 @@ async function handleEvent(event: ClaimedOutboxEvent): Promise<void> {
     return;
   }
   if (event.type === 'push.send') {
+    await sendPushOutbox(event.payload as PushSendPayload, event.id);
     return;
   }
   if (event.type === 'payment.refund') {

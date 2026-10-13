@@ -214,7 +214,16 @@ _Verify (2026-10-13):_ `npm run -w apps/driver lint`, `npm run -w apps/driver ty
 
 ## Phase 15 — Notifications & real-time
 _Plan:_
-- [ ] Expo push sender + tickets · [ ] receipts cron + dead tokens · [ ] repeat-until-seen · [ ] quiet hours · [ ] all crons registered + check-ins · [ ] test push · [ ] event-matrix test
+- [x] Add `expo-server-sdk` to `apps/web` with an exact pinned version and update the lockfile.
+- [x] Expand `src/server/notifications/matrix.ts` to cover every `13-notifications-realtime.md` §2 domain-event row.
+- [x] Implement Expo push sending with chunking, stored `PushTicket` rows, capture-mode support, immediate dead-token cleanup and receipt polling.
+- [x] Wire `push.send` outbox handling, admin/driver recipient resolution, quiet-hours delaying and admin test-push.
+- [x] Add repeat-until-seen alerts, push receipts, hourly, data-retention and integrity cron routes and register every cron in `apps/web/vercel.json`.
+- [x] Add app-side Expo push token registration for Admin and Driver.
+- [x] Add end-to-end event-matrix tests proving email, push and in-app fan-out rows are exact for documented domain events.
+- [x] Run `npm run verify`, fix failures, update docs, commit, merge Phase 15 to `main`, then continue to Phase 16.
+
+_Verify (2026-10-13):_ `npm run verify` passed across lint, typecheck, tests and build. `@sv/web` tests now run file-sequentially against the shared Neon test branch; 6 files / 20 tests passed. Phase 15 event-matrix test passed and asserted every documented domain event row produces the expected email templates, push categories/apps, in-app notification rows and captured push tickets under `PUSH_MODE=capture`.
 
 ## Phase 16 — QA hardening
 _Plan:_

@@ -13,6 +13,7 @@ import { AppText, Button, Card } from '@/components/primitives';
 import { OfflineBanner } from '@/components/offline-banner';
 import { DriverPermissionGates } from '@/components/permission-gates';
 import { JobOfferModal, type JobOfferAlert } from '@/notifications/job-offer-modal';
+import { registerPushDevice } from '@/notifications/register-push';
 import { routeFromNotificationData, type NotificationData } from '@/notifications/routing';
 import { AuthProvider, useAuth } from '@/state/auth';
 
@@ -62,6 +63,24 @@ export function RootShell(props: { children: React.ReactNode }): React.ReactElem
 function RuntimeGates(props: { children: React.ReactNode }): React.ReactElement {
   const auth = useAuth();
   const [alerts, setAlerts] = useState<JobOfferAlert[]>([]);
+  useEffect(() => {
+    if (auth.status !== 'signed-in') return;
+    let cleanup: (() => void) | undefined;
+    let cancelled = false;
+    void registerPushDevice(auth.api)
+      .then((dispose) => {
+        if (cancelled) {
+          dispose();
+        } else {
+          cleanup = dispose;
+        }
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+      cleanup?.();
+    };
+  }, [auth.api, auth.status]);
   useEffect(() => {
     void Notifications.setNotificationCategoryAsync('JOB_OFFERED', [
       { buttonTitle: 'Open', identifier: 'OPEN', options: { opensAppToForeground: true } },

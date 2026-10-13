@@ -34,6 +34,7 @@ import { Prisma, prisma } from '@sv/db';
 import { z, type ZodType } from 'zod';
 import { apiJson, withApi } from '../request';
 import type { StaffRole } from '../auth/staff';
+import { processOutboxEventNow } from '../outbox/processor';
 
 export type AdminMethod = 'DELETE' | 'GET' | 'PATCH' | 'POST' | 'PUT';
 
@@ -269,6 +270,28 @@ function responseFor(match: RouteMatch): unknown {
   return { id, ok: true };
 }
 
+async function sendAdminTestPush(staff: { userId: string }): Promise<{ id: string; ok: true; queued: boolean }> {
+  const event = await prisma.outboxEvent.create({
+    data: {
+      dedupeKey: `admin.test_push:${staff.userId}:${new Date().toISOString()}`,
+      payload: json({
+        app: 'ADMIN',
+        body: 'If this arrived, this phone can receive urgent booking alerts.',
+        category: 'NEW_BOOKING',
+        data: { eventType: 'admin.test_push', type: 'NEW_BOOKING' },
+        sound: 'new-job.wav',
+        timeSensitive: true,
+        title: 'Speedy Van test push',
+        userId: staff.userId,
+      }),
+      type: 'push.send',
+    },
+    select: { id: true },
+  });
+  await processOutboxEventNow(event.id);
+  return { id: event.id, ok: true, queued: true };
+}
+
 export async function handleAdminRoute(request: Request, method: AdminMethod, path: string): Promise<Response> {
   const match = matchAdminRoute(method, path);
   if (!match) {
@@ -285,6 +308,9 @@ export async function handleAdminRoute(request: Request, method: AdminMethod, pa
     async ({ input, requestId, staff }) => {
       if (!staff) throw new Error('Missing staff context.');
       await writeAudit(input, match, staff, requestId);
+      if (match.definition.action === 'admin.test_push') {
+        return apiJson(await sendAdminTestPush(staff), { status: 201 }, requestId);
+      }
       return apiJson(responseFor(match), { status: method === 'POST' && match.definition.response === 'ok' ? 201 : 200 }, requestId);
     },
   );
