@@ -15,7 +15,12 @@ Codex adds a question here instead of guessing about money, prices, legal text, 
 
 ## Open
 
-_(none currently)_
+### Q4 — D1 hero reference still absent locally   (Repair D1, 2026-10-13)
+**Blocking:** yes — D1 implementation cannot start because the required reference files are not available to inspect, run in a browser, or port.
+**Context:** After finishing and fast-forward merging R1 into `main`, I created `repair/D1-landing-design` from `main` and checked for `docs/design/hero-reference/`. It is still absent in this worktree. A recursive search under `c:\speedy van` did not find a `hero-reference` directory, and `git fetch origin --prune` did not expose `docs/design/hero-reference/` on `origin/main`.
+**Options:** A) Add `docs/design/hero-reference/` to this branch with `README.md`, `index.html`, `screenshots/`, `data/scotland-map.json` and `scripts/`, then tell Codex to resume D1. B) Provide the branch/commit/archive path that contains those exact files so Codex can restore them. Recommendation: A, because D1 requires exact visual matching and the source reference should live in the repository.
+**Owner answer:**
+**Resolved:**
 
 ## Resolved
 
