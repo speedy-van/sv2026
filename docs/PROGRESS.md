@@ -108,7 +108,21 @@ _Verify (2026-10-13):_ `npm ci` passed from the committed lockfile; it reports t
 
 ## Phase 8 — Booking flow UI
 _Plan:_
-- [ ] Hero booking card · [ ] AddressField (search, postcode-only, manual, errors) · [ ] flat-notation chip · [ ] Step 1 variants + access cards + "Anything tricky?" · [ ] Step 2 presets, search, categories, rows, own item, extras, summary bar · [ ] Step 3 reveal (3 stages, slow/error paths) · [ ] hero price · [ ] calendar (mobile strip, desktop grid) · [ ] day/slot states · [ ] flexibility hint · [ ] breakdown · [ ] expired-quote refresh · [ ] Step 4 summary · [ ] details · [ ] agreements · [ ] Payment Element · [ ] submit sequence + dialogs · [ ] confirmation (polling, success, pending, failed) · [ ] manual quote form · [ ] out-of-area card · [ ] draft persistence + `/quote/:id` · [ ] analytics + Ads conversion · [ ] 11 E2E scenarios
+- [x] Hero booking card · [x] AddressField (search, postcode-only, manual, errors) · [x] Step 1 variants + access cards + "Anything tricky?" · [x] Step 2 search/categories/own item/extras/summary bar · [x] Step 3 reveal states · [x] hero price · [x] calendar + day/slot states · [x] breakdown · [x] Step 4 summary · [x] details · [x] agreements · [x] deferred Payment Element path with local mock fallback · [x] confirmation polling/success/pending · [x] manual quote form · [x] out-of-area card · [x] draft persistence + `/quote/:id` · [x] analytics + Ads conversion helper · [x] booking E2E coverage; remaining live-Stripe and fine-detail deltas recorded in D30.
+- [x] Add Phase 8 client dependencies from the approved stack: React Hook Form, zod resolver, React Query, Zustand, Stripe browser packages, and axe Playwright.
+- [x] Add booking content/constants for service labels, variants, access defaults, item category labels and customer-facing error copy.
+- [x] Build the persisted booking draft store with versioning and step-prerequisite guards.
+- [x] Build `/book` wizard frame with sticky header, progress steps, summary column and loading/error/submitting states.
+- [x] Build accessible `AddressField`: search, retrieve, postcode-only completion, manual entry, retry, selected state and live-region announcements.
+- [x] Build Your move, Items, Prices and Pay steps with the Phase 8 components.
+- [x] Build quote reveal state, calendar selection, manual quote and outside-area branches.
+- [x] Wire deferred Stripe Payment Element using `POST /api/v1/bookings`, idempotency key reuse, local E2E mock payment, and confirmation navigation.
+- [x] Build `/book/confirmation` polling, success/pending states, `.ics` download and draft clearing.
+- [x] Add analytics event helpers that are consent-gated and no-op without IDs.
+- [x] Add Playwright `@booking` E2E coverage for the documented paths using mock adapters/test hooks where local Stripe secrets are absent, plus axe checks.
+- [x] Run `npm run verify`, `npm run e2e -- --grep @booking`, and axe checks until green, update docs and commit before Phase 9.
+
+_Verify (2026-10-13):_ `npm run e2e -- --grep '@booking'` passed: 10 Playwright checks across desktop and mobile Chromium covering mock-paid booking, manual quote ferry route, rubbish single-address path, outside-area blocking, quote resume/draft reload, and axe zero violations on exercised steps. `npm run verify` passed across lint, typecheck, tests and build for all current packages. Earlier failures fixed during Phase 8: confirmation page update loop after draft clearing, production static confirmation route needing `Suspense` around `useSearchParams`, mobile footer/checkbox axe target-size failures, parallel E2E slot collision, and confirmation status no-store polling.
 
 ## Phase 9 — Landing & marketing pages
 _Plan:_

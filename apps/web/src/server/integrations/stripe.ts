@@ -29,7 +29,7 @@ export interface RefundTarget {
 let client: Stripe | null | undefined;
 
 function mockAllowed(): boolean {
-  return process.env.NODE_ENV !== 'production';
+  return process.env.NODE_ENV !== 'production' || process.env.E2E === '1';
 }
 
 function stripeClient(): Stripe | null {

@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 
 export function SkeletonCard(): ReactNode {
   return (
-    <div aria-label="Loading" aria-live="polite" className="state-card">
+    <div aria-label="Loading" aria-live="polite" className="state-card" role="status">
       <div className="skeleton" style={{ width: '42%' }} />
       <div className="skeleton" style={{ marginTop: 14, width: '72%' }} />
       <div className="skeleton skeleton-card" style={{ marginTop: 18 }} />

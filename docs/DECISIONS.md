@@ -96,6 +96,9 @@ Every decision that shapes the build, with the reason. Codex appends new entries
 | @upstash/ratelimit / @upstash/redis | 2.2.0 / 1.39.0 | 2026-10-12 |
 | resend / react-email | 6.32.1 / 6.11.1 | 2026-10-13 |
 | @react-email/components / @react-email/render | 1.0.12 / 2.1.0 | 2026-10-13 |
+| react-hook-form / @hookform/resolvers | 7.90.0 / 5.9.1 | 2026-10-13 |
+| @tanstack/react-query / zustand | 5.104.2 / 5.0.15 | 2026-10-13 |
+| @axe-core/playwright | 4.13.0 | 2026-10-13 |
 | zod | 4.6.7 | 2026-10-12 |
 | typescript | 6.0.3 | 2026-10-12 |
 
@@ -147,3 +150,9 @@ Every decision that shapes the build, with the reason. Codex appends new entries
 **Decision:** Do not run `npm audit fix --force` for the current Prisma-related high advisories. Keep Prisma CLI/client/adapter on `7.10.0` until a Prisma 7-compatible patched release is available.
 **Why:** `npm audit --omit=dev` reports high advisories through Prisma's transitive `deepmerge-ts` and `mysql2` dependencies, but npm's available fix is `prisma@6.19.3`, a major downgrade from the required Prisma 7 stack. Downgrading would break D07/D21 and the Phase 4 Prisma 7 `prisma-client` generator / `prisma.config.ts` setup. The application uses Postgres/Neon, not MySQL, so the `mysql2` advisory is in an unused Prisma CLI transitive path.
 **Alternatives considered:** Force-downgrade Prisma to 6.19.3 (rejected because Phase 4 explicitly required Prisma 7 and verify is green on Prisma 7); ignore the audit output without documenting it (rejected because `npm ci` surfaces the warning every run).
+
+## D30 — Phase 8 local booking-flow verification mode
+**Decision:** Pin the Phase 8 browser/client packages exactly and support two payment modes in the booking UI: the documented deferred Stripe Payment Element when `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` exists, and a deterministic local mock payment mode when Stripe browser keys are absent. The mock mode is enabled for production-built local E2E only when `E2E=1`; production without Stripe secrets still fails closed. Booking analytics are implemented as consent-gated no-ops unless the public GA4/Google Ads IDs are present and the relevant consent is granted.
+**Why:** The local workspace does not expose Stripe browser or secret keys, so true card, 3-D Secure and decline flows cannot be exercised locally without external Stripe credentials. The Phase 8 E2E suite still needs to verify the customer booking path end-to-end through the real booking API, webhook-equivalent confirmation handling, polling, draft clearing and accessibility. The mock payment hook lets local and CI-like production builds prove the application path without calling Stripe, while the real Stripe Element path remains wired for environments with Stripe test keys.
+**Deviation recorded:** The local `@booking` E2E run covers the main paid booking, manual-quote ferry path, rubbish single-address path, outside-area blocking, draft reload and quote resume across desktop and mobile, with axe checks on exercised steps. It does not locally exercise Stripe's real 3-D Secure challenge, real declined-card retry, or the exact price-changed/slot-taken modal flows from `06-booking-flow.md` §10 because those require live Stripe test keys and additional mutation hooks. Server-side Phase 7 tests already cover stale price and late-payment/slot-taken money safety; Phase 16 should add full live-Stripe E2E once test credentials are available in the target CI/Vercel environment.
+**Alternatives considered:** Block Phase 8 on Stripe test secrets (rejected because the owner asked Codex to continue without more help); put fake card fields in the production UI (rejected because the real UI must use Stripe Payment Element); skip payment E2E entirely (rejected because the booking confirmation path is core revenue behavior).
