@@ -33,7 +33,7 @@
     "verify:launch": "tsx scripts/launch-check.ts"
   },
   "devDependencies": {
-    "@eslint/js": "9.39.5",
+    "@eslint/js": "10.0.1",
     "@next/eslint-plugin-next": "16.4.0",
     "@react-native/assets-registry": "0.86.3",
     "@rolldown/binding-wasm32-wasi": "^1.2.13",
