@@ -126,7 +126,18 @@ _Verify (2026-10-13):_ `npm run e2e -- --grep '@booking'` passed: 10 Playwright 
 
 ## Phase 9 — Landing & marketing pages
 _Plan:_
-- [ ] S1 hero + route map · [ ] S2 what you get · [ ] S3 how it works · [ ] S4 services list · [ ] S5 price explainer · [ ] S6 areas · [ ] S7 example prices · [ ] S8 reviews (hidden < 3) · [ ] S9 FAQs · [ ] S10 final card · [ ] 10 service pages + index · [ ] pricing · [ ] how it works · [ ] about · [ ] contact + form · [ ] reviews page · [ ] help · [ ] guides index + template + 6 drafts · [ ] drive with us · [ ] legal drafts · [ ] "from" prices job · [ ] Lighthouse budgets
+- [x] Centralise Phase 9 marketing content for services, FAQs, legal drafts and guides under `apps/web/src/content`.
+- [x] Add server helpers for public settings, active pricing, honest "from" prices, FAQ rendering, reviews and JSON-LD.
+- [x] Replace the landing page with all required sections S1-S10 while hiding missing business facts instead of showing placeholders.
+- [x] Add `/services`, the 10 service detail pages, breadcrumbs, service JSON-LD and service-specific booking-card defaults.
+- [x] Add `/pricing`, `/how-it-works`, `/about`, `/contact`, `/reviews`, `/help`, `/guides`, `/drive-with-us`, legal draft pages and accessibility page.
+- [x] Add a validated contact form endpoint and client form states with rate limiting and no secret or PII logging.
+- [x] Add responsive marketing CSS for tables, accordions, service rows, legal banners, contact form states and guide/review empty states.
+- [x] Add `@marketing` Playwright checks for facts hiding, H1/meta structure, contact form, FAQ/search, service pages and keyboard-accessible content.
+- [x] Update Lighthouse verification to cover `/` and `/services/house-removals` with the Phase 9 category thresholds.
+- [x] Run `npm run verify`, Lighthouse and `npm run e2e -- --grep @marketing` until green, then update docs and commit before Phase 10.
+
+_Verify (2026-10-13):_ `npm run verify` passed across lint, typecheck, tests and build. `npm run lighthouse -w @sv/web` passed on `/` and `/services/house-removals`: performance 96/96, accessibility 100/100, best practices 96/96, SEO 100/100. `npm run e2e -- --grep '@marketing'` passed 10 Playwright checks across desktop and mobile for the landing page, service page, FAQ search, contact form states, pricing/reviews/legal stable states, and missing-fact hiding.
 
 ## Phase 10 — SEO
 _Plan:_

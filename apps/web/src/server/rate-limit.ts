@@ -11,6 +11,7 @@ export type PublicRateLimitKind =
   | 'addressSuggest'
   | 'addressRetrieve'
   | 'catalogue'
+  | 'contact'
   | 'mapStatic'
   | 'quote'
   | 'manualQuote'
@@ -28,6 +29,10 @@ const rules = {
   ],
   addressRetrieve: [{ limit: 30, windowSeconds: 60 }],
   catalogue: [{ limit: 120, windowSeconds: 60 }],
+  contact: [
+    { limit: 5, windowSeconds: 3600 },
+    { limit: 20, windowSeconds: 86400 },
+  ],
   mapStatic: [{ limit: 60, windowSeconds: 60 }],
   quote: [
     { limit: 10, windowSeconds: 60 },
