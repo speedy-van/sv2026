@@ -20,11 +20,11 @@
   },
   "dependencies": {
     "@neondatabase/serverless": "1.2.0",
-    "@prisma/adapter-neon": "7.10.0",
-    "@prisma/client": "7.10.0",
+    "@prisma/adapter-neon": "7.10.1",
+    "@prisma/client": "7.10.1",
     "@sv/contracts": "0.0.0",
     "@sv/pricing": "0.0.0",
-    "dotenv": "18.0.7",
+    "dotenv": "18.0.8",
     "yaml": "2.9.1"
   }
 }
