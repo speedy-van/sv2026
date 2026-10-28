@@ -35,6 +35,7 @@ enum AppKind {
 enum DevicePlatform {
   IOS
   ANDROID
+  WEB
 }
 
 enum Slot {
@@ -183,6 +184,7 @@ model User {
   email         String         @unique // always lower-case
   name          String
   phone         String?
+  passwordHash  String? // optional versioned scrypt hash; OTP-only accounts remain supported
   role          Role
   status        UserStatus     @default(INVITED)
   createdAt     DateTime       @default(now())
@@ -218,13 +220,14 @@ model Session {
   app                      AppKind
   refreshTokenHash         String         @unique
   previousRefreshTokenHash String?        @unique // reuse of this ⇒ revoke session (token theft)
+  lastRefreshRequestId     String?        @db.Uuid // exact native retry receipt; never stores plaintext refresh tokens
   deviceId                 String
   deviceName               String?
   platform                 DevicePlatform
   appVersion               String?
   createdAt                DateTime       @default(now())
   lastUsedAt               DateTime       @default(now())
-  expiresAt                DateTime
+  expiresAt                DateTime? // null only for ADMIN sessions that remain valid until explicitly revoked
   revokedAt                DateTime?
   revokedReason            String?
   pushDevices              PushDevice[]
@@ -286,7 +289,7 @@ model DriverProfile {
   user             User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
   licenceExpiry    DateTime?              @db.Date
   rightToWorkAt    DateTime?
-  payoutPercent    Int                    @default(0) // 0–100 of booking total; owner sets per driver
+  payoutPercent    Int?                   // null when payment is agreed by phone; existing configured rates remain intact
   defaultVanId     String?
   defaultVan       Van?                   @relation(fields: [defaultVanId], references: [id], onDelete: SetNull)
   homePostcode     String?
@@ -501,6 +504,7 @@ model Booking {
   cancelledBy                 CancelledBy?
   cancelReason                String?
   completedAt                 DateTime?
+  deletedAt                   DateTime? // reversible admin list cleanup; accounting/history rows are retained
   version                     Int                  @default(0) // optimistic concurrency for admin edits
   createdAt                   DateTime             @default(now())
   updatedAt                   DateTime             @updatedAt
@@ -565,6 +569,18 @@ model CapacityOverride {
   capacity    Int // 0 = closed
   reason      String?
   createdById String?
+  createdAt   DateTime @default(now())
+
+  @@unique([date, slot])
+}
+
+// Manual stop on new reservations; numeric overrides/rules remain unchanged for reopening.
+model CapacityClosure {
+  id          String   @id @default(cuid())
+  date        DateTime @db.Date
+  slot        Slot
+  reason      String
+  createdById String
   createdAt   DateTime @default(now())
 
   @@unique([date, slot])
@@ -790,6 +806,46 @@ model ContactMessage {
 }
 
 // ───────────────────────────── Platform ─────────────────────────────
+
+model WebsiteVisitorPresence {
+  id         String   @id @db.Uuid // opaque random UUID issued by the server after analytics consent
+  lastSeenAt DateTime
+
+  @@index([lastSeenAt])
+}
+
+// Customer credentials are random opaque cookies. Only their SHA-256 hashes are stored.
+model ChatConversation {
+  id                   String        @id @default(cuid())
+  customerTokenHash    String        @unique
+  customerName         String?       @db.VarChar(80)
+  expiresAt            DateTime
+  customerReadSequence BigInt        @default(0)
+  adminReadSequence    BigInt        @default(0)
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+  lastMessageAt        DateTime      @default(now())
+  messages             ChatMessage[]
+
+  @@index([lastMessageAt, id])
+  @@index([expiresAt])
+}
+
+model ChatMessage {
+  sequence        BigInt           @id @default(autoincrement())
+  id              String           @unique @default(cuid())
+  conversationId  String
+  conversation    ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  clientMessageId String           @db.Uuid
+  sender          String           @db.VarChar(8)
+  senderUserId    String? // staff attribution; deliberately omitted from every customer/admin message DTO
+  body            String           @db.VarChar(2000)
+  createdAt       DateTime         @default(now())
+
+  @@unique([conversationId, clientMessageId])
+  @@index([conversationId, sequence])
+  @@index([conversationId, sender, sequence])
+}
 
 model Setting {
   key         String   @id // see 03-database.md §5 for every key and its zod schema

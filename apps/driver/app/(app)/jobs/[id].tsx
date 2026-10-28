@@ -3,7 +3,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Badge, Button, Card, Screen, AppText, Row } from '@/components/primitives';
 import { EmptyState } from '@/components/screen-state';
 import { getJob, isJobStage } from '@/data/driver';
-import { formatPence } from '@/earnings/format';
+import { formatAgreedEarning } from '@/earnings/format';
 import { stageLabel } from '@/job/stages';
 import { useAuth } from '@/state/auth';
 
@@ -23,7 +23,7 @@ export default function JobDetailScreen(): React.ReactElement {
               <Badge label={detail.status} tone={detail.status === 'COMPLETED' ? 'success' : 'neutral'} />
               <Badge label={detail.dispatchStatus} tone={detail.dispatchStatus === 'ACCEPTED' ? 'success' : 'warning'} />
             </Row>
-            <AppText size="lg" weight="bold">{formatPence(detail.earningPence)}</AppText>
+            <AppText size="lg" weight="bold">{formatAgreedEarning(detail.earningPence)}</AppText>
             <AppText muted>{detail.moveDate} · {detail.slot} · {detail.service}</AppText>
             <AppText>{detail.contact.name} · {detail.contact.phone}</AppText>
             <AppText muted>{detail.customerNotes ?? 'No customer notes'}</AppText>
@@ -40,6 +40,15 @@ export default function JobDetailScreen(): React.ReactElement {
           <Card>
             <AppText weight="bold">Current stage</AppText>
             <AppText>{isJobStage(detail.jobStage) ? stageLabel(detail.jobStage) : detail.jobStage}</AppText>
+          </Card>
+          <Card>
+            <AppText weight="bold">Inventory</AppText>
+            {detail.items.length > 0 ? detail.items.map((item) => (
+              <Row key={item.itemId}>
+                <AppText>{item.name}</AppText>
+                <AppText muted>x{item.quantity}</AppText>
+              </Row>
+            )) : <AppText muted>No inventory recorded</AppText>}
           </Card>
         </>
       ) : (

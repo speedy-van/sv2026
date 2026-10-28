@@ -6,11 +6,16 @@ import { StructuredData } from '@/components/marketing/structured-data';
 import { getRenderedFaqs } from '@/server/marketing';
 import { getPublicSettings } from '@/server/settings';
 
-export const metadata: Metadata = {
-  alternates: { canonical: '/help' },
-  description: 'Speedy Van FAQs for booking, pricing, payments, coverage and move-day questions.',
-  title: 'Help and FAQs',
-};
+import { createPageMetadata, getSeoSettings } from '@/server/seo';
+
+export async function generateMetadata(): Promise<Metadata> {
+  return createPageMetadata({
+    path: '/help',
+    settings: await getSeoSettings(),
+    description: 'Speedy Van FAQs for booking, pricing, payments, coverage and move-day questions.',
+    title: 'Help and FAQs',
+  });
+}
 
 export default async function HelpPage(): Promise<ReactNode> {
   const [faqs, settings] = await Promise.all([getRenderedFaqs(), getPublicSettings()]);

@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { Badge, Button, Card, AppText, Row } from '@/components/primitives';
 import type { JobCard } from '@/data/driver';
-import { formatPence } from '@/earnings/format';
+import { formatAgreedEarning } from '@/earnings/format';
 
 function stageTone(stage: string): 'danger' | 'neutral' | 'success' | 'warning' {
   if (stage === 'COMPLETED') return 'success';
@@ -21,7 +21,7 @@ export function JobCardView(props: { job: JobCard; mode?: 'offer' | 'run' }): Re
       <AppText size="lg" weight="bold">{props.job.route}</AppText>
       <AppText muted>{props.job.moveDate} · {props.job.slot} · {props.job.service}</AppText>
       <Row>
-        <AppText weight="bold">{formatPence(props.job.earningPence)}</AppText>
+        <AppText weight="bold">{formatAgreedEarning(props.job.earningPence)}</AppText>
         <Button label={action} onPress={() => { router.push(path); }} tone="secondary" />
       </Row>
     </Card>

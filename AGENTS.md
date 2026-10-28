@@ -68,6 +68,12 @@ Real people use this to move their homes. A glitch costs a family their moving d
 
 **R16 — One truth per fact.** Booking status transitions only through `packages/contracts/src/booking-state.ts`. Business settings only from `Setting`. Prices only from `packages/pricing`. Copy for repeated UI text from `apps/web/src/content/`. Never duplicate a constant across apps — put it in a package.
 
+**R17 — No shells.** Code outside test files must never contain fixture or sample data, hard-coded counts or money, handlers that do nothing, endpoints that return canned responses, empty upload payloads, placeholder geodata, or UI text that describes a feature instead of providing it. A feature that can't be finished stays out, and its PROGRESS item stays unticked.
+
+**R18 — Missing input means stop.** If a key, account, device or owner decision is missing, write the question in `docs/QUESTIONS.md` and stop that item. Never substitute fallback data or a fake service in a production code path. Test fakes are allowed only in tests, behind the existing test-mode switches that production refuses. An instruction to "continue without more input" never overrides this rule.
+
+**R19 — Honest progress.** Tick a PROGRESS item only when it works end to end against the real API and database, and write the name of the test that proves it next to the tick.
+
 ---
 
 ## 4. Stack

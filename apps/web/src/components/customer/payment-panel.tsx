@@ -1,10 +1,14 @@
 'use client';
 
 import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js';
-import { loadStripe } from '@stripe/stripe-js';
+import { loadStripe, type PaymentIntent } from '@stripe/stripe-js';
 import { formatGBP } from '@sv/contracts';
 import { CreditCard } from 'lucide-react';
 import { useState, type ReactNode, type SyntheticEvent } from 'react';
+import { paymentCopy } from '@/content/payments';
+import { stripeTestMode } from '@/lib/payment-mode';
+import { PaymentModeNotice } from './payment-mode-notice';
+import { customerPaymentResult, type CustomerPaymentResult } from './payment-result';
 
 const stripeKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? '';
 const stripePromise = stripeKey ? loadStripe(stripeKey) : null;
@@ -35,33 +39,75 @@ function StripeConfirmForm({ amountPence, clientSecret, onPaid }: { amountPence:
   const elements = useElements();
   const stripe = useStripe();
   const [message, setMessage] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [state, setState] = useState<CustomerPaymentResult['state']>('incomplete');
+
+  function showResult(status: PaymentIntent['status'] | undefined): void {
+    const result = customerPaymentResult(status);
+    setState(result.state);
+    setMessage(result.message);
+    if (result.state === 'paid') onPaid();
+  }
 
   async function submit(event: SyntheticEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
-    if (!stripe || !elements) return;
-    const submitted = await elements.submit();
-    if (submitted.error) {
-      setMessage(submitted.error.message ?? 'Check your payment details.');
-      return;
+    if (!stripe || !elements || busy || state === 'pending' || state === 'canceled') return;
+    setBusy(true);
+    setMessage('');
+    try {
+      const submitted = await elements.submit();
+      if (submitted.error) {
+        setMessage(submitted.error.message ?? 'Check your payment details.');
+        return;
+      }
+      const result = await stripe.confirmPayment({
+        clientSecret,
+        confirmParams: { return_url: window.location.href },
+        elements,
+        redirect: 'if_required',
+      });
+      if (result.error) {
+        setMessage(result.error.message ?? paymentCopy.failed);
+        return;
+      }
+      showResult(result.paymentIntent.status);
+    } catch {
+      setMessage(paymentCopy.checkFailed);
+      setState('pending');
+    } finally {
+      setBusy(false);
     }
-    const result = await stripe.confirmPayment({
-      clientSecret,
-      confirmParams: { return_url: window.location.href },
-      elements,
-      redirect: 'if_required',
-    });
-    if (result.error) {
-      setMessage(result.error.message ?? 'Payment failed.');
-      return;
+  }
+
+  async function checkPayment(): Promise<void> {
+    if (!stripe || busy) return;
+    setBusy(true);
+    try {
+      const result = await stripe.retrievePaymentIntent(clientSecret);
+      if (result.error) {
+        setMessage(result.error.message ?? paymentCopy.checkFailed);
+        return;
+      }
+      showResult(result.paymentIntent.status);
+    } catch {
+      setMessage(paymentCopy.checkFailed);
+    } finally {
+      setBusy(false);
     }
-    setMessage('Payment received - thank you.');
-    onPaid();
   }
 
   return (
-    <form className="contact-form" onSubmit={(event) => void submit(event)}>
+    <form aria-busy={busy} className="contact-form" onSubmit={(event) => void submit(event)}>
       <PaymentElement options={{ layout: 'accordion' }} />
-      <button className="button button-primary" disabled={!stripe} type="submit">Pay {formatGBP(amountPence)}</button>
+      <button className="button button-primary" disabled={!stripe || !elements || busy || state === 'pending' || state === 'canceled'} type="submit">
+        {busy ? paymentCopy.checking : `Pay ${formatGBP(amountPence)}`}
+      </button>
+      {state === 'pending' ? (
+        <button className="button button-secondary" disabled={!stripe || busy} onClick={() => void checkPayment()} type="button">
+          {paymentCopy.checkStatus}
+        </button>
+      ) : null}
+      {state === 'canceled' ? <a className="text-link" href="/contact">{paymentCopy.contact}</a> : null}
       <p aria-live="polite" className="form-status">{message}</p>
     </form>
   );
@@ -101,7 +147,7 @@ export function PaymentPanel({ initialData, token }: { initialData: PaymentReque
     return <div className="component-card"><h1>This payment link has expired.</h1><p>Call us and we'll send a new one.</p></div>;
   }
   if (data.paid) {
-    return <div className="component-card"><h1>Payment received - thank you</h1><p>{data.reference}</p></div>;
+    return <div className="component-card"><h1>{stripeTestMode ? paymentCopy.testPaymentTitle : 'Payment received - thank you'}</h1><PaymentModeNotice /><p>{data.reference}</p></div>;
   }
 
   return (
@@ -109,6 +155,7 @@ export function PaymentPanel({ initialData, token }: { initialData: PaymentReque
       <CreditCard aria-hidden="true" color="#6D3BD7" size={28} />
       <span className="status-badge">{data.reference}</span>
       <h1>{data.description}</h1>
+      <PaymentModeNotice />
       <p>{data.summary}</p>
       <p className="price-line"><strong>{formatGBP(data.amountPence)}</strong><span>{data.validUntil ? `Price held until ${new Date(data.validUntil).toLocaleString('en-GB')}` : 'Due now'}</span></p>
       <label className="toggle-row">

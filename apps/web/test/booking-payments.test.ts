@@ -14,6 +14,8 @@ const createdBookingRefs: string[] = [];
 const createdCustomerEmails: string[] = [];
 const createdStripeEvents: string[] = [];
 const testStartedAt = new Date();
+const originalStripeSecretKey = process.env.STRIPE_SECRET_KEY;
+const originalStripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
 const pickupAccess: QuoteRequest['pickupAccess'] = {
   carryMetres: 10,
@@ -155,6 +157,8 @@ async function sendStripeEvent(event: unknown): Promise<Response> {
 
 beforeAll(async () => {
   process.env.MAPBOX_MODE = 'mock';
+  process.env.STRIPE_SECRET_KEY = '';
+  process.env.STRIPE_WEBHOOK_SECRET = '';
   await prisma.user.upsert({
     create: {
       email: 'phase7-admin@example.test',
@@ -168,6 +172,8 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
+  process.env.STRIPE_SECRET_KEY = originalStripeSecretKey;
+  process.env.STRIPE_WEBHOOK_SECRET = originalStripeWebhookSecret;
   await prisma.outboxEvent.deleteMany({
     where: {
       OR: [

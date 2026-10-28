@@ -2,12 +2,32 @@ import 'server-only';
 
 import { formatGBP, londonToday, parseIsoDate, type PublicSettings } from '@sv/contracts';
 import { prisma } from '@sv/db';
-import { computeQuote, formatPriceBreakdownLines, type InventoryLine, type PricingConfig, type PricingInput } from '@sv/pricing';
-import { DEFAULT_PRICING_CONFIG } from '@sv/pricing';
+import {
+  computeQuote,
+  formatPriceBreakdownLines,
+  type InventoryLine,
+  type PricingConfig,
+  type PricingInput,
+} from '@sv/pricing';
+import { cache } from 'react';
 import { FAQ_SEED } from '@/content/faqs';
+import {
+  locationsBySlug,
+  routeDistanceFor,
+  routesBySlug,
+  type LocationPage,
+  type RoutePage,
+} from '@/content/locations';
+import {
+  featuredRouteSlugs,
+  removalExampleProfiles,
+  servicePresetSlugs,
+  type ExampleProfile,
+} from '@/content/seo-examples';
 import { serviceContent, type ServiceContent } from '@/content/services';
 import { overlayAvailability } from './services/availability';
-import { getActivePricingConfig } from './services/catalogue';
+import { getActivePricingConfig, getCatalogue } from './services/catalogue';
+import { jobSize } from './services/job-size';
 import { getOperationsSettings, getSetting } from './settings';
 
 export interface FromPrice {
@@ -70,7 +90,6 @@ const profileItems: Record<ServiceContent['slug'], Array<{ slug: string; quantit
     { quantity: 8, slug: 'box-archive' },
   ],
   'piano-moving': [{ quantity: 1, slug: 'piano-upright' }],
-  'rubbish-removal': [{ quantity: 5, slug: 'bag-black' }],
   'same-day-delivery': [{ quantity: 1, slug: 'box-medium' }],
   'storage-moves': [{ quantity: 5, slug: 'box-medium' }],
   'student-moves': [
@@ -81,60 +100,51 @@ const profileItems: Record<ServiceContent['slug'], Array<{ slug: string; quantit
   ],
 };
 
-function fallbackVolume(slug: string): number {
-  const volumes: Record<string, number> = {
-    armchair: 0.6,
-    'bag-black': 0.05,
-    'bag-holdall': 0.05,
-    'bed-double': 1.7,
-    'box-archive': 0.05,
-    'box-large': 0.13,
-    'box-medium': 0.08,
-    'box-small': 0.04,
-    'chair-office': 0.3,
-    'chest-of-drawers': 0.55,
-    'desk-office': 0.7,
-    'dining-chair': 0.15,
-    'dining-table-small': 0.55,
-    'piano-upright': 1.2,
-    'sofa-2-seater': 1,
-    'sofa-3-seater': 1.4,
-    suitcase: 0.1,
-    'tv-small': 0.2,
-    'tv-unit': 0.4,
-    'wardrobe-double': 1.3,
-    workstation: 0.15,
-  };
-  return volumes[slug] ?? 0.3;
+const marketingCatalogue = cache(getCatalogue);
+
+async function inventoryForProfile(
+  profile: Pick<ExampleProfile, 'items' | 'preset'>,
+): Promise<InventoryLine[] | null> {
+  const catalogue = await marketingCatalogue();
+  const items = profile.preset
+    ? catalogue.presets.find((preset) => preset.slug === profile.preset)?.items
+    : profile.items;
+  if (!items?.length) return null;
+  const rows = new Map(catalogue.items.map((item) => [item.slug, item]));
+  const inventory: InventoryLine[] = [];
+  for (const item of items) {
+    const row = rows.get(item.itemSlug);
+    if (!row) return null;
+    inventory.push({
+      itemId: row.slug,
+      name: row.name,
+      quantity: item.quantity,
+      unitVolumeM3: row.unitVolumeM3,
+    });
+  }
+  return inventory;
 }
 
-async function inventoryFor(service: ServiceContent): Promise<InventoryLine[]> {
-  const profile = profileItems[service.slug] ?? [];
-  const slugs = profile.map((item) => item.slug);
-  const rows = await prisma.item
-    .findMany({
-      where: { slug: { in: slugs } },
-      select: { name: true, slug: true, volumeM3: true },
-    })
-    .catch(() => []);
-  const bySlug = new Map(rows.map((row) => [row.slug, row]));
-  return profile.map((item) => {
-    const row = bySlug.get(item.slug);
-    return {
-      itemId: item.slug,
-      name: row?.name ?? item.slug.replaceAll('-', ' '),
-      quantity: item.quantity,
-      unitVolumeM3: row?.volumeM3 ?? fallbackVolume(item.slug),
-    };
-  });
+async function inventoryFor(service: ServiceContent): Promise<InventoryLine[] | null> {
+  const preset = servicePresetSlugs[service.slug];
+  return inventoryForProfile(
+    preset
+      ? { preset }
+      : {
+          items: (profileItems[service.slug] ?? []).map((item) => ({
+            itemSlug: item.slug,
+            quantity: item.quantity,
+          })),
+        },
+  );
 }
 
 function pricingInput(service: ServiceContent, inventory: InventoryLine[]): PricingInput {
   return {
     access: { carryMetres: 0, narrowAccess: false, permitZone: false },
     addons: { assembly: false, helpers: 0, packing: false },
-    distanceMiles: service.engineKey === 'rubbish' ? 0 : 5,
-    dropoff: service.engineKey === 'rubbish' ? null : { floor: 0, hasLift: false },
+    distanceMiles: 5,
+    dropoff: { floor: 0, hasLift: false },
     inventory,
     pickup: { floor: 0, hasLift: false },
     service: service.engineKey,
@@ -151,76 +161,179 @@ export function formatFromPrice(price: FromPrice): string {
   return `From ${wholePounds.format(price.pence / 100)}`;
 }
 
-export async function getPricingConfigForMarketing(): Promise<PricingConfig> {
-  try {
-    return (await getActivePricingConfig()).config;
-  } catch {
-    return DEFAULT_PRICING_CONFIG;
-  }
+export const getPricingConfigForMarketing = cache(
+  async (): Promise<PricingConfig> => (await getActivePricingConfig()).config,
+);
+
+const marketingContext = cache(async () => ({
+  config: await getPricingConfigForMarketing(),
+  operations: await getOperationsSettings(),
+}));
+
+async function availableFromPrice(input: PricingInput, label: string): Promise<FromPrice> {
+  const { config, operations } = await marketingContext();
+  if (operations.bookingPaused) return { label: 'Online booking is paused', pence: null };
+  const quote = computeQuote(input, config, londonToday());
+  if (quote.requiresManualQuote || input.distanceMiles > operations.maxInstantDistanceMiles)
+    return { label: 'Individual quote required', pence: null };
+  const availability = await overlayAvailability({
+    ...jobSize(quote.breakdown.inventory.volumeM3, operations),
+    calendar: quote.calendar,
+    operations,
+    service: input.service,
+  });
+  return availability.cheapest
+    ? { label, pence: roundUpWholePounds(availability.cheapest.pricePence) }
+    : {
+        label: input.service === 'same-day' ? 'Today: fully booked' : 'Fully booked for the next 4 weeks',
+        pence: null,
+      };
 }
 
-export async function getFromPrices(): Promise<Map<string, FromPrice>> {
-  const config = await getPricingConfigForMarketing();
+export const getFromPrices = cache(async (): Promise<Map<string, FromPrice>> => {
   const fromPrices = new Map<string, FromPrice>();
   for (const service of serviceContent) {
-    const input = pricingInput(service, await inventoryFor(service));
-    const quote = computeQuote(input, config, londonToday());
-    try {
-      const operations = await getOperationsSettings();
-      const availability = await overlayAvailability({
-        blocksSlots: 1,
-        calendar: quote.calendar,
-        capacityUnits: 1,
-        operations,
-        service: service.engineKey,
-      });
-      const cheapest = availability.cheapest;
-      if (!cheapest) {
-        fromPrices.set(service.slug, { label: service.engineKey === 'same-day' ? 'Today: fully booked' : 'Fully booked', pence: null });
-        continue;
-      }
-      fromPrices.set(service.slug, { label: service.profileLabel, pence: roundUpWholePounds(cheapest.pricePence) });
-    } catch {
-      const firstOpen = quote.calendar.flatMap((day) => day.slots).sort((left, right) => left.pricePence - right.pricePence)[0];
-      fromPrices.set(service.slug, { label: service.profileLabel, pence: firstOpen ? roundUpWholePounds(firstOpen.pricePence) : null });
-    }
+    const inventory = await inventoryFor(service);
+    fromPrices.set(
+      service.slug,
+      inventory
+        ? await availableFromPrice(pricingInput(service, inventory), service.profileLabel)
+        : { label: 'Price shown in booking', pence: null },
+    );
   }
   return fromPrices;
-}
+});
 
 export async function getWorkedExample(): Promise<{
   breakdown: Array<{ label: string; value: string }>;
   dateLabel: string;
   total: string;
 }> {
-  const config = await getPricingConfigForMarketing();
+  const { config, operations } = await marketingContext();
+  if (operations.bookingPaused)
+    return { breakdown: [], dateLabel: todayLabel(), total: 'Online booking is paused' };
   const home = serviceContent[0];
+  const inventory = await inventoryForProfile({ preset: '1-bed' });
+  if (!inventory) return { breakdown: [], dateLabel: todayLabel(), total: 'Price shown in booking' };
   const input = {
-    ...pricingInput(home, await inventoryFor(home)),
+    ...pricingInput(home, inventory),
+    variant: '1-bed',
     distanceMiles: 8,
     pickup: { floor: 2, hasLift: false },
   };
   const quote = computeQuote(input, config, londonToday());
-  const afternoon = quote.calendar[3]?.slots.find((slot) => slot.slot === 'AFTERNOON') ?? quote.calendar[0]?.slots[1];
-  const total = afternoon?.pricePence ?? quote.breakdown.staticSubtotalPence;
+  const available = await overlayAvailability({
+    ...jobSize(quote.breakdown.inventory.volumeM3, operations),
+    calendar: quote.calendar,
+    operations,
+    service: input.service,
+  });
+  const afternoon = available.calendar
+    .filter((day) => day.weekday >= 1 && day.weekday <= 5)
+    .flatMap((day) => day.slots)
+    .find((slot) => slot.slot === 'AFTERNOON' && slot.available);
   return {
-    breakdown: formatPriceBreakdownLines(quote.breakdown).map((line) => ({ label: line.label, value: formatGBP(line.pence) })),
+    breakdown: formatPriceBreakdownLines(quote.breakdown).map((line) => ({
+      label: line.label,
+      value: formatGBP(line.pence),
+    })),
     dateLabel: todayLabel(),
-    total: formatGBP(total),
+    total: afternoon ? formatGBP(afternoon.pricePence) : 'No weekday afternoon slot available',
   };
 }
 
-export async function getExampleRoutes(): Promise<Array<{ detail: string; price: string; route: string }>> {
-  const fromPrices = await getFromPrices();
-  const bySlug = (slug: string): string => formatFromPrice(fromPrices.get(slug) ?? { label: 'Price shown in booking', pence: null });
-  return [
-    { detail: '1-bedroom flat', price: bySlug('house-removals'), route: 'Glasgow to Edinburgh' },
-    { detail: 'Armchair', price: bySlug('man-and-van'), route: 'Paisley to Glasgow' },
-    { detail: 'Three-seater sofa', price: bySlug('furniture-delivery'), route: 'Dundee to Perth' },
-    { detail: 'Student room', price: bySlug('student-moves'), route: 'Stirling to Glasgow' },
-    { detail: 'Five archive boxes', price: bySlug('office-removals'), route: 'Aberdeen city centre' },
-    { detail: 'Five black bags', price: bySlug('rubbish-removal'), route: 'Edinburgh collection' },
-  ];
+export interface MarketingExample {
+  detail: string;
+  distanceMiles: number;
+  price: string;
+}
+
+async function priceExample(profile: ExampleProfile, distanceMiles: number): Promise<MarketingExample> {
+  const inventory = await inventoryForProfile(profile);
+  const price = inventory
+    ? await availableFromPrice(
+        {
+          access: { carryMetres: 0, narrowAccess: false, permitZone: false },
+          addons: { assembly: false, helpers: 0, packing: false },
+          distanceMiles,
+          dropoff: { floor: 0, hasLift: false },
+          inventory,
+          pickup: { floor: 0, hasLift: false },
+          service: profile.service,
+          variant: profile.variant,
+        },
+        profile.detail,
+      )
+    : { label: 'Price shown in booking', pence: null };
+  return { detail: profile.detail, distanceMiles, price: formatFromPrice(price) };
+}
+
+export async function getRouteExamples(route: RoutePage): Promise<MarketingExample[]> {
+  const examples: MarketingExample[] = [];
+  for (const profile of removalExampleProfiles)
+    examples.push(await priceExample(profile, route.distanceMiles));
+  return examples;
+}
+
+export async function getLocationExamplePrice(
+  location: LocationPage,
+  service: 'house-removals' | 'man-and-van',
+): Promise<FromPrice> {
+  if (location.ferry !== 'NO') return { label: 'Individual route check and quote required', pence: null };
+  const content = serviceContent.find((item) => item.engineKey === service);
+  if (!content) return { label: 'Price shown in booking', pence: null };
+  const inventory = await inventoryFor(content);
+  if (!inventory) return { label: 'Price shown in booking', pence: null };
+  const distanceMiles = service === 'man-and-van' ? 5 : routeDistanceFor(location).miles;
+  const destination = location.cityDistances[0];
+  const label =
+    service === 'man-and-van'
+      ? 'One armchair, 5 miles within the city, ground floors'
+      : `Studio preset, ${location.name} to ${destination ? (locationsBySlug.get(destination.slug)?.name ?? destination.slug) : 'the nearest city'}, ${String(distanceMiles)} miles, ground floors`;
+  return availableFromPrice({ ...pricingInput(content, inventory), distanceMiles }, label);
+}
+
+export async function getLocationExamples(
+  location: LocationPage,
+): Promise<Array<MarketingExample & { route: string }>> {
+  if (location.ferry !== 'NO') return [];
+  const examples: Array<MarketingExample & { route: string }> = [];
+  const small = removalExampleProfiles[0];
+  if (small) examples.push({ ...(await priceExample(small, 3)), route: `Within ${location.name}` });
+  const first = location.cityDistances[0];
+  const second = location.cityDistances[1];
+  if (first)
+    examples.push({
+      ...(await priceExample(
+        { detail: '1-bedroom flat preset', preset: '1-bed', service: 'house-removals', variant: '1-bed' },
+        first.miles,
+      )),
+      route: `${location.name} to ${locationsBySlug.get(first.slug)?.name ?? first.slug}`,
+    });
+  if (second)
+    examples.push({
+      ...(await priceExample(
+        { detail: '2-bedroom home preset', preset: '2-bed', service: 'house-removals', variant: '2-bed' },
+        second.miles,
+      )),
+      route: `${location.name} to ${locationsBySlug.get(second.slug)?.name ?? second.slug}`,
+    });
+  return examples;
+}
+
+export async function getExampleRoutes(): Promise<Array<MarketingExample & { href: string; route: string }>> {
+  const examples: Array<MarketingExample & { href: string; route: string }> = [];
+  for (const slug of featuredRouteSlugs) {
+    const route = routesBySlug.get(slug);
+    const profile = removalExampleProfiles[1];
+    if (route && profile)
+      examples.push({
+        ...(await priceExample(profile, route.distanceMiles)),
+        href: `/removals/${route.slug}`,
+        route: `${route.fromName} to ${route.toName}`,
+      });
+  }
+  return examples;
 }
 
 function humanPercent(multiplier: number): string {
@@ -234,24 +347,7 @@ function minLeadHours(settings: Awaited<ReturnType<typeof getOperationsSettings>
 export async function getRenderedFaqs(limit?: number): Promise<RenderedFaq[]> {
   const [settings, operations, config] = await Promise.all([
     import('./settings').then((module) => module.getPublicSettings()),
-    getOperationsSettings().catch(() => ({
-      bookingPaused: false,
-      calendarDays: DEFAULT_PRICING_CONFIG.calendarDays,
-      crossBorderMoves: null,
-      defaultCapacityPerSlot: 1,
-      jobSizeRules: [],
-      maxInstantDistanceMiles: 400,
-      minLeadMinutes: 120,
-      paymentHoldMinutes: 30,
-      phoneBookingHoldHours: 24,
-      quoteValidityMinutes: 60,
-      serviceAreaRule: 'TO_OR_FROM_SCOTLAND' as const,
-      slotWindows: {
-        AFTERNOON: { end: '17:00', label: '12pm-5pm', start: '12:00' },
-        EVENING: { end: '21:00', label: '5pm-9pm', start: '17:00' },
-        MORNING: { end: '12:00', label: '8am-12pm', start: '08:00' },
-      },
-    })),
+    getOperationsSettings(),
     getPricingConfigForMarketing(),
   ]);
   const rows = await prisma.faq
@@ -273,7 +369,10 @@ function renderFaqAnswer(
   config: PricingConfig,
 ): string {
   if (question === 'Do you move to and from England?') {
-    if (settings.operations.crossBorderMoves === true || operations.serviceAreaRule === 'TO_OR_FROM_SCOTLAND') {
+    if (
+      settings.operations.crossBorderMoves === true ||
+      operations.serviceAreaRule === 'TO_OR_FROM_SCOTLAND'
+    ) {
       return 'Yes - at least one address needs to be in Scotland.';
     }
     return 'Not at the moment. We cover moves within Scotland.';
@@ -289,11 +388,26 @@ function renderFaqAnswer(
     .replaceAll('{calendarDays}', String(config.calendarDays))
     .replaceAll('{minLeadHours}', minLeadHours(operations))
     .replaceAll('{phone}', settings.contact.phoneDisplay ?? 'the contact page')
-    .replaceAll('{rescheduleHours}', settings.cancellation.selfServiceRescheduleHours?.toString() ?? 'the cutoff shown in your booking')
-    .replaceAll('{freeHours}', settings.cancellation.freeCancellationHours?.toString() ?? 'the published cancellation window')
-    .replaceAll('{noRefundHours}', settings.cancellation.noRefundHours?.toString() ?? 'the final cancellation window')
-    .replaceAll('{latePercent}', settings.cancellation.lateCancellationRefundPercent?.toString() ?? 'the published refund')
-    .replace('Owner to write: hazardous materials, gas bottles, fuel, etc.', 'Contact Speedy Van before booking anything hazardous or unusual; the final restricted-items list is confirmed before launch.');
+    .replaceAll(
+      '{rescheduleHours}',
+      settings.cancellation.selfServiceRescheduleHours?.toString() ?? 'the cutoff shown in your booking',
+    )
+    .replaceAll(
+      '{freeHours}',
+      settings.cancellation.freeCancellationHours?.toString() ?? 'the published cancellation window',
+    )
+    .replaceAll(
+      '{noRefundHours}',
+      settings.cancellation.noRefundHours?.toString() ?? 'the final cancellation window',
+    )
+    .replaceAll(
+      '{latePercent}',
+      settings.cancellation.lateCancellationRefundPercent?.toString() ?? 'the published refund',
+    )
+    .replace(
+      'Owner to write: hazardous materials, gas bottles, fuel, etc.',
+      'Contact Speedy Van before booking anything hazardous or unusual; the final restricted-items list is confirmed before launch.',
+    );
 }
 
 export async function getReviewSummary(): Promise<ReviewSummary> {
@@ -310,7 +424,10 @@ export async function getReviewSummary(): Promise<ReviewSummary> {
   return {
     average,
     count,
-    distribution: [5, 4, 3, 2, 1].map((rating) => ({ count: reviews.filter((review) => review.rating === rating).length, rating })),
+    distribution: [5, 4, 3, 2, 1].map((rating) => ({
+      count: reviews.filter((review) => review.rating === rating).length,
+      rating,
+    })),
     reviews: reviews.map((review) => ({
       comment: review.comment,
       date: dateLabel.format(review.createdAt),
@@ -322,7 +439,6 @@ export async function getReviewSummary(): Promise<ReviewSummary> {
 }
 
 export async function showDraftLegalBanner(): Promise<boolean> {
-  if (process.env.NODE_ENV === 'production') return false;
   const launch = await getSetting('launch').catch(() => ({ legalApprovedAt: null }));
   return !launch.legalApprovedAt;
 }

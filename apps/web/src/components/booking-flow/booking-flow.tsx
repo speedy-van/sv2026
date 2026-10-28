@@ -1,7 +1,6 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import NumberFlow from '@number-flow/react';
 import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
@@ -18,21 +17,38 @@ import {
 } from '@sv/contracts';
 import {
   AlertTriangle,
+  Bath,
+  BedDouble,
+  BriefcaseBusiness,
   CalendarDays,
   Check,
+  ChevronDown,
   ChevronLeft,
+  ChevronRight,
+  CookingPot,
   CreditCard,
+  Flower2,
   Loader2,
   MapPin,
+  Package,
   PackagePlus,
   Search,
   ShieldCheck,
+  Sofa,
   Truck,
+  User,
+  Users,
+  UtensilsCrossed,
+  X,
+  type LucideIcon,
 } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Suspense, useEffect, useRef, useState, type ReactNode } from 'react';
+import { Suspense, useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useForm } from 'react-hook-form';
 import type { z } from 'zod';
+import { bookingNavigationCopy, bookingSteps as steps } from '../../content/booking-navigation';
+import { bookingConfirmationCopy } from '@/content/booking-confirmation';
+import { PaymentModeNotice } from '../customer/payment-mode-notice';
 import { distanceBand, trackBookingEvent, trackBookingStart } from './analytics';
 import {
   confirmTestPayment,
@@ -58,20 +74,144 @@ import {
   type ServiceKey,
   type Slot,
 } from './booking-store';
-import { categoryLabels, serviceByKey, serviceOptions } from './content';
+import { serviceByKey, serviceOptions } from './content';
 
 const stripeKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? '';
 const stripePromise = stripeKey ? loadStripe(stripeKey) : null;
-const steps: Array<{ key: BookingStep; label: string }> = [
-  { key: 'move', label: 'Your move' },
-  { key: 'items', label: 'Items' },
-  { key: 'prices', label: 'Prices' },
-  { key: 'pay', label: 'Pay' },
-];
 
 type Suggestion = z.infer<typeof AddressSuggestionSchema>;
 type ContactInput = z.infer<typeof ContactSchema>;
 type ManualQuoteInput = z.infer<typeof ManualQuoteRequestSchema>;
+type InventoryItemConfig = { detail?: string; label: string; slug: string };
+type InventoryCategoryConfig = {
+  description?: string;
+  icon: LucideIcon;
+  items: InventoryItemConfig[];
+  key: string;
+  title: string;
+};
+
+const inventoryCategories: InventoryCategoryConfig[] = [
+  {
+    icon: BedDouble,
+    key: 'bedrooms',
+    title: 'Bedrooms',
+    items: [
+      { label: 'Single Bed & Mattress', slug: 'bed-single' },
+      { label: 'Double Bed & Mattress', slug: 'bed-double' },
+      { label: 'Kingsize Bed & Mattress', slug: 'bed-king' },
+      { label: 'Single Wardrobe', slug: 'wardrobe-single' },
+      { label: 'Double Wardrobe', slug: 'wardrobe-double' },
+      { label: 'Chest Of Drawers', slug: 'chest-of-drawers' },
+      { label: 'Bedside Table', slug: 'bedside-table' },
+      { label: 'Dressing Table', slug: 'dressing-table' },
+      { label: 'Television', slug: 'tv-small' },
+      { label: 'Side Table', slug: 'side-table' },
+    ],
+  },
+  {
+    icon: Sofa,
+    key: 'living',
+    title: 'Living',
+    items: [
+      { label: 'Two Seater Sofa', slug: 'sofa-2-seater' },
+      { label: 'Three Seater Sofa', slug: 'sofa-3-seater' },
+      { label: 'Four Seater Sofa', slug: 'sofa-4-seater' },
+      { label: 'Armchair', slug: 'armchair' },
+      { label: 'Coffee Table', slug: 'coffee-table' },
+      { label: 'Small Television/TV (Less than 30")', slug: 'tv-small' },
+      { label: 'Large Television/TV (Greater than 40")', slug: 'tv-large' },
+      { label: 'TV Stand', slug: 'tv-unit' },
+      { label: 'Bookcase', slug: 'bookcase-small' },
+      { label: 'Rug', slug: 'rug' },
+      { label: 'Floor Lamp', slug: 'floor-lamp' },
+    ],
+  },
+  {
+    icon: UtensilsCrossed,
+    key: 'dining',
+    title: 'Dining',
+    items: [
+      { label: '6 Seater Dining Table', slug: 'dining-table-large' },
+      { label: '8 Seater Dining Table', slug: 'dining-table-8' },
+      { label: 'Dining Chair', slug: 'dining-chair' },
+      { label: 'Sideboard', slug: 'sideboard' },
+      { label: 'Display Cabinet', slug: 'display-cabinet' },
+      { label: 'Rug', slug: 'rug' },
+      { label: '4 Seater Dining Table', slug: 'dining-table-small' },
+    ],
+  },
+  {
+    icon: CookingPot,
+    key: 'kitchen',
+    title: 'Kitchen',
+    items: [
+      { label: 'Fridge Freezer', slug: 'fridge-freezer' },
+      { label: 'Washing Machine', slug: 'washing-machine' },
+      { label: 'Tumble Dryer', slug: 'tumble-dryer' },
+      { label: 'Microwave Oven', slug: 'microwave' },
+      { label: 'Cooker', slug: 'cooker' },
+      { label: 'Dishwasher', slug: 'dishwasher' },
+      { label: 'Kitchen Table', slug: 'dining-table-small' },
+      { label: 'Dining Chair', slug: 'dining-chair' },
+      { label: 'Bin', slug: 'kitchen-bin' },
+    ],
+  },
+  {
+    icon: BriefcaseBusiness,
+    key: 'office',
+    title: 'Office',
+    items: [
+      { label: 'Office Chair', slug: 'chair-office' },
+      { label: 'Desk', slug: 'desk-office' },
+      { label: 'Lamp', slug: 'office-lamp' },
+      { label: 'Display Cabinet', slug: 'display-cabinet' },
+      { label: 'Printer', slug: 'printer-desktop' },
+      { label: 'Filing Cabinet', slug: 'cabinet-filing-4' },
+      { label: 'Computer', slug: 'computer' },
+    ],
+  },
+  {
+    icon: Bath,
+    key: 'bathroom',
+    title: 'Bathroom',
+    items: [
+      { label: 'Large Mirror', slug: 'mirror-large' },
+      { label: 'Small Mirror', slug: 'mirror-small' },
+      { label: 'Rug', slug: 'rug' },
+      { label: 'Bathroom Cabinet', slug: 'bathroom-cabinet' },
+      { label: 'Bath Tub', slug: 'bath-tub' },
+    ],
+  },
+  {
+    icon: Flower2,
+    key: 'garden',
+    title: 'Garden',
+    items: [
+      { label: 'Garden Table', slug: 'garden-table' },
+      { label: 'Garden Chair', slug: 'garden-chair' },
+      { label: 'Lawn Mower', slug: 'lawn-mower' },
+      { label: 'Tool Box', slug: 'tool-box' },
+      { label: 'Bench', slug: 'garden-bench' },
+      { label: 'Parasol', slug: 'parasol' },
+      { label: 'Bicycle', slug: 'bicycle' },
+    ],
+  },
+  {
+    description: "Whether you're packing yourself or would like us to help, estimating how many boxes you'll need is important for an accurate quote.",
+    icon: Package,
+    key: 'boxes-bags',
+    title: 'Boxes & Bags',
+    items: [
+      { detail: 'Approx. 50 x 50 x 50 cm', label: 'Large Box', slug: 'box-large' },
+      { detail: 'Approx. 45 x 45 x 35 cm', label: 'Medium Box', slug: 'box-medium' },
+      { detail: 'Approx. 40 x 30 x 30 cm', label: 'Small Box', slug: 'box-small' },
+      { label: 'Wardrobe Box', slug: 'box-wardrobe' },
+      { label: 'Suitcase', slug: 'suitcase' },
+      { label: 'Bag', slug: 'bag-holdall' },
+    ],
+  },
+];
 
 function classNames(...values: Array<string | false | null | undefined>): string {
   return values.filter(Boolean).join(' ');
@@ -108,16 +248,22 @@ function useBookingStep(): [BookingStep, (step: BookingStep) => void] {
   const router = useRouter();
   const params = useSearchParams();
   const draft = useBookingDraft();
+  const [hydrated, setHydrated] = useState(false);
   const guard = firstIncompleteStep(draft);
   const step = selectedStep(params);
   const allowQuoteRestore = params.has('quote');
   useEffect(() => {
-    if (!allowQuoteRestore && stepIndex(step) > stepIndex(guard)) {
+    const unsubscribe = useBookingDraft.persist.onFinishHydration(() => { setHydrated(true); });
+    if (useBookingDraft.persist.hasHydrated()) setHydrated(true);
+    return unsubscribe;
+  }, []);
+  useEffect(() => {
+    if (hydrated && !allowQuoteRestore && stepIndex(step) > stepIndex(guard)) {
       router.replace(`/book?step=${guard}`);
     }
-  }, [allowQuoteRestore, guard, router, step]);
+  }, [allowQuoteRestore, guard, hydrated, router, step]);
   return [
-    !allowQuoteRestore && stepIndex(step) > stepIndex(guard) ? guard : step,
+    !hydrated ? 'move' : !allowQuoteRestore && stepIndex(step) > stepIndex(guard) ? guard : step,
     (next) => {
       router.push(`/book?step=${next}`);
     },
@@ -136,12 +282,20 @@ function InlineAlert({ children, tone = 'info' }: { children: ReactNode; tone?: 
 function ProgressSteps({ current, setStep }: { current: BookingStep; setStep: (step: BookingStep) => void }): ReactNode {
   const currentIndex = stepIndex(current);
   return (
-    <ol aria-label="Booking progress" className="booking-progress">
+    <ol aria-label={bookingNavigationCopy.progress} className="booking-progress">
       {steps.map((step, index) => (
         <li className={classNames(index === currentIndex && 'is-current', index < currentIndex && 'is-complete')} key={step.key}>
-          <button disabled={index > currentIndex} onClick={() => { setStep(step.key); }} type="button">
-            <span>{index + 1}</span>
-            {step.label}
+          <button
+            aria-current={index === currentIndex ? 'step' : undefined}
+            aria-label={bookingNavigationCopy.stepLabel(index + 1, step.label, index < currentIndex)}
+            disabled={index > currentIndex}
+            onClick={() => { setStep(step.key); }}
+            type="button"
+          >
+            <span aria-hidden="true" className="booking-step-marker">
+              {index < currentIndex ? <Check size={18} strokeWidth={2.5} /> : index + 1}
+            </span>
+            <span className="booking-step-label">{step.label}</span>
           </button>
         </li>
       ))}
@@ -316,23 +470,31 @@ function AddressField({
 
 function AccessCard({
   address,
+  kind,
   label,
   onChange,
   value,
 }: {
   address: Address | null;
+  kind: 'dropoff' | 'pickup';
   label: string;
   onChange: (next: AccessDetail) => void;
   value: AccessDetail;
 }): ReactNode {
   const [notesOpen, setNotesOpen] = useState(false);
+  const MarkerIcon = kind === 'pickup' ? Truck : MapPin;
   const suggestion = parseFlatNotation(address?.flat, address?.line1);
   function patch(next: Partial<AccessDetail>): void {
     onChange({ ...value, ...next });
   }
   return (
-    <section className="booking-panel">
-      <h2>{label}</h2>
+    <section className={classNames('booking-panel', 'access-card', kind === 'pickup' ? 'access-card-pickup' : 'access-card-dropoff')}>
+      <div className="access-card-title">
+        <span className="access-marker" aria-hidden="true">
+          <MarkerIcon size={18} />
+        </span>
+        <h2>{label}</h2>
+      </div>
       <p className="field-help">At {address?.line1 ?? 'the address'}</p>
       {suggestion ? (
         <div className="flat-suggestion">
@@ -343,7 +505,7 @@ function AccessCard({
         </div>
       ) : null}
       <div className="choice-grid compact">
-        {(['BASEMENT', 'GROUND', 'FLOOR'] as const).map((choice) => (
+        {(['GROUND', 'FLOOR', 'BASEMENT'] as const).map((choice) => (
           <button className={classNames('choice-card', value.floorChoice === choice && 'selected')} key={choice} onClick={() => { patch({ floorChoice: choice, floorNumber: choice === 'FLOOR' ? value.floorNumber ?? 1 : undefined }); }} type="button">
             {choice === 'BASEMENT' ? 'Basement' : choice === 'GROUND' ? 'Ground' : 'Floor'}
           </button>
@@ -411,22 +573,17 @@ function MoveStep({ goNext }: { goNext: () => void }): ReactNode {
     <div className="booking-step">
       <section className="booking-panel">
         <h1>Your move</h1>
-        <p className="lead">Choose the service, addresses and access details. Fixed prices come next.</p>
-        <div aria-label="Service type" className="choice-grid" role="radiogroup">
-          {serviceOptions.map((service) => {
-            const Icon = service.icon;
-            return (
-              <button aria-checked={draft.service === service.key} className={classNames('choice-card', draft.service === service.key && 'selected')} key={service.key} onClick={() => { chooseService(service.key); }} role="radio" type="button">
-                <Icon aria-hidden="true" size={22} />
-                <strong>{service.label}</strong>
-                <span>{service.description}</span>
-              </button>
-            );
-          })}
-        </div>
-      </section>
-      <section className="booking-panel">
-        <h2>Addresses</h2>
+        <p className="lead">Tell us what you are moving and where it is going.</p>
+        <label className="field">
+          Move type
+          <select className="text-input" onChange={(event) => { chooseService(event.target.value as ServiceKey); }} value={draft.service ?? ''}>
+            <option disabled value="">Choose move type</option>
+            {serviceOptions.map((service) => (
+              <option key={service.key} value={service.key}>{service.label}</option>
+            ))}
+          </select>
+          {selectedService ? <span className="field-help">{selectedService.description}</span> : null}
+        </label>
         <div className="field-grid">
           <AddressField label={selectedService?.requiresDropoff === false ? 'Collection address' : 'From'} onChange={(pickup) => { draft.setDraft({ pickup, quote: null, selectedDate: null, selectedSlot: null }); }} value={draft.pickup} />
           {selectedService?.requiresDropoff === false ? null : (
@@ -434,23 +591,40 @@ function MoveStep({ goNext }: { goNext: () => void }): ReactNode {
           )}
         </div>
         {!touchesScotland ? <InlineAlert tone="danger">We move people to and from Scotland. One address needs to be in Scotland.</InlineAlert> : null}
+        {selectedService && selectedService.variants.length > 1 ? (
+          <label className="field">
+            Size or type
+            <select className="text-input" onChange={(event) => { draft.setDraft({ quote: null, selectedDate: null, selectedSlot: null, variant: event.target.value }); }} value={draft.variant ?? selectedService.variants[0]?.key ?? ''}>
+              {selectedService.variants.map((variant) => (
+                <option key={variant.key} value={variant.key}>
+                  {variant.manualQuote ? `${variant.label} - individual price` : variant.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
       </section>
-      {selectedService && selectedService.variants.length > 1 ? (
-        <section className="booking-panel">
-          <h2>Size or type</h2>
-          <div className="choice-grid compact">
-            {selectedService.variants.map((variant) => (
-              <button className={classNames('choice-card', draft.variant === variant.key && 'selected')} key={variant.key} onClick={() => { draft.setDraft({ quote: null, selectedDate: null, selectedSlot: null, variant: variant.key }); }} type="button">
-                <strong>{variant.label}</strong>
-                {variant.manualQuote ? <span>We'll price this one individually.</span> : null}
-              </button>
-            ))}
-          </div>
-        </section>
-      ) : null}
-      {draft.pickup ? <AccessCard address={draft.pickup} label="Pickup access" onChange={(pickupAccess) => { draft.setDraft({ pickupAccess, quote: null }); }} value={draft.pickupAccess} /> : null}
-      {selectedService?.requiresDropoff !== false && draft.dropoff && draft.dropoffAccess ? <AccessCard address={draft.dropoff} label="Dropoff access" onChange={(dropoffAccess) => { draft.setDraft({ dropoffAccess, quote: null }); }} value={draft.dropoffAccess} /> : null}
       <button className="button button-primary booking-next" disabled={!canContinue || !touchesScotland} onClick={goNext} type="button">
+        Continue to access
+      </button>
+    </div>
+  );
+}
+
+function AccessStep({ goNext }: { goNext: () => void }): ReactNode {
+  const draft = useBookingDraft();
+  const selectedService = serviceByKey(draft.service);
+  const canContinue = Boolean(draft.pickup && (selectedService?.requiresDropoff === false || draft.dropoff));
+
+  return (
+    <div className="booking-step">
+      <section className="booking-panel">
+        <h1>Access</h1>
+        <p className="lead">A quick check for stairs, lifts and parking so the price is accurate.</p>
+      </section>
+      {draft.pickup ? <AccessCard address={draft.pickup} kind="pickup" label="Pickup access" onChange={(pickupAccess) => { draft.setDraft({ pickupAccess, quote: null }); }} value={draft.pickupAccess} /> : null}
+      {selectedService?.requiresDropoff !== false && draft.dropoff ? <AccessCard address={draft.dropoff} kind="dropoff" label="Dropoff access" onChange={(dropoffAccess) => { draft.setDraft({ dropoffAccess, quote: null }); }} value={draft.dropoffAccess ?? defaultAccess} /> : null}
+      <button className="button button-primary booking-next" disabled={!canContinue} onClick={goNext} type="button">
         Continue to items
       </button>
     </div>
@@ -460,29 +634,66 @@ function MoveStep({ goNext }: { goNext: () => void }): ReactNode {
 function ItemsStep({ goNext }: { goNext: () => void }): ReactNode {
   const draft = useBookingDraft();
   const catalogue = useQuery({ queryFn: getCatalogue, queryKey: ['catalogue'] });
-  const [category, setCategory] = useState('Popular');
-  const [search, setSearch] = useState('');
+  const [openCategories, setOpenCategories] = useState<Set<string>>(() => new Set(['bedrooms']));
+  const [categorySearches, setCategorySearches] = useState<Record<string, string>>({});
   const [customName, setCustomName] = useState('');
   const selected = new Map(draft.items.filter((item) => item.kind === 'catalogue' && item.itemSlug).map((item) => [item.itemSlug as string, item.quantity]));
-  const items = (catalogue.data?.items ?? []).filter((item) => {
-    const categoryMatch = category === 'Popular' ? item.aliases.length > 0 : item.category.toLowerCase() === category.toLowerCase();
-    const query = search.trim().toLowerCase();
-    const searchMatch = !query || item.name.toLowerCase().includes(query) || item.aliases.some((alias) => alias.toLowerCase().startsWith(query));
-    return categoryMatch && searchMatch;
-  }).slice(0, search ? 8 : 24);
+  const catalogueBySlug = new Map((catalogue.data?.items ?? []).map((item) => [item.slug, item]));
+  const missingItems = catalogue.data
+    ? inventoryCategories.flatMap((category) => category.items.filter((item) => !catalogueBySlug.has(item.slug)).map((item) => item.label))
+    : [];
+
+  function toggleCategory(key: string): void {
+    setOpenCategories((current) => {
+      const next = new Set(current);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
+  function categoryQuantity(category: InventoryCategoryConfig): number {
+    return category.items.reduce((sum, item) => sum + (selected.get(item.slug) ?? 0), 0);
+  }
+
+  function filteredItems(category: InventoryCategoryConfig): InventoryItemConfig[] {
+    const query = (categorySearches[category.key] ?? '').trim().toLowerCase();
+    if (!query) return category.items;
+    return category.items.filter((item) => {
+      const catalogueItem = catalogueBySlug.get(item.slug);
+      return (
+        item.label.toLowerCase().includes(query) ||
+        item.detail?.toLowerCase().includes(query) ||
+        catalogueItem?.name.toLowerCase().includes(query) ||
+        catalogueItem?.aliases.some((alias) => alias.toLowerCase().includes(query))
+      );
+    });
+  }
 
   function setQuantity(slug: string, quantity: number): void {
-    const item = catalogue.data?.items.find((candidate) => candidate.slug === slug);
+    const item = catalogueBySlug.get(slug);
     if (!item) return;
-    const rest = draft.items.filter((candidate) => candidate.itemSlug !== slug);
-    draft.setDraft({ items: quantity > 0 ? [...rest, { itemSlug: slug, kind: 'catalogue', quantity }] : rest, quote: null });
+    const nextQuantity = Math.max(0, Math.min(99, Math.trunc(quantity)));
+    const current = useBookingDraft.getState();
+    const rest = current.items.filter((candidate) => candidate.kind !== 'catalogue' || candidate.itemSlug !== slug);
+    draft.setDraft({
+      items: nextQuantity > 0 ? [...rest, { itemSlug: slug, kind: 'catalogue', quantity: nextQuantity }] : rest,
+      quote: null,
+      quotePublicId: null,
+      selectedDate: null,
+      selectedSlot: null,
+    });
   }
 
   function addCustom(): void {
     if (customName.trim().length < 2) return;
+    const current = useBookingDraft.getState();
     draft.setDraft({
-      items: [...draft.items, { kind: 'custom', name: customName.trim(), quantity: 1, size: 'M' }],
+      items: [...current.items, { kind: 'custom', name: customName.trim(), quantity: 1, size: 'M' }],
       quote: null,
+      quotePublicId: null,
+      selectedDate: null,
+      selectedSlot: null,
     });
     setCustomName('');
   }
@@ -491,52 +702,102 @@ function ItemsStep({ goNext }: { goNext: () => void }): ReactNode {
     <div className="booking-step">
       <section className="booking-panel">
         <h1>Items</h1>
-        <p className="lead">Add what you are moving. You can use a preset, search, or add your own item.</p>
+        <p className="lead">Open each room, search inside it, and add the items you are moving.</p>
         {catalogue.isLoading ? <div className="skeleton skeleton-card" /> : null}
         {catalogue.isError ? <InlineAlert tone="danger">We could not load the item catalogue. Try again.</InlineAlert> : null}
-        <div className="chip-row">
-          {categoryLabels.map((label) => (
-            <button className={classNames('chip', category === label && 'chip-selected')} key={label} onClick={() => { setCategory(label); }} type="button">
-              {label}
-            </button>
-          ))}
-        </div>
-        <input className="text-input" onChange={(event) => { setSearch(event.target.value); }} placeholder="Search items, like sofa or wardrobe" type="search" value={search} />
-        <div className="item-list">
-          {items.map((item) => {
-            const quantity = selected.get(item.slug) ?? 0;
+        {missingItems.length > 0 ? (
+          <InlineAlert tone="warning">Pricing metadata is missing for {missingItems.slice(0, 4).join(', ')}{missingItems.length > 4 ? ` and ${String(missingItems.length - 4)} more` : ''}.</InlineAlert>
+        ) : null}
+        <div className="inventory-accordion">
+          {inventoryCategories.map((category) => {
+            const Icon = category.icon;
+            const isOpen = openCategories.has(category.key);
+            const panelId = `${category.key}-inventory-panel`;
+            const query = categorySearches[category.key] ?? '';
+            const visibleItems = filteredItems(category);
+            const selectedCount = categoryQuantity(category);
             return (
-              <div className={classNames('item-row', quantity > 0 && 'selected')} key={item.slug}>
-                <span>{item.name}</span>
-                <Quantity value={quantity} onChange={(next) => { setQuantity(item.slug, next); }} />
-              </div>
+              <section className={classNames('inventory-category', isOpen && 'open')} key={category.key}>
+                <button aria-controls={panelId} aria-expanded={isOpen} className="inventory-category-trigger" onClick={() => { toggleCategory(category.key); }} type="button">
+                  <Icon aria-hidden="true" size={22} />
+                  <span>{category.title}</span>
+                  {selectedCount > 0 ? <strong>{selectedCount}</strong> : null}
+                  <ChevronDown aria-hidden="true" className="inventory-chevron" size={20} />
+                </button>
+                {isOpen ? (
+                  <div aria-label={`${category.title} items`} className="inventory-category-panel" id={panelId} role="region">
+                    {category.key === 'boxes-bags' ? (
+                      <div className="inventory-intro">
+                        <h2>Your boxes and bags</h2>
+                        <p>{category.description}</p>
+                      </div>
+                    ) : null}
+                    <label className="field inventory-search-field">
+                      Search items
+                      <div className="inventory-search-wrap">
+                        <Search aria-hidden="true" size={18} />
+                        <input
+                          className="text-input"
+                          onChange={(event) => { setCategorySearches((current) => ({ ...current, [category.key]: event.target.value })); }}
+                          placeholder={`Search ${category.title.toLowerCase()}`}
+                          type="search"
+                          value={query}
+                        />
+                        {query ? (
+                          <button aria-label={`Clear ${category.title} search`} onClick={() => { setCategorySearches((current) => ({ ...current, [category.key]: '' })); }} type="button">
+                            <X aria-hidden="true" size={16} />
+                          </button>
+                        ) : null}
+                      </div>
+                    </label>
+                    <div className="inventory-list">
+                      {visibleItems.map((item) => {
+                        const catalogueItem = catalogueBySlug.get(item.slug);
+                        const quantity = selected.get(item.slug) ?? 0;
+                        return (
+                          <div className={classNames('inventory-item-row', quantity > 0 && 'selected', !catalogueItem && 'unavailable')} key={`${category.key}-${item.slug}-${item.label}`}>
+                            <div className="inventory-item-copy">
+                              <span>{item.label}</span>
+                              {item.detail ? <small>{item.detail}</small> : null}
+                              {!catalogueItem ? <small>Pricing unavailable</small> : null}
+                            </div>
+                            {catalogueItem ? (
+                              <Quantity label={item.label} value={quantity} onChange={(next) => { setQuantity(item.slug, next); }} />
+                            ) : null}
+                            {quantity > 0 ? <span className="inventory-selected-count">{quantity} selected</span> : null}
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {visibleItems.length === 0 ? <p className="field-help">No matching items</p> : null}
+                  </div>
+                ) : null}
+              </section>
             );
           })}
         </div>
-        {items.length === 0 && search ? (
-          <div className="custom-item">
-            <p>No catalogue matches. Add it as your own item.</p>
-            <input className="text-input" onChange={(event) => { setCustomName(event.target.value); }} placeholder="Item name" type="text" value={customName} />
-            <button className="button button-secondary" onClick={addCustom} type="button">
-              <PackagePlus aria-hidden="true" size={18} />
-              Add own item
-            </button>
-          </div>
-        ) : null}
+        <div className="custom-item">
+          <p>Can't find something? Add it as your own item.</p>
+          <input className="text-input" onChange={(event) => { setCustomName(event.target.value); }} placeholder="Item name" type="text" value={customName} />
+          <button className="button button-secondary" onClick={addCustom} type="button">
+            <PackagePlus aria-hidden="true" size={18} />
+            Add own item
+          </button>
+        </div>
       </section>
       <section className="booking-panel">
         <h2>Extras</h2>
         <label className="field">
           Extra helpers
-          <Quantity max={3} value={draft.addons.helpers} onChange={(helpers) => { draft.setDraft({ addons: { ...draft.addons, helpers }, quote: null }); }} />
+          <Quantity max={3} label="extra helpers" value={draft.addons.helpers} onChange={(helpers) => { draft.setDraft({ addons: { ...draft.addons, helpers }, quote: null, quotePublicId: null, selectedDate: null, selectedSlot: null }); }} />
         </label>
         <label className="toggle-row">
           <span>Packing help</span>
-          <input checked={draft.addons.packing} onChange={(event) => { draft.setDraft({ addons: { ...draft.addons, packing: event.target.checked }, quote: null }); }} type="checkbox" />
+          <input checked={draft.addons.packing} onChange={(event) => { draft.setDraft({ addons: { ...draft.addons, packing: event.target.checked }, quote: null, quotePublicId: null, selectedDate: null, selectedSlot: null }); }} type="checkbox" />
         </label>
         <label className="toggle-row">
           <span>Furniture assembly</span>
-          <input checked={draft.addons.assembly} onChange={(event) => { draft.setDraft({ addons: { ...draft.addons, assembly: event.target.checked }, quote: null }); }} type="checkbox" />
+          <input checked={draft.addons.assembly} onChange={(event) => { draft.setDraft({ addons: { ...draft.addons, assembly: event.target.checked }, quote: null, quotePublicId: null, selectedDate: null, selectedSlot: null }); }} type="checkbox" />
         </label>
       </section>
       <div className="booking-summary-bar">
@@ -549,14 +810,25 @@ function ItemsStep({ goNext }: { goNext: () => void }): ReactNode {
   );
 }
 
-function Quantity({ max = 99, onChange, value }: { max?: number; onChange: (value: number) => void; value: number }): ReactNode {
+function Quantity({ label = 'quantity', max = 99, onChange, value }: { label?: string; max?: number; onChange: (value: number) => void; value: number }): ReactNode {
+  const pendingValue = useRef(value);
+  useEffect(() => {
+    pendingValue.current = value;
+  }, [value]);
+
+  function commit(next: number): void {
+    const clamped = Math.max(0, Math.min(max, Math.trunc(next)));
+    pendingValue.current = clamped;
+    onChange(clamped);
+  }
+
   return (
     <div className="quantity">
-      <button aria-label="Decrease quantity" onClick={() => { onChange(Math.max(0, value - 1)); }} type="button">
+      <button aria-label={`Decrease ${label}`} disabled={value <= 0} onClick={() => { commit(pendingValue.current - 1); }} type="button">
         -
       </button>
       <output aria-live="polite">{value}</output>
-      <button aria-label="Increase quantity" onClick={() => { onChange(Math.min(max, value + 1)); }} type="button">
+      <button aria-label={`Increase ${label}`} disabled={value >= max} onClick={() => { commit(pendingValue.current + 1); }} type="button">
         +
       </button>
     </div>
@@ -582,117 +854,421 @@ function quoteInputFromDraft(draft: ReturnType<typeof useBookingDraft.getState>)
   });
 }
 
+function buildCrewInput(helpers: 0 | 1): z.infer<typeof QuoteRequestSchema> {
+  const state = useBookingDraft.getState();
+  return quoteInputFromDraft({ ...state, addons: { ...state.addons, helpers } });
+}
+
 function PricesStep({ goNext }: { goNext: () => void }): ReactNode {
   const draft = useBookingDraft();
-  const [loading, setLoading] = useState(false);
+  const setDraft = draft.setDraft;
+
+  // Local cache of quotes for each crew size (1 mover = helpers 0, 2 movers = helpers 1)
+  const [crew1Quote, setCrew1Quote] = useState<QuoteDto | null>(null);
+  const [crew2Quote, setCrew2Quote] = useState<QuoteDto | null>(null);
+  const [crew1Loading, setCrew1Loading] = useState(false);
+  const [crew2Loading, setCrew2Loading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [manualReasons, setManualReasons] = useState<string[] | null>(null);
-  const quote = draft.quote;
-  const selectedDay = quote?.calendar.find((day) => day.date === draft.selectedDate) ?? quote?.calendar.find((day) => day.slots.some((slot) => slot.available));
-  const selectedSlot = selectedDay?.slots.find((slot) => slot.slot === draft.selectedSlot) ?? selectedDay?.slots.find((slot) => slot.available);
-  const cheapest = quote?.cheapest;
+  const [visibleCount, setVisibleCount] = useState(7);
+  const [expiredQuoteIds, setExpiredQuoteIds] = useState<Set<string>>(() => new Set());
 
-  async function revealPrices(): Promise<void> {
+  const crew1KeyRef = useRef<string | null>(null);
+  const crew2KeyRef = useRef<string | null>(null);
+  const crewQuoteIdsRef = useRef<Partial<Record<1 | 2, string>>>({});
+  const mountedRef = useRef(false);
+  // Per-crew generation counters prevent stale async results from applying
+  const loadGenRef = useRef<Record<1 | 2, number>>({ 1: 0, 2: 0 });
+
+  const activeCrewNum: 1 | 2 = draft.addons.helpers >= 1 ? 2 : 1;
+  const activeQuote = activeCrewNum === 1 ? crew1Quote : crew2Quote;
+  const isActiveLoading = activeCrewNum === 1 ? crew1Loading : crew2Loading;
+
+  const applyQuoteForCrew = useCallback((quote: QuoteDto, moverCount: 1 | 2): void => {
+    const state = useBookingDraft.getState();
+    const nowActive: 1 | 2 = state.addons.helpers >= 1 ? 2 : 1;
+    if (moverCount !== nowActive) return;
+    const selectedDay = quote.calendar.find((day) => day.date === state.selectedDate);
+    const selectedStillAvailable = selectedDay?.slots.some((slot) => slot.slot === state.selectedSlot && slot.available);
+    const best = quote.cheapest;
+    setDraft({
+      quote,
+      quotePublicId: quote.publicId,
+      selectedDate: selectedStillAvailable ? state.selectedDate : best?.date ?? null,
+      selectedSlot: selectedStillAvailable ? state.selectedSlot : best?.slot ?? null,
+    });
+  }, [setDraft]);
+
+  const restoreCrewQuote = useCallback(async (moverCount: 1 | 2, publicId: string): Promise<QuoteDto | null> => {
+    crewQuoteIdsRef.current[moverCount] = publicId;
+    const gen = ++loadGenRef.current[moverCount];
+    const setLoading = moverCount === 1 ? setCrew1Loading : setCrew2Loading;
+    const setQuote = moverCount === 1 ? setCrew1Quote : setCrew2Quote;
+    setLoading(true);
+    setQuote(null);
+    setError(null);
+    try {
+      const result = await getQuoteByPublicId(publicId);
+      if (!mountedRef.current || gen !== loadGenRef.current[moverCount]) return null;
+      setExpiredQuoteIds((current) => {
+        const next = new Set(current);
+        if (result.expired) next.add(result.quote.publicId);
+        else next.delete(result.quote.publicId);
+        return next;
+      });
+      setQuote(result.quote);
+      applyQuoteForCrew(result.quote, moverCount);
+      return result.quote;
+    } catch (cause) {
+      if (!mountedRef.current || gen !== loadGenRef.current[moverCount]) return null;
+      const nowActive: 1 | 2 = useBookingDraft.getState().addons.helpers >= 1 ? 2 : 1;
+      if (moverCount === nowActive) setError(cause instanceof Error ? cause.message : 'We could not check current availability. Try again.');
+      return null;
+    } finally {
+      if (mountedRef.current && gen === loadGenRef.current[moverCount]) setLoading(false);
+    }
+  }, [applyQuoteForCrew]);
+
+  const fetchCrewQuote = useCallback(async (moverCount: 1 | 2, force = false): Promise<QuoteDto | null> => {
+    let input: z.infer<typeof QuoteRequestSchema>;
+    try {
+      input = buildCrewInput(moverCount === 1 ? 0 : 1);
+    } catch (cause) {
+      const nowActive: 1 | 2 = useBookingDraft.getState().addons.helpers >= 1 ? 2 : 1;
+      if (moverCount === nowActive) setError(cause instanceof Error ? cause.message : 'Complete your move details first.');
+      return null;
+    }
+
+    const key = JSON.stringify(input);
+    const keyRef = moverCount === 1 ? crew1KeyRef : crew2KeyRef;
+    if (!force && keyRef.current === key) return null;
+    keyRef.current = key;
+
+    const gen = ++loadGenRef.current[moverCount];
+    const setLoading = moverCount === 1 ? setCrew1Loading : setCrew2Loading;
+    const setQuote = moverCount === 1 ? setCrew1Quote : setCrew2Quote;
+
     setLoading(true);
     setError(null);
-    setManualReasons(null);
-    trackBookingEvent('quote_requested', { service: draft.service ?? undefined });
+
     try {
-      const result = await createQuote(quoteInputFromDraft(useBookingDraft.getState()));
+      const result = await createQuote(input);
+      if (!mountedRef.current || gen !== loadGenRef.current[moverCount]) return null;
+
       if ('manualQuote' in result) {
-        draft.setDraft({ quotePublicId: result.manualQuote.quotePublicId });
-        setManualReasons(result.manualQuote.reasons);
-        trackBookingEvent('manual_quote_shown', { reason: result.manualQuote.reasons[0], service: draft.service ?? undefined });
-        return;
+        const nowActive: 1 | 2 = useBookingDraft.getState().addons.helpers >= 1 ? 2 : 1;
+        if (moverCount === nowActive) {
+          setDraft({ quotePublicId: result.manualQuote.quotePublicId });
+          setManualReasons(result.manualQuote.reasons);
+          trackBookingEvent('manual_quote_shown', { reason: result.manualQuote.reasons[0], service: input.service });
+        }
+        return null;
       }
-      const first = result.quote.cheapest;
-      draft.setDraft({
-        quote: result.quote,
-        quotePublicId: result.quote.publicId,
-        selectedDate: first?.date ?? null,
-        selectedSlot: first?.slot ?? null,
-      });
-      trackBookingEvent('quote_shown', {
-        distance_band: distanceBand(result.quote.distanceMiles),
-        service: result.quote.service,
-        value: (result.quote.cheapest?.pricePence ?? 0) / 100,
-      });
+
+      setQuote(result.quote);
+      crewQuoteIdsRef.current[moverCount] = result.quote.publicId;
+      return result.quote;
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'We could not get prices just now.');
+      if (!mountedRef.current || gen !== loadGenRef.current[moverCount]) return null;
+      const nowActive: 1 | 2 = useBookingDraft.getState().addons.helpers >= 1 ? 2 : 1;
+      if (moverCount === nowActive) setError(cause instanceof Error ? cause.message : 'We could not get prices just now.');
+      return null;
     } finally {
-      setLoading(false);
+      if (mountedRef.current && gen === loadGenRef.current[moverCount]) setLoading(false);
+    }
+  }, [setDraft]);
+
+  // Persisted prices are a snapshot; restore their current availability without creating another quote.
+  useEffect(() => {
+    mountedRef.current = true;
+    const state = useBookingDraft.getState();
+    const currActive: 1 | 2 = state.addons.helpers >= 1 ? 2 : 1;
+    const other: 1 | 2 = currActive === 1 ? 2 : 1;
+
+    if (state.quote) {
+      void restoreCrewQuote(currActive, state.quote.publicId);
+    } else {
+      void fetchCrewQuote(currActive).then((quote) => {
+        if (!quote) return;
+        applyQuoteForCrew(quote, currActive);
+        trackBookingEvent('quote_shown', {
+          distance_band: distanceBand(quote.distanceMiles),
+          service: quote.service,
+          value: (quote.cheapest?.pricePence ?? 0) / 100,
+        });
+      });
+      // A new quote still loads both crew options; restoring an existing one is read-only.
+      void fetchCrewQuote(other);
+    }
+    return () => {
+      mountedRef.current = false;
+    };
+  }, [applyQuoteForCrew, fetchCrewQuote, restoreCrewQuote]);
+
+  function handleCrewSwitch(moverCount: 1 | 2): void {
+    if (moverCount === activeCrewNum) return;
+    setDraft({ addons: { ...draft.addons, helpers: moverCount - 1 } });
+    const publicId = crewQuoteIdsRef.current[moverCount];
+    if (publicId) {
+      void restoreCrewQuote(moverCount, publicId);
+    } else {
+      void fetchCrewQuote(moverCount).then((q) => { if (q) applyQuoteForCrew(q, moverCount); });
     }
   }
 
   if (manualReasons) return <ManualQuotePanel reasons={manualReasons} />;
 
+  // Date-list calculations
+  const calendar = activeQuote?.calendar ?? [];
+  const firstIdx = Math.max(0, calendar.findIndex((d) => d.slots.some((s) => s.available)));
+  const shownDays = calendar.slice(firstIdx, firstIdx + visibleCount);
+  const hasMore = firstIdx + visibleCount < calendar.length;
+  const canCollapse = visibleCount > 7;
+
+  // Best-price date among currently shown rows
+  let bestDate: string | null = null;
+  let bestPricePence = Infinity;
+  for (const day of shownDays) {
+    for (const slot of day.slots) {
+      if (slot.available && slot.pricePence < bestPricePence) {
+        bestPricePence = slot.pricePence;
+        bestDate = day.date;
+      }
+    }
+  }
+
+  const selectedDay =
+    activeQuote?.calendar.find((d) => d.date === draft.selectedDate) ??
+    activeQuote?.calendar.find((d) => d.slots.some((s) => s.available));
+  const selectedSlot =
+    selectedDay?.slots.find((s) => s.slot === draft.selectedSlot) ??
+    selectedDay?.slots.find((s) => s.available);
+
+  const quoteExpired = activeQuote ? expiredQuoteIds.has(activeQuote.publicId) || new Date(activeQuote.expiresAt) <= new Date() : false;
+  const crew1Min = crew1Quote?.cheapest?.pricePence ?? null;
+  const crew2Min = crew2Quote?.cheapest?.pricePence ?? null;
+
   return (
     <div className="booking-step">
       <section className="booking-panel">
         <h1>Prices</h1>
-        {!quote ? (
-          <div className="reveal-card" role="status">
+
+        {/* Crew size tabs */}
+        <div aria-label="Crew size" className="crew-tabs" role="group">
+          {([1, 2] as const).map((moverCount) => {
+            const isActive = activeCrewNum === moverCount;
+            const minPrice = moverCount === 1 ? crew1Min : crew2Min;
+            const tabLoading = moverCount === 1 ? crew1Loading : crew2Loading;
+            const Icon = moverCount === 1 ? User : Users;
+            return (
+              <button
+                aria-pressed={isActive}
+                className={classNames('crew-tab', isActive && 'crew-tab-active')}
+                key={moverCount}
+                onClick={() => { handleCrewSwitch(moverCount); }}
+                type="button"
+              >
+                <Icon aria-hidden="true" size={22} />
+                <span className="crew-tab-name">{moverCount === 1 ? '1 mover' : '2 movers'}</span>
+                {tabLoading ? (
+                  <span className="crew-price-loading"><Loader2 aria-hidden="true" className="spin" size={14} /></span>
+                ) : minPrice !== null ? (
+                  <span className="crew-price">From {formatGBP(minPrice)}</span>
+                ) : null}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Loading / empty state */}
+        {!activeQuote && (
+          <div aria-live="polite" className="reveal-card price-loading-card" role={error ? undefined : 'status'}>
             <p>Planning your route</p>
             <p>Checking our vans for the next 4 weeks</p>
             <p>Working out fixed prices</p>
-            <button className="button button-primary" disabled={loading} onClick={() => void revealPrices()} type="button">
-              {loading ? <Loader2 aria-hidden="true" className="spin" size={18} /> : <CalendarDays aria-hidden="true" size={18} />}
-              {loading ? 'Checking prices…' : 'Reveal prices'}
-            </button>
+            {isActiveLoading ? (
+              <div className="price-loading-indicator">
+                <Loader2 aria-hidden="true" className="spin" size={18} />
+                <span>Checking prices…</span>
+              </div>
+            ) : error ? (
+              <button className="button button-primary" onClick={() => {
+                const publicId = crewQuoteIdsRef.current[activeCrewNum];
+                if (publicId) void restoreCrewQuote(activeCrewNum, publicId);
+                else void fetchCrewQuote(activeCrewNum, true).then((quote) => { if (quote) applyQuoteForCrew(quote, activeCrewNum); });
+              }} type="button">
+                <CalendarDays aria-hidden="true" size={18} />
+                Try again
+              </button>
+            ) : null}
           </div>
-        ) : (
+        )}
+
+        {/* Expired-quote notice */}
+        {quoteExpired && (
+          <InlineAlert tone="warning">
+            Prices have expired.{' '}
+            <button
+              className="link-button"
+              onClick={() => {
+                setCrew1Quote(null);
+                setCrew2Quote(null);
+                crew1KeyRef.current = null;
+                crew2KeyRef.current = null;
+                crewQuoteIdsRef.current = {};
+                setDraft({ quote: null, selectedDate: null, selectedSlot: null });
+                void fetchCrewQuote(activeCrewNum, true).then((q) => {
+                  if (!q) return;
+                  const best = q.cheapest;
+                  setDraft({ quote: q, quotePublicId: q.publicId, selectedDate: best?.date ?? null, selectedSlot: best?.slot ?? null });
+                });
+                void fetchCrewQuote(activeCrewNum === 1 ? 2 : 1, true);
+              }}
+              type="button"
+            >
+              Refresh prices
+            </button>
+          </InlineAlert>
+        )}
+
+        {/* Date-based pricing list */}
+        {activeQuote && !quoteExpired && (
           <>
-            <div className="hero-price">
-              <span>From</span>
-              <strong>
-                <NumberFlow value={(cheapest?.pricePence ?? 0) / 100} format={{ currency: 'GBP', style: 'currency' }} />
-              </strong>
-              <p>{cheapest ? `${cheapest.date}, ${slotWindow(cheapest.slot)}` : 'No available slots'}</p>
-              <small>Prices held until {new Date(quote.expiresAt).toLocaleTimeString('en-GB', { hour: 'numeric', minute: '2-digit' })}</small>
-            </div>
-            <div className="calendar-grid">
-              {quote.calendar.map((day) => {
-                const lowest = day.slots.filter((slot) => slot.available).sort((left, right) => left.pricePence - right.pricePence)[0];
+            <div aria-label="Available move dates" className="price-date-list" role="list">
+              {shownDays.map((day) => {
+                const available = day.slots.filter((s) => s.available);
+                const lowest = [...available].sort((a, b) => a.pricePence - b.pricePence)[0];
+                const availCount = available.length;
+                const isUnavailable = availCount === 0;
+                const isBest = day.date === bestDate;
+                const isSelected = draft.selectedDate === day.date;
+
+                const dateObj = new Date(`${day.date}T12:00:00Z`);
+                const wday = new Intl.DateTimeFormat('en-GB', { weekday: 'short', timeZone: 'UTC' }).format(dateObj);
+                const dnum = new Intl.DateTimeFormat('en-GB', { day: 'numeric', timeZone: 'UTC' }).format(dateObj);
+                const mon = new Intl.DateTimeFormat('en-GB', { month: 'short', timeZone: 'UTC' }).format(dateObj);
+                const priceStr = lowest ? formatGBP(lowest.pricePence) : undefined;
+
                 return (
-                  <button className={classNames('day-card', draft.selectedDate === day.date && 'selected', !lowest && 'disabled')} disabled={!lowest} key={day.date} onClick={() => {
-                    draft.setDraft({ selectedDate: day.date, selectedSlot: lowest?.slot ?? null });
-                    if (lowest) trackBookingEvent('slot_selected', { day_offset: Math.max(0, Math.round((new Date(`${day.date}T12:00:00Z`).getTime() - Date.now()) / 86_400_000)), slot: lowest.slot, value: lowest.pricePence / 100 });
-                  }} type="button">
-                    <span>{new Date(`${day.date}T12:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', weekday: 'short' })}</span>
-                    <strong>{lowest ? formatGBP(lowest.pricePence) : 'Full'}</strong>
+                  <button
+                    aria-label={`${wday} ${dnum} ${mon}${priceStr ? `, from ${priceStr}` : ', unavailable'}`}
+                    aria-pressed={isSelected}
+                    className={classNames(
+                      'price-date-row',
+                      isBest && 'price-date-row-best',
+                      isSelected && 'price-date-row-selected',
+                    )}
+                    disabled={isUnavailable}
+                    key={day.date}
+                    onClick={() => {
+                      if (!lowest) return;
+                      const sameSlot = day.slots.find((s) => s.slot === draft.selectedSlot && s.available);
+                      const chosen = sameSlot ?? lowest;
+                      setDraft({ selectedDate: day.date, selectedSlot: chosen.slot });
+                      trackBookingEvent('slot_selected', {
+                        day_offset: Math.max(0, Math.round((new Date(`${day.date}T12:00:00Z`).getTime() - Date.now()) / 86_400_000)),
+                        slot: chosen.slot,
+                        value: chosen.pricePence / 100,
+                      });
+                    }}
+                    role="listitem"
+                    type="button"
+                  >
+                    <span className="price-date-left">
+                      <span className="price-date-weekday">{wday},</span>
+                      <span className="price-date-month">{mon}</span>
+                      <span className="price-date-day">{dnum}</span>
+                    </span>
+                    <span className="price-date-right">
+                      {isBest && (
+                        <span aria-hidden="true" className="price-avail-badge price-badge-best">Best Price</span>
+                      )}
+                      {priceStr ? (
+                        <strong className="price-date-price">{priceStr}</strong>
+                      ) : (
+                        <span className="price-date-unavail">Full</span>
+                      )}
+                      {!isUnavailable && <ChevronRight aria-hidden="true" className="price-date-chevron" size={16} />}
+                    </span>
                   </button>
                 );
               })}
             </div>
-            {selectedDay ? (
-              <div className="slot-list">
-                {selectedDay.slots.map((slot) => (
-                  <button className={classNames('slot-card', draft.selectedSlot === slot.slot && 'selected', !slot.available && 'disabled')} disabled={!slot.available} key={slot.slot} onClick={() => {
-                    draft.setDraft({ selectedSlot: slot.slot });
-                    trackBookingEvent('slot_selected', { day_offset: Math.max(0, Math.round((new Date(`${selectedDay.date}T12:00:00Z`).getTime() - Date.now()) / 86_400_000)), slot: slot.slot, value: slot.pricePence / 100 });
-                  }} type="button">
-                    <span>{slotWindow(slot.slot)}</span>
-                    <strong>{formatGBP(slot.pricePence)}</strong>
-                    {slot.lastOne ? <em>Last slot</em> : null}
-                    {!slot.available ? <em>{slot.reason?.replaceAll('_', ' ').toLowerCase()}</em> : null}
-                  </button>
-                ))}
-              </div>
-            ) : null}
-            <details className="booking-breakdown">
-              <summary>How this price is worked out</summary>
-              {quote.breakdownLines.map((line) => (
-                <div key={line.key}>
-                  <span>{line.label}</span>
-                  <strong>{formatGBP(line.pence)}</strong>
-                </div>
-              ))}
-            </details>
+
+            {/* Show more / fewer dates */}
+            <div className="show-more-row">
+              {hasMore && (
+                <button className="show-more-btn" onClick={() => { setVisibleCount((c) => c + 7); }} type="button">
+                  Show more dates
+                  <ChevronDown aria-hidden="true" size={16} />
+                </button>
+              )}
+              {canCollapse && !hasMore && (
+                <button
+                  className="show-more-btn"
+                  onClick={() => {
+                    const selIdx = shownDays.findIndex((d) => d.date === draft.selectedDate);
+                    setVisibleCount(selIdx >= 7 ? selIdx + 1 : 7);
+                  }}
+                  type="button"
+                >
+                  Show fewer dates
+                  <ChevronDown aria-hidden="true" className="show-fewer-chevron" size={16} />
+                </button>
+              )}
+            </div>
           </>
         )}
+
+        {/* Time-window picker for selected date */}
+        {selectedDay && activeQuote && !quoteExpired && (
+          <div aria-label="Available time windows" className="slot-list">
+            {selectedDay.slots.map((slot) => (
+              <button
+                aria-pressed={draft.selectedSlot === slot.slot}
+                className={classNames('slot-card', draft.selectedSlot === slot.slot && 'selected', !slot.available && 'disabled')}
+                disabled={!slot.available}
+                key={slot.slot}
+                onClick={() => {
+                  setDraft({ selectedSlot: slot.slot });
+                  trackBookingEvent('slot_selected', {
+                    day_offset: Math.max(0, Math.round((new Date(`${selectedDay.date}T12:00:00Z`).getTime() - Date.now()) / 86_400_000)),
+                    slot: slot.slot,
+                    value: slot.pricePence / 100,
+                  });
+                }}
+                type="button"
+              >
+                <span>{slot.windowLabel}</span>
+                <strong>{formatGBP(slot.pricePence)}</strong>
+                {!slot.available ? <em>{slot.reason?.replaceAll('_', ' ').toLowerCase()}</em> : null}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Price breakdown */}
+        {activeQuote && (
+          <details className="booking-breakdown">
+            <summary>How this price is worked out</summary>
+            {activeQuote.breakdownLines.map((line) => (
+              <div key={line.key}>
+                <span>{line.label}</span>
+                <strong>{formatGBP(line.pence)}</strong>
+              </div>
+            ))}
+          </details>
+        )}
+
         {error ? <InlineAlert tone="danger">{error}</InlineAlert> : null}
       </section>
-      <button className="button button-primary booking-next" disabled={!selectedSlot} onClick={goNext} type="button">
+
+      <button
+        className="button button-primary booking-next"
+        disabled={!selectedSlot?.available || isActiveLoading || quoteExpired || Boolean(error)}
+        onClick={goNext}
+        type="button"
+      >
         Continue
       </button>
     </div>
@@ -737,6 +1313,7 @@ function PayStep(): ReactNode {
     <div className="booking-step">
       <section className="booking-panel">
         <h1>Details and pay</h1>
+        <PaymentModeNotice />
         <Summary quote={draft.quote} total={total} />
         {stripePromise ? (
           <Elements options={{ amount: total, currency: 'gbp', mode: 'payment' }} stripe={stripePromise}>
@@ -781,7 +1358,7 @@ function usePaymentSubmit(total: number) {
       termsAccepted: draft.termsAccepted,
     });
     const booking = await createBooking(parsed);
-    draft.setDraft({ statusToken: booking.statusToken });
+    draft.setDraft({ paymentIntentId: booking.clientSecret.split('_secret_')[0] ?? null, statusToken: booking.statusToken });
     if (options.navigate !== false) {
       router.push(`/book/confirmation?t=${encodeURIComponent(booking.statusToken)}`);
     }
@@ -850,6 +1427,7 @@ function MockPayForm({ total }: { total: number }): ReactNode {
         <span>Test payment mode. Use this locally when Stripe keys are not loaded.</span>
       </div>
       {error ? <InlineAlert tone="danger">{error}</InlineAlert> : null}
+      {error && draft.statusToken ? <a className="text-link" href={`/book/confirmation?t=${encodeURIComponent(draft.statusToken)}`}>{bookingConfirmationCopy.checkAgain}</a> : null}
       <button className="button button-primary booking-next" disabled={!draft.termsAccepted || !draft.shortNoticeAck || form.formState.isSubmitting} type="submit">
         {form.formState.isSubmitting ? 'Processing payment…' : `Pay ${formatGBP(total)}`}
       </button>
@@ -891,8 +1469,10 @@ function StripePayForm({ total }: { total: number }): ReactNode {
           if (confirm.error) {
             trackBookingEvent('payment_failed', { code: confirm.error.code ?? 'stripe_confirm' });
             setError(confirm.error.message ?? 'Payment failed.');
-          } else {
+          } else if (confirm.paymentIntent.status === 'succeeded' || confirm.paymentIntent.status === 'processing') {
             router.push(`/book/confirmation?t=${encodeURIComponent(booking.statusToken)}`);
+          } else {
+            setError(bookingConfirmationCopy.incompletePayment);
           }
         } catch (cause) {
           trackBookingEvent('payment_failed', { code: 'booking_submit' });
@@ -903,6 +1483,7 @@ function StripePayForm({ total }: { total: number }): ReactNode {
       <DetailsFields form={form} />
       <PaymentElement options={{ layout: 'accordion' }} />
       {error ? <InlineAlert tone="danger">{error}</InlineAlert> : null}
+      {error && draft.statusToken ? <a className="text-link" href={`/book/confirmation?t=${encodeURIComponent(draft.statusToken)}`}>{bookingConfirmationCopy.checkAgain}</a> : null}
       <button className="button button-primary booking-next" disabled={!draft.termsAccepted || !draft.shortNoticeAck || !stripe || form.formState.isSubmitting} type="submit">
         {form.formState.isSubmitting ? 'Processing payment…' : `Pay ${formatGBP(total)}`}
       </button>
@@ -915,12 +1496,15 @@ function BookingFrame({ children, step, setStep }: { children: ReactNode; setSte
   return (
     <div className="booking-page">
       <header className="booking-wizard-header">
-        <button className="button button-ghost icon-button" disabled={step === 'move'} onClick={() => { setStep(previousStep(step)); }} type="button" aria-label="Back">
+        <button className="button button-ghost icon-button booking-back" disabled={step === 'move'} onClick={() => { setStep(previousStep(step)); }} type="button" aria-label={bookingNavigationCopy.back}>
           <ChevronLeft aria-hidden="true" size={22} />
         </button>
-        <div className="route-chip">
-          <Truck aria-hidden="true" size={18} />
-          <span>{draft.pickup ? `${draft.pickup.town}${draft.dropoff ? ` to ${draft.dropoff.town}` : ''}` : 'Your route'}</span>
+        <div className="booking-route-context">
+          <span className="booking-step-count">{bookingNavigationCopy.stepCount(stepIndex(step) + 1, steps.length)}</span>
+          <div className="route-chip">
+            <Truck aria-hidden="true" size={18} />
+            <span>{draft.pickup ? `${draft.pickup.town}${draft.dropoff ? ` to ${draft.dropoff.town}` : ''}` : bookingNavigationCopy.route}</span>
+          </div>
         </div>
         <ProgressSteps current={step} setStep={setStep} />
       </header>
@@ -980,6 +1564,7 @@ function BookingFlowInner(): ReactNode {
   return (
     <BookingFrame setStep={setStep} step={step}>
       {step === 'move' ? <MoveStep goNext={setNext} /> : null}
+      {step === 'access' ? <AccessStep goNext={setNext} /> : null}
       {step === 'items' ? <ItemsStep goNext={setNext} /> : null}
       {step === 'prices' ? <PricesStep goNext={setNext} /> : null}
       {step === 'pay' ? <PayStep /> : null}

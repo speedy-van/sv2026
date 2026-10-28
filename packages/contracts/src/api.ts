@@ -349,6 +349,11 @@ export const BookingStatusResponseSchema = z
     reference: z.string().nullable(),
     summary: z.record(z.string(), z.unknown()).nullable(),
     manageUrl: UrlSchema.optional(),
+    checkout: z.object({
+      paymentStatus: z.enum(['REQUIRES_PAYMENT', 'PROCESSING', 'SUCCEEDED', 'FAILED', 'CANCELED']).nullable(),
+      holdExpiresAt: IsoTimestampSchema.nullable(),
+      canRetry: z.boolean(),
+    }).strict().optional(),
   })
   .strict();
 
@@ -474,6 +479,11 @@ export const OtpVerifySchema = OtpRequestSchema.extend({
   code: z.string().regex(/^\d{6}$/),
   device: DeviceSchema,
 }).strict();
+export const StaffPasswordSchema = z.string().min(1).max(1024);
+export const PasswordLoginRequestSchema = OtpRequestSchema.extend({
+  password: StaffPasswordSchema,
+  device: DeviceSchema,
+}).strict();
 export const StaffUserSchema = z
   .object({
     id: z.string().min(1),
@@ -491,7 +501,9 @@ export const AuthTokenResponseSchema = z
     user: StaffUserSchema,
   })
   .strict();
-export const RefreshRequestSchema = z.object({ refreshToken: z.string().min(20), deviceId: z.string().min(1).max(160) }).strict();
+export const RefreshRequestSchema = z.object({
+  refreshToken: z.string().min(20), deviceId: z.string().min(1).max(160), requestId: z.uuid().optional(),
+}).strict();
 export const PushDevicePutSchema = z.object({ expoPushToken: z.string().min(1).max(300), platform: z.enum(['ios', 'android']) }).strict();
 export const NotificationReadSchema = z.union([
   z.object({ ids: z.array(z.string().min(1)).min(1).max(100) }).strict(),
@@ -594,7 +606,7 @@ export const ManualQuotePriceSchema = z
 export const CapacityRuleSchema = z.object({ weekday: z.number().int().min(0).max(6), slot: SlotSchema, capacity: z.number().int().min(0).max(100) }).strict();
 export const CapacityOverrideSchema = z.object({ date: IsoDateSchema, slot: SlotSchema, capacity: z.number().int().min(0).max(100), reason: z.string().max(200).optional() }).strict();
 export const DriverInviteSchema = z.object({ name: z.string().min(1).max(80), email: EmailSchema, phone: UkPhoneSchema.optional() }).strict();
-export const DriverPatchSchema = z.object({ name: z.string().min(1).max(80).optional(), phone: UkPhoneSchema.optional(), payoutPercent: z.number().int().min(0).max(100).optional() }).strict();
+export const DriverPatchSchema = z.object({ name: z.string().min(1).max(80).optional(), phone: UkPhoneSchema.optional(), payoutPercent: z.number().int().min(0).max(100).nullable().optional() }).strict();
 export const VanUpsertSchema = z.object({ registration: z.string().min(1).max(20), label: z.string().min(1).max(80), active: z.boolean() }).strict();
 export const PayoutCreateSchema = z.object({ driverId: z.string().min(1), earningIds: z.array(z.string().min(1)).min(1), method: z.string().min(1).max(80), reference: z.string().max(120).optional(), paidAt: IsoTimestampSchema }).strict();
 export const PricingDraftCreateSchema = z.object({ sourceVersionId: z.string().min(1).optional() }).strict();

@@ -39,13 +39,20 @@ interface CapacityState {
 
 interface CapacityContext {
   operations: OperationsSettings;
+  closures: Set<string>;
   overrides: Map<string, number>;
   rules: Map<string, number>;
   usage: Map<string, number>;
 }
 
 let capacityContextCache: { expiresAt: number; key: string; value: CapacityContext } | null = null;
+let capacityContextGeneration = 0;
 const capacityContextCacheMs = 1_000;
+
+export function invalidateAvailabilityCache(): void {
+  capacityContextGeneration += 1;
+  capacityContextCache = null;
+}
 
 function dateOnly(date: string): Date {
   return new Date(`${toDbDate(date)}T00:00:00.000Z`);
@@ -129,7 +136,8 @@ async function loadCapacityContext(input: AvailabilityInput, now: Date): Promise
     return capacityContextCache.value;
   }
   const dbDates = dates.map(dateOnly);
-  const [overrides, rules, bookings, holds] = await Promise.all([
+  const generation = capacityContextGeneration;
+  const [overrides, rules, bookings, holds, closures] = await Promise.all([
     prisma.capacityOverride.findMany({
       where: { date: { in: dbDates } },
       select: { capacity: true, date: true, slot: true },
@@ -151,6 +159,7 @@ async function loadCapacityContext(input: AvailabilityInput, now: Date): Promise
       where: { date: { in: dbDates }, expiresAt: { gt: now } },
       select: { blocksSlots: true, capacityUnits: true, date: true, slot: true },
     }),
+    prisma.capacityClosure.findMany({ where: { date: { in: dbDates } }, select: { date: true, slot: true } }),
   ]);
 
   const usage = new Map<string, number>();
@@ -163,15 +172,17 @@ async function loadCapacityContext(input: AvailabilityInput, now: Date): Promise
 
   const value = {
     operations: input.operations,
+    closures: new Set(closures.map((closure) => capacityKey(fromDbDate(closure.date), closure.slot))),
     overrides: new Map(overrides.map((override) => [capacityKey(fromDbDate(override.date), override.slot), override.capacity])),
     rules: new Map(rules.map((rule) => [ruleKey(rule.weekday, rule.slot), rule.capacity])),
     usage,
   };
-  capacityContextCache = { expiresAt: cacheNow + capacityContextCacheMs, key: cacheKey, value };
+  if (generation === capacityContextGeneration) capacityContextCache = { expiresAt: cacheNow + capacityContextCacheMs, key: cacheKey, value };
   return value;
 }
 
 function capacityState(date: string, slot: SlotKey, context: CapacityContext): CapacityState {
+  if (context.closures.has(capacityKey(date, slot))) return { capacity: 0, used: context.usage.get(capacityKey(date, slot)) ?? 0 };
   const override = context.overrides.get(capacityKey(date, slot));
   const capacity = override ?? context.rules.get(ruleKey(weekdayOf(date), slot)) ?? context.operations.defaultCapacityPerSlot;
   return { capacity, used: context.usage.get(capacityKey(date, slot)) ?? 0 };

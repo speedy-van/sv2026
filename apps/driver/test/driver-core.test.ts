@@ -1,5 +1,5 @@
 import { stagePathFor } from '@sv/contracts';
-import { formatPence, earningTotals } from '@/earnings/format';
+import { formatAgreedEarning, formatPayoutAgreement, formatPence, earningTotals } from '@/earnings/format';
 import { canUndoStage, driverStagePath } from '@/job/stages';
 import { storeLocationPoint } from '@/location/task';
 import { compressPhoto } from '@/media/photos';
@@ -48,9 +48,18 @@ describe('driver offline queue', () => {
 });
 
 describe('driver stage helpers', () => {
-  it('uses the single-address path for rubbish and enforces a two-minute undo window', () => {
-    expect(driverStagePath('rubbish')).toEqual(stagePathFor('rubbish'));
-    expect(driverStagePath('rubbish')).toEqual(['NOT_STARTED', 'EN_ROUTE_TO_PICKUP', 'AT_PICKUP', 'LOADING', 'COMPLETED']);
+  it('uses the shared service stage path and enforces a two-minute undo window', () => {
+    expect(driverStagePath('man-and-van')).toEqual(stagePathFor('man-and-van'));
+    expect(driverStagePath('man-and-van')).toEqual([
+      'NOT_STARTED',
+      'EN_ROUTE_TO_PICKUP',
+      'AT_PICKUP',
+      'LOADING',
+      'EN_ROUTE_TO_DROPOFF',
+      'AT_DROPOFF',
+      'UNLOADING',
+      'COMPLETED',
+    ]);
     expect(canUndoStage(new Date('2026-01-02T10:00:00.000Z'), new Date('2026-01-02T10:01:59.000Z'))).toBe(true);
     expect(canUndoStage(new Date('2026-01-02T10:00:00.000Z'), new Date('2026-01-02T10:02:01.000Z'))).toBe(false);
   });
@@ -81,6 +90,14 @@ describe('driver media and location', () => {
 });
 
 describe('driver earnings formatting', () => {
+  it('keeps a phone-agreed payout distinct from a real numeric zero or recorded earning', () => {
+    expect(formatPayoutAgreement(null)).toBe('Agreed by phone');
+    expect(formatPayoutAgreement(40)).toBe('40%');
+    expect(formatPayoutAgreement(0)).toBe('0%');
+    expect(formatAgreedEarning(null)).toBe('Agreed by phone');
+    expect(formatAgreedEarning(0)).toBe('£0.00');
+    expect(formatAgreedEarning(12345)).toBe('£123.45');
+  });
   it('formats pence and totals paid versus unpaid rows', () => {
     expect(formatPence(12345)).toBe('£123.45');
     expect(earningTotals([{ amountPence: 1000, paid: true }, { amountPence: 2500, paid: false }])).toEqual({

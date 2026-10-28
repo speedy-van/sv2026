@@ -110,10 +110,10 @@ describe('Phase 12 staff auth and admin API', () => {
     }
   }, 30_000);
 
-  it('writes an audit row for admin mutations', async () => {
+  it('audits a test-push attempt while reporting that the account has no registered phone', async () => {
     const ownerToken = await tokenFor(ownerEmail, 'admin', 'owner-device-audit');
     const response = await handleAdminRoute(requestFor('POST', 'test-push', ownerToken), 'POST', 'test-push');
-    expect(response.status).toBe(201);
+    expect(response.status).toBe(409);
     const audit = await prisma.auditLog.findFirst({
       where: { action: 'admin.test_push', actor: { email: ownerEmail } },
     });

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import type { ReactNode } from 'react';
-import { cookieInventory } from '@/content/cookies';
+import { cookieInventory, liveChatPrivacyNotice } from '@/content/cookies';
 import { isLegalSlug, legalPages, type LegalSlug } from '@/content/marketing';
 import { showDraftLegalBanner } from '@/server/marketing';
 import { getPublicSettings } from '@/server/settings';
@@ -72,6 +72,8 @@ function PrivacyContent(): ReactNode {
       <p>The company operating Speedy Van is the controller. Booking and job data are processed for contract; accounting records for legal obligation; fraud prevention, job tracking and operational records for legitimate interests; analytics, ads and marketing email only with consent.</p>
       <h2>Processors</h2>
       <p>Processors include Vercel, Neon, Stripe, Mapbox, Resend, Expo, Apple push services, Sentry, Upstash and Google services when consented.</p>
+      <h2>{liveChatPrivacyNotice.heading}</h2>
+      <p>{liveChatPrivacyNotice.body}</p>
       <h2>Rights and retention</h2>
       <p>Customers can request access, portability, rectification, erasure where allowed, and objection to marketing. Retention follows the database retention policy before launch.</p>
       <h2>Driver location</h2>

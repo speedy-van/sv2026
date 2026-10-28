@@ -274,6 +274,5 @@ Single source for every status change on web, API, admin and driver apps. `asser
 
 **`JobStage`** — path from `stagePathFor(service)`:
 - With dropoff: NOT_STARTED → EN_ROUTE_TO_PICKUP → AT_PICKUP → LOADING → EN_ROUTE_TO_DROPOFF → AT_DROPOFF → UNLOADING → COMPLETED
-- Single address (rubbish): NOT_STARTED → EN_ROUTE_TO_PICKUP → AT_PICKUP → LOADING → COMPLETED
 
 Rules: DRIVER moves forward exactly one step, only on their own accepted job, only on the move date (London) or the day after (late-running jobs); may undo one step within 2 minutes. Leaving NOT_STARTED sets status IN_PROGRESS; reaching COMPLETED requires at least one AFTER photo (or a recorded skip reason) and a signature (or a recorded reason such as "customer not present"), then sets status COMPLETED. ADMIN/OWNER may set any stage with a reason (audited). Driver earning at completion = `floor(totalPence × payoutPercent / 100)`.

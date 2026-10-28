@@ -1,7 +1,32 @@
-import { Building2, GraduationCap, House, Package, Piano, Sofa, Trash2, Truck, Warehouse, Zap } from 'lucide-react';
+import { Building2, GraduationCap, House, Package, Piano, Sofa, Truck, Warehouse, Zap } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 export type NavIcon = LucideIcon;
+
+export const headerCopy = {
+  allAreas: 'All areas',
+  allServices: 'View all services',
+  areas: 'Areas',
+  areasIntro: 'Find your area',
+  closeMenu: 'Close menu',
+  contact: 'Contact',
+  getPrice: 'Get a price',
+  help: 'Help',
+  mainNavigation: 'Main navigation',
+  manage: 'Manage booking',
+  menuLabel: 'Navigation menu',
+  mobileNavigation: 'Mobile navigation',
+  openMenu: 'Open menu',
+  prices: 'Prices',
+  services: 'Services',
+  servicesIntro: 'What are you moving?',
+} as const;
+
+export const headerLinks = [
+  { href: '/pricing', label: headerCopy.prices },
+  { href: '/help', label: headerCopy.help },
+  { href: '/manage', label: headerCopy.manage },
+] as const;
 
 export interface ServiceLink {
   href: string;
@@ -18,7 +43,6 @@ export const services: ServiceLink[] = [
   { href: '/services/office-removals', icon: Building2, label: 'Office moves', summary: 'Small offices and workplace moves.' },
   { href: '/services/storage-moves', icon: Warehouse, label: 'Storage moves', summary: 'To storage, from storage or between units.' },
   { href: '/services/ikea-delivery', icon: Package, label: 'IKEA and flat-pack', summary: 'Flat-pack collection and delivery.' },
-  { href: '/services/rubbish-removal', icon: Trash2, label: 'Rubbish removal', summary: 'Clearance priced as a single-address job.' },
   { href: '/services/piano-moving', icon: Piano, label: 'Piano moving', summary: 'Piano moves with access checks.' },
   { href: '/services/same-day-delivery', icon: Zap, label: 'Same-day delivery', summary: 'Urgent small deliveries when slots are free.' },
 ];

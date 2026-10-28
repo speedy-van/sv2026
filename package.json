@@ -29,6 +29,7 @@
     "lighthouse": "npm run build && npm run lighthouse -w @sv/web",
     "load:quote": "npm run build && tsx scripts/load/quote.ts",
     "security:check": "tsx scripts/security-check.ts",
+    "stub:check": "tsx scripts/stub-check.ts",
     "verify": "npm run lint && npm run typecheck && npm run test && npm run build",
     "verify:launch": "tsx scripts/launch-check.ts"
   },

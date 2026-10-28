@@ -6,7 +6,7 @@ export const JobCardSchema = z.object({
   assignmentId: z.string().optional(),
   bookingId: z.string(),
   dispatchStatus: z.string(),
-  earningPence: z.number().int(),
+  earningPence: z.number().int().nullable(),
   expiresAt: z.string().nullable().optional(),
   jobStage: z.string(),
   moveDate: z.string(),
@@ -26,10 +26,15 @@ export const JobDetailSchema = z.object({
   contact: z.object({ name: z.string(), phone: z.string() }),
   customerNotes: z.string().nullable(),
   dispatchStatus: z.string(),
-  earningPence: z.number().int(),
+  earningPence: z.number().int().nullable(),
   extraCharges: z.array(z.object({ amountPence: z.number().int(), description: z.string(), id: z.string(), status: z.string() }).loose()),
   id: z.string(),
-  items: z.unknown(),
+  items: z.array(z.object({
+    itemId: z.string(),
+    name: z.string(),
+    quantity: z.number().int(),
+    unitVolumeM3: z.number()
+  }).loose()),
   jobStage: z.string(),
   moveDate: z.string(),
   pickup: z.unknown(),
@@ -65,7 +70,7 @@ export const ProfileSchema = z.object({
   homePostcode: z.string().nullable(),
   licenceExpiry: z.string().nullable(),
   name: z.string(),
-  payoutPercent: z.number().int(),
+  payoutPercent: z.number().int().nullable(),
   phone: z.string().nullable()
 });
 

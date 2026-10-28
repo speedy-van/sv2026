@@ -39,14 +39,13 @@ export const howItWorksSteps = [
   },
 ] as const;
 
-export const guideDrafts = [
+const guideDraftContent = [
   {
     body: [
       'Scottish flat notation often describes the floor and door. In Glasgow, 2/1 commonly means second floor, first door. In Edinburgh, 3F2 commonly means third floor, second flat.',
       'Enter the real floor in the booking flow so the access price and crew plan are accurate.',
       'This guide is a draft for owner review before publication.',
     ],
-    readingMinutes: 3,
     slug: 'tenement-flat-notation',
     title: 'Tenement move notation in Glasgow and Edinburgh',
   },
@@ -56,7 +55,6 @@ export const guideDrafts = [
       'The price changes when the volume, item count or access changes, so complete the list before payment.',
       'This guide is a draft for owner review before publication.',
     ],
-    readingMinutes: 4,
     slug: 'estimate-how-much-you-have',
     title: 'How to estimate how much you have',
   },
@@ -66,7 +64,6 @@ export const guideDrafts = [
       'Check building access before move day, especially halls and shared flats.',
       'This guide is a draft for owner review before publication.',
     ],
-    readingMinutes: 3,
     slug: 'student-move-checklist',
     title: 'Student move checklist',
   },
@@ -76,7 +73,6 @@ export const guideDrafts = [
       'Do not rely on this guide as legal advice.',
       'This guide is a draft for owner review before publication.',
     ],
-    readingMinutes: 3,
     slug: 'parking-for-removal-vans',
     title: 'Parking for removal vans',
   },
@@ -86,7 +82,6 @@ export const guideDrafts = [
       'Add packing help in the booking flow if you want it included in the price.',
       'This guide is a draft for owner review before publication.',
     ],
-    readingMinutes: 4,
     slug: 'packing-timeline',
     title: 'Packing timeline before a move',
   },
@@ -96,11 +91,15 @@ export const guideDrafts = [
       'Choose a cheaper flexible slot if your date is not fixed.',
       'This guide is a draft for owner review before publication.',
     ],
-    readingMinutes: 3,
     slug: 'glasgow-edinburgh-move',
     title: 'Planning a Glasgow to Edinburgh move',
   },
 ] as const;
+
+export const guideDrafts = guideDraftContent.map((guide) => ({
+  ...guide,
+  readingMinutes: Math.max(1, Math.ceil(guide.body.join(' ').trim().split(/\s+/).length / 200)),
+}));
 
 export const legalPages = {
   cancellation: {
@@ -124,5 +123,11 @@ export const legalPages = {
 export type LegalSlug = keyof typeof legalPages;
 
 export function isLegalSlug(slug: string): slug is LegalSlug {
-  return slug in legalPages;
+  return Object.hasOwn(legalPages, slug);
 }
+
+export const serviceDirectoryCopy = {
+  description: 'House and flat removals, man and van, furniture and sofa transport, and specialist moving services across Scotland.',
+  lead: 'Find help with a house or flat move, a few boxes, furniture collection or sofa transport. Choose your service, then add pickup and delivery details to check the available prices.',
+  title: 'Our services',
+} as const;

@@ -44,8 +44,15 @@ export async function sendTransactionalEmail(payload: EmailSendPayload, outboxEv
     to: payload.to,
     ...(payload.data.contactEmail ? { replyTo: payload.data.contactEmail } : {}),
   };
-  const result = await resend.emails.send(options);
-  if (result.error) {
-    throw new AppError('UPSTREAM_UNAVAILABLE', 'Email could not be sent.', { resendError: result.error.message });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => { controller.abort(); }, 10_000);
+  try {
+    const result = await resend.emails.send(options, { signal: controller.signal, idempotencyKey: outboxEventId });
+    if (result.error) throw new AppError('UPSTREAM_UNAVAILABLE', 'Email could not be sent.');
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    throw new AppError('UPSTREAM_UNAVAILABLE', 'Email could not be sent.');
+  } finally {
+    clearTimeout(timeout);
   }
 }

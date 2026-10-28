@@ -4,11 +4,16 @@ import type { ReactNode } from 'react';
 import { ContactForm } from '@/components/marketing/contact-form';
 import { getPublicSettings } from '@/server/settings';
 
-export const metadata: Metadata = {
-  alternates: { canonical: '/contact' },
-  description: 'Contact Speedy Van about a booking, quote or move.',
-  title: 'Contact',
-};
+import { createPageMetadata, getSeoSettings } from '@/server/seo';
+
+export async function generateMetadata(): Promise<Metadata> {
+  return createPageMetadata({
+    path: '/contact',
+    settings: await getSeoSettings(),
+    description: 'Contact Speedy Van about a booking, quote or move.',
+    title: 'Contact',
+  });
+}
 
 export default async function ContactPage(): Promise<ReactNode> {
   const settings = await getPublicSettings();

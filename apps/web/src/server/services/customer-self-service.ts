@@ -86,7 +86,7 @@ async function emailDataBase(): Promise<{ canonicalOrigin: string; contactEmail:
   };
 }
 
-export async function requestManageLink(input: { email: string; reference: string }, now = new Date()): Promise<void> {
+export async function requestManageLink(input: { email: string; reference: string }, now = new Date()): Promise<string | null> {
   enforceEmailLimit(input.email, now);
   const booking = await prisma.booking.findFirst({
     where: {
@@ -95,10 +95,10 @@ export async function requestManageLink(input: { email: string; reference: strin
     },
     select: { contactEmail: true, id: true, moveDate: true, reference: true },
   });
-  if (!booking) return;
+  if (!booking) return null;
   const base = await emailDataBase();
   const token = await manageLinkForBooking(booking, now);
-  await enqueueOutbox(
+  const event = await enqueueOutbox(
     prisma,
     'email.send',
     json({
@@ -112,6 +112,7 @@ export async function requestManageLink(input: { email: string; reference: strin
     }),
     `manage-link:${booking.id}:${contactEmailHash(booking.contactEmail)}:${String(Math.floor(now.getTime() / 3_600_000))}`,
   );
+  return event.id;
 }
 
 export async function bookingIdFromManageToken(token: string): Promise<string> {

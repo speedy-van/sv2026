@@ -2,11 +2,16 @@ import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import { getReviewSummary } from '@/server/marketing';
 
-export const metadata: Metadata = {
-  alternates: { canonical: '/reviews' },
-  description: 'Verified Speedy Van booking reviews and review policy.',
-  title: 'Reviews',
-};
+import { createPageMetadata, getSeoSettings } from '@/server/seo';
+
+export async function generateMetadata(): Promise<Metadata> {
+  return createPageMetadata({
+    path: '/reviews',
+    settings: await getSeoSettings(),
+    description: 'Verified Speedy Van booking reviews and review policy.',
+    title: 'Reviews',
+  });
+}
 
 export default async function ReviewsPage(): Promise<ReactNode> {
   const summary = await getReviewSummary();

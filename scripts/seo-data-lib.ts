@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -20,9 +20,11 @@ export interface CsvRoute {
 }
 
 export interface GeneratedLocation extends CsvLocation {
-  confidence: 'fallback' | 'high' | 'manual';
+  confidence: 'manual' | 'mapbox';
   lat: number;
   lng: number;
+  mapboxId?: string;
+  matchedCouncilArea: string;
   nearestCities: string[];
   nearestLocations: string[];
   regionHub: string;
@@ -38,6 +40,12 @@ export interface GeneratedDistance {
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 export const outputDir = resolve(root, 'apps/web/src/content/locations');
+export const scotlandBounds = {
+  east: -0.5,
+  north: 61.2,
+  south: 54.5,
+  west: -8.9,
+} as const;
 
 export function repoPath(path: string): string {
   return resolve(root, path);
@@ -87,55 +95,67 @@ export function readRoutesCsv(): CsvRoute[] {
   return parseCsv<CsvRoute>(readFileSync(repoPath('docs/data/routes.csv'), 'utf8'));
 }
 
-const knownCoordinates: Record<string, { lat: number; lng: number }> = {
-  aberdeen: { lat: 57.1497, lng: -2.0943 },
-  ayr: { lat: 55.4586, lng: -4.6292 },
-  dundee: { lat: 56.462, lng: -2.9707 },
-  dunfermline: { lat: 56.0717, lng: -3.4522 },
-  edinburgh: { lat: 55.9533, lng: -3.1883 },
-  'fort-william': { lat: 56.8198, lng: -5.1052 },
-  glasgow: { lat: 55.8642, lng: -4.2518 },
-  inverness: { lat: 57.4778, lng: -4.2247 },
-  perth: { lat: 56.3969, lng: -3.437 },
-  'st-andrews': { lat: 56.3398, lng: -2.7967 },
-  stirling: { lat: 56.1165, lng: -3.9369 },
-};
-
-const regionAnchors: Record<string, { lat: number; lng: number }> = {
-  'argyll-and-bute': { lat: 56.15, lng: -5.05 },
-  'ayrshire-and-arran': { lat: 55.55, lng: -4.65 },
-  'edinburgh-and-lothians': { lat: 55.93, lng: -3.25 },
-  fife: { lat: 56.2, lng: -3.15 },
-  'forth-valley': { lat: 56.08, lng: -3.9 },
-  'glasgow-and-clyde': { lat: 55.86, lng: -4.35 },
-  highlands: { lat: 57.25, lng: -4.4 },
-  islands: { lat: 58.55, lng: -4.2 },
-  lanarkshire: { lat: 55.72, lng: -3.85 },
-  'north-east': { lat: 57.25, lng: -2.3 },
-  'south-of-scotland': { lat: 55.25, lng: -3.0 },
-  tayside: { lat: 56.55, lng: -3.15 },
-};
-
-function hash(value: string): number {
-  let result = 0;
-  for (let index = 0; index < value.length; index += 1) {
-    result = (result * 31 + value.charCodeAt(index)) >>> 0;
-  }
-  return result;
+export interface LocationOverride {
+  lat: string;
+  lng: string;
+  matched_council_area: string;
+  slug: string;
 }
 
-export function coordinateFor(location: CsvLocation): { confidence: GeneratedLocation['confidence']; lat: number; lng: number } {
-  const known = knownCoordinates[location.slug];
-  if (known) return { ...known, confidence: 'high' };
-  const anchor = regionAnchors[location.region] ?? { lat: 56.4, lng: -3.8 };
-  const seed = hash(location.slug);
-  const latOffset = (((seed % 1000) / 1000) - 0.5) * 0.6;
-  const lngOffset = ((((seed >>> 10) % 1000) / 1000) - 0.5) * 0.9;
-  return {
-    confidence: 'fallback',
-    lat: Number((anchor.lat + latOffset).toFixed(5)),
-    lng: Number((anchor.lng + lngOffset).toFixed(5)),
-  };
+function unquoteEnvValue(value: string): string {
+  const trimmed = value.trim();
+  if ((trimmed.startsWith('"') && trimmed.endsWith('"')) || (trimmed.startsWith("'") && trimmed.endsWith("'"))) {
+    return trimmed.slice(1, -1);
+  }
+  return trimmed;
+}
+
+function readEnvFileValue(key: string): string | undefined {
+  const path = repoPath('.env.local');
+  if (!existsSync(path)) return undefined;
+  const raw = readFileSync(path, 'utf8');
+  for (const line of raw.split(/\r?\n/u)) {
+    const match = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)\s*$/u);
+    if (!match || match[1] !== key) continue;
+    return unquoteEnvValue(match[2] ?? '');
+  }
+  return undefined;
+}
+
+export function envValue(key: string): string | undefined {
+  return process.env[key] ?? readEnvFileValue(key);
+}
+
+export function requireMapboxToken(): string {
+  const token = envValue('MAPBOX_SECRET_TOKEN');
+  if (!token) throw new Error('MAPBOX_SECRET_TOKEN is required for R1 SEO data generation. Add it to .env.local or the process environment.');
+  if (!/^(?:pk|sk)\./u.test(token)) throw new Error('MAPBOX_SECRET_TOKEN must start with pk. or sk.');
+  return token;
+}
+
+export function readLocationOverrides(): LocationOverride[] {
+  const path = repoPath('docs/data/location-overrides.csv');
+  if (!existsSync(path)) return [];
+  return parseCsv<LocationOverride>(readFileSync(path, 'utf8'));
+}
+
+export function readGeneratedLocations(): GeneratedLocation[] {
+  return JSON.parse(readFileSync(resolve(outputDir, 'locations.generated.json'), 'utf8')) as GeneratedLocation[];
+}
+
+export function insideScotlandBounds(point: { lat: number; lng: number }): boolean {
+  return point.lat >= scotlandBounds.south && point.lat <= scotlandBounds.north && point.lng >= scotlandBounds.west && point.lng <= scotlandBounds.east;
+}
+
+export function normalizePlaceName(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/&/gu, 'and')
+    .replace(/\bcity of\b/gu, '')
+    .replace(/\bthe\b/gu, '')
+    .replace(/[^a-z0-9]+/gu, ' ')
+    .trim()
+    .replace(/\s+/gu, ' ');
 }
 
 export function haversineMiles(left: { lat: number; lng: number }, right: { lat: number; lng: number }): number {

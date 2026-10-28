@@ -1,9 +1,14 @@
 import type { NextConfig } from 'next';
 import { redirects } from './src/content/redirects';
 
+const developmentScriptPolicy = process.env.NODE_ENV === 'development' ? " 'unsafe-eval'" : '';
+const previewRobotsHeaders = ['preview', 'development'].includes(process.env.VERCEL_ENV ?? '')
+  ? [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }]
+  : [];
+
 const csp = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' https://js.stripe.com https://www.googletagmanager.com",
+  `script-src 'self' 'unsafe-inline'${developmentScriptPolicy} https://js.stripe.com https://www.googletagmanager.com`,
   'frame-src https://js.stripe.com https://hooks.stripe.com',
   "connect-src 'self' https://api.stripe.com https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com",
   "img-src 'self' data: blob: https://*.stripe.com https://www.googletagmanager.com https://*.google-analytics.com",
@@ -12,7 +17,8 @@ const csp = [
   "base-uri 'self'",
   "form-action 'self'",
   "frame-ancestors 'none'",
-  'upgrade-insecure-requests',
+  // WebKit upgrades even localhost assets to HTTPS; the dev server serves HTTP.
+  ...(process.env.NODE_ENV === 'development' ? [] : ['upgrade-insecure-requests']),
 ].join('; ');
 
 const securityHeaders = [
@@ -44,6 +50,8 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   experimental: {
+    // Prerendered SEO pages read live pricing and capacity; bound DB concurrency.
+    cpus: 4,
     optimizePackageImports: ['@chakra-ui/react'],
   },
   headers: async () => {
@@ -51,7 +59,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/:path*',
-        headers: [...securityHeaders],
+        headers: [...securityHeaders, ...previewRobotsHeaders],
       },
     ];
   },

@@ -184,8 +184,8 @@ async function createBooking(params: {
 
 export async function GET(request: Request): Promise<Response> {
   return withApi(request, { auth: false }, async ({ requestId }) => {
-    if (process.env.NODE_ENV === 'production' && process.env.E2E !== '1') {
-      throw new AppError('FORBIDDEN', 'Self-service test fixture is disabled.');
+    if (process.env.NODE_ENV === 'production' || process.env.E2E !== '1' || !process.env.DATABASE_URL_TEST || process.env.DATABASE_URL_TEST === process.env.DATABASE_URL) {
+      throw new AppError('FORBIDDEN', 'Self-service test fixtures require E2E mode and a separate test database.');
     }
     const active = await getActivePricingConfig();
     const today = londonToday();

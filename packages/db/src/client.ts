@@ -7,6 +7,7 @@ dns.setDefaultResultOrder('ipv4first');
 
 type GlobalPrisma = typeof globalThis & {
   __speedyVanPrisma?: PrismaClient;
+  __speedyVanPrismaConstructor?: typeof PrismaClient;
 };
 
 export function createPrismaClient(connectionString = runtimeDatabaseUrl()): PrismaClient {
@@ -17,8 +18,12 @@ export function createPrismaClient(connectionString = runtimeDatabaseUrl()): Pri
 
 const globalPrisma = globalThis as GlobalPrisma;
 
-export const prisma = globalPrisma.__speedyVanPrisma ?? createPrismaClient();
+// Regenerating Prisma changes its constructor; an older singleton still has the old schema.
+export const prisma = globalPrisma.__speedyVanPrismaConstructor === PrismaClient
+  ? globalPrisma.__speedyVanPrisma ?? createPrismaClient()
+  : createPrismaClient();
 
 if (process.env.NODE_ENV !== 'production') {
   globalPrisma.__speedyVanPrisma = prisma;
+  globalPrisma.__speedyVanPrismaConstructor = PrismaClient;
 }

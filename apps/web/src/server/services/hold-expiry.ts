@@ -15,16 +15,22 @@ export async function expireBookingHolds(now = new Date()): Promise<{ bookingsEx
     select: {
       id: true,
       payments: {
-        where: { status: { in: ['REQUIRES_PAYMENT', 'FAILED'] } },
-        select: { id: true, stripePaymentIntentId: true },
+        select: { id: true, kind: true, status: true, stripePaymentIntentId: true },
       },
     },
   });
 
   let bookingsExpired = 0;
   for (const booking of bookings) {
+    // An initial payment awaiting webhook confirmation must keep its booking intact.
+    const awaitingConfirmation = booking.payments.some((payment) =>
+      (payment.kind === 'BOOKING' || payment.kind === 'ADMIN_BOOKING' || payment.kind === 'MANUAL_QUOTE')
+      && (payment.status === 'PROCESSING' || payment.status === 'SUCCEEDED'),
+    );
+    if (awaitingConfirmation) continue;
     let skip = false;
     for (const payment of booking.payments) {
+      if (payment.status !== 'REQUIRES_PAYMENT' && payment.status !== 'FAILED') continue;
       const result = await cancelPaymentIntent(payment.stripePaymentIntentId);
       if (result === 'skip') skip = true;
     }

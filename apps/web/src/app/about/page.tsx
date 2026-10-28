@@ -3,11 +3,16 @@ import type { ReactNode } from 'react';
 import { BookingStartCard } from '@/components/booking/booking-start-card';
 import { getPublicSettings } from '@/server/settings';
 
-export const metadata: Metadata = {
-  alternates: { canonical: '/about' },
-  description: 'About Speedy Van and the booking system behind fixed online removals prices.',
-  title: 'About Speedy Van',
-};
+import { createPageMetadata, getSeoSettings } from '@/server/seo';
+
+export async function generateMetadata(): Promise<Metadata> {
+  return createPageMetadata({
+    path: '/about',
+    settings: await getSeoSettings(),
+    description: 'About Speedy Van and the booking system behind fixed online removals prices.',
+    title: 'About Speedy Van',
+  });
+}
 
 export default async function AboutPage(): Promise<ReactNode> {
   const settings = await getPublicSettings();

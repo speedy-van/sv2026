@@ -5,7 +5,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import type { z } from 'zod';
 
-export type BookingStep = 'move' | 'items' | 'prices' | 'pay';
+export type BookingStep = 'move' | 'access' | 'items' | 'prices' | 'pay';
 export type Address = z.infer<typeof AddressSchema>;
 export type AccessDetail = z.infer<typeof AccessDetailSchema>;
 export type QuoteDto = z.infer<typeof QuoteDtoSchema>;
@@ -39,6 +39,7 @@ export interface BookingDraftState {
   marketingOptIn: boolean;
   pickup: Address | null;
   pickupAccess: AccessDetail;
+  paymentIntentId?: string | null;
   quote: QuoteDto | null;
   quotePublicId: string | null;
   selectedDate: string | null;
@@ -72,6 +73,7 @@ const initialDraft = {
   marketingOptIn: false,
   pickup: null,
   pickupAccess: defaultAccess,
+  paymentIntentId: null,
   quote: null,
   quotePublicId: null,
   selectedDate: null,
@@ -85,6 +87,14 @@ const initialDraft = {
 
 function newId(): string {
   return crypto.randomUUID();
+}
+
+export function mergePersistedBookingDraft(persisted: unknown, current: BookingDraftState): BookingDraftState {
+  if (!persisted || typeof persisted !== 'object') return current;
+  const variant = 'service' in persisted && persisted.service === 'storage' && 'variant' in persisted
+    ? persisted.variant === 'into-storage' ? 'to-storage' : persisted.variant === 'out-of-storage' ? 'from-storage' : null
+    : null;
+  return { ...current, ...persisted, ...(variant ? { variant, quote: null, quotePublicId: null, selectedDate: null, selectedSlot: null } : {}) };
 }
 
 export const useBookingDraft = create<BookingDraftState>()(
@@ -110,6 +120,7 @@ export const useBookingDraft = create<BookingDraftState>()(
       name: 'sv-booking-draft-v1',
       storage: createJSONStorage(() => sessionStorage),
       version: 1,
+      merge: mergePersistedBookingDraft,
     },
   ),
 );
@@ -119,7 +130,7 @@ export function firstIncompleteStep(state: BookingDraftState): BookingStep {
     if (!state.selectedDate || !state.selectedSlot) return 'prices';
     return 'pay';
   }
-  if (!state.service || !state.pickup || (state.service !== 'rubbish' && !state.dropoff) || !state.variant) return 'move';
+  if (!state.service || !state.pickup || !state.dropoff || !state.variant) return 'move';
   if (state.items.length === 0 && state.service !== 'piano') return 'items';
   if (!state.quote || !state.selectedDate || !state.selectedSlot) return 'prices';
   return 'pay';

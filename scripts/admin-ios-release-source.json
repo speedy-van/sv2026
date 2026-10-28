@@ -1,0 +1,54 @@
+[
+  {
+    "path": "apps/admin/app.config.ts",
+    "sha256": "e1126bd211dd13c8c0bfc6f2cb962ecb7de40248f2f3210b0565136339a40aaf"
+  },
+  {
+    "path": "apps/admin/src/notifications/chat-push.ts",
+    "sha256": "5300c038a5862ebdc20759276ee5931e43eea52e052deb045e06f18c7d504a59"
+  },
+  {
+    "path": "apps/admin/src/notifications/chat-sound-provider.tsx",
+    "sha256": "5c413c39bdf6b1d4d7ac8841cf4923106ce5086249edec306d9d0ef7d48bddb9"
+  },
+  {
+    "path": "apps/admin/src/notifications/chat-sound-tracker.ts",
+    "sha256": "3e4a5b539d284fdecd106dda6968aa58af63603ea4d2d1ac1f773686ba68de11"
+  },
+  {
+    "path": "apps/admin/src/notifications/use-booking-alerts.ts",
+    "sha256": "b7b62d4978fa46fe25eee5efbb01949ae9417dc7980ec620d3b5da503ea51f3f"
+  },
+  {
+    "path": "apps/admin/src/notifications/routing.ts",
+    "sha256": "9e8b23769675fde6238d9a51b5fbfa657b31c200cb8929264769d78c4ce595fb"
+  },
+  {
+    "path": "apps/admin/src/notifications/notification-sound-focus.ts",
+    "sha256": "5d7b022c4f9107391b2f410d18772a8b94bcd5e9f57955e96eb3060f4b39da50"
+  },
+  {
+    "path": "apps/admin/src/notifications/booking-alert-sound.tsx",
+    "sha256": "41e283da68eeddd8efb8145a83fa7bc39cb9b8633ac5e384bd07d42cbb5b9ff6"
+  },
+  {
+    "path": "apps/admin/src/notifications/use-chat-sound-player.ts",
+    "sha256": "f66c0ceb5fcfcb18cc40d5f89844bf2a3bb39fcb6f5c96cd07c21497ce6109d6"
+  },
+  {
+    "path": "apps/admin/src/state/auth.tsx",
+    "sha256": "83f1060a6035b00be89371cfb3467b90338246846c468090435b1418fb79e656"
+  },
+  {
+    "path": "apps/admin/assets/sounds/new-job.wav",
+    "sha256": "09c0374f169a701059ede07b2054de9628cc7cfbcfb60666fd86d40f77e67998"
+  },
+  {
+    "path": "apps/admin/assets/sounds/chat-message.wav",
+    "sha256": "09c0374f169a701059ede07b2054de9628cc7cfbcfb60666fd86d40f77e67998"
+  },
+  {
+    "path": "apps/admin/public/sounds/chat-message.wav",
+    "sha256": "09c0374f169a701059ede07b2054de9628cc7cfbcfb60666fd86d40f77e67998"
+  }
+]

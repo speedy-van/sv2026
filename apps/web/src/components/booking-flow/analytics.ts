@@ -1,5 +1,7 @@
 'use client';
 
+import { readConsent } from '../consent/consent';
+
 type BookingEvent =
   | 'add_payment_info'
   | 'address_selected'
@@ -20,25 +22,12 @@ declare global {
   }
 }
 
-const consentCookie = 'sv_consent';
 const ga4Id = process.env.NEXT_PUBLIC_GA4_ID ?? '';
 const googleAdsId = process.env.NEXT_PUBLIC_GADS_ID ?? '';
 const googleAdsPurchaseLabel = process.env.NEXT_PUBLIC_GADS_PURCHASE_LABEL ?? '';
 
 function consent(): { advertising: boolean; analytics: boolean } {
-  if (typeof document === 'undefined') return { advertising: false, analytics: false };
-  const raw = document.cookie
-    .split(';')
-    .map((cookie) => cookie.trim())
-    .find((cookie) => cookie.startsWith(`${consentCookie}=`))
-    ?.slice(consentCookie.length + 1);
-  if (!raw) return { advertising: false, analytics: false };
-  try {
-    const parsed = JSON.parse(decodeURIComponent(raw)) as { advertising?: unknown; analytics?: unknown };
-    return { advertising: parsed.advertising === true, analytics: parsed.analytics === true };
-  } catch {
-    return { advertising: false, analytics: false };
-  }
+  return readConsent() ?? { advertising: false, analytics: false };
 }
 
 function gtag(...args: unknown[]): void {

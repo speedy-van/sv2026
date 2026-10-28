@@ -34,6 +34,12 @@ export async function lockSlot(tx: DbTx, moveDate: Date, slot: Slot): Promise<vo
 }
 
 export async function capacityFor(tx: DbTx, moveDate: Date, slot: Slot): Promise<number> {
+  const closure = await tx.capacityClosure.findUnique({ where: { date_slot: { date: moveDate, slot } }, select: { id: true } });
+  if (closure) return 0;
+  return configuredCapacityFor(tx, moveDate, slot);
+}
+
+export async function configuredCapacityFor(tx: DbTx, moveDate: Date, slot: Slot): Promise<number> {
   const override = await tx.capacityOverride.findUnique({
     where: { date_slot: { date: moveDate, slot } },
     select: { capacity: true },
@@ -50,12 +56,40 @@ export async function capacityFor(tx: DbTx, moveDate: Date, slot: Slot): Promise
     where: { key: 'operations' },
     select: { value: true },
   });
-  const defaultCapacity = operations?.value && typeof operations.value === 'object' && !Array.isArray(operations.value) ? operations.value['defaultCapacityPerSlot'] : undefined;
+  return defaultCapacityFromSettings(operations?.value);
+}
+
+function defaultCapacityFromSettings(value: unknown): number {
+  const defaultCapacity = value && typeof value === 'object' && !Array.isArray(value)
+    && 'defaultCapacityPerSlot' in value ? value.defaultCapacityPerSlot : undefined;
   return typeof defaultCapacity === 'number' ? defaultCapacity : 1;
 }
 
-function coversSlot(start: Slot, blocksSlots: number, target: Slot): boolean {
-  return slotsCovered(start, blocksSlots).includes(target);
+/** Read a day's configuration once rather than repeating three lookups for each window. */
+export async function configuredCapacitiesForSlots(
+  tx: DbTx,
+  moveDate: Date,
+  slots: readonly Slot[] = ORDERED_SLOTS,
+): Promise<Map<Slot, number>> {
+  const [overrides, rules, operations] = await Promise.all([
+    tx.capacityOverride.findMany({ where: { date: moveDate, slot: { in: [...slots] } }, select: { slot: true, capacity: true } }),
+    tx.capacityRule.findMany({ where: { weekday: moveDate.getUTCDay(), slot: { in: [...slots] } }, select: { slot: true, capacity: true } }),
+    tx.setting.findUnique({ where: { key: 'operations' }, select: { value: true } }),
+  ]);
+  const fallback = defaultCapacityFromSettings(operations?.value);
+  return new Map(slots.map((slot) => [
+    slot,
+    overrides.find((row) => row.slot === slot)?.capacity
+      ?? rules.find((row) => row.slot === slot)?.capacity ?? fallback,
+  ]));
+}
+
+export function capacityUnitsInSlot(
+  reservations: readonly { slot: Slot; blocksSlots: number; capacityUnits: number }[],
+  target: Slot,
+): number {
+  return reservations.reduce((total, reservation) => slotsCovered(reservation.slot, reservation.blocksSlots).includes(target)
+    ? total + reservation.capacityUnits : total, 0);
 }
 
 export async function countSlotUsage(tx: DbTx, moveDate: Date, slot: Slot, now = new Date()): Promise<number> {
@@ -69,17 +103,11 @@ export async function countSlotUsage(tx: DbTx, moveDate: Date, slot: Slot, now =
     },
     select: { slot: true, capacityUnits: true, blocksSlots: true },
   });
-  const bookingUsage = bookings.reduce((total, booking) => {
-    return coversSlot(booking.slot, booking.blocksSlots, slot) ? total + booking.capacityUnits : total;
-  }, 0);
-
   const holds = await tx.slotHold.findMany({
     where: { date: moveDate, expiresAt: { gt: now } },
     select: { slot: true, capacityUnits: true, blocksSlots: true },
   });
-  return holds.reduce((total, hold) => {
-    return coversSlot(hold.slot, hold.blocksSlots, slot) ? total + hold.capacityUnits : total;
-  }, bookingUsage);
+  return capacityUnitsInSlot(bookings, slot) + capacityUnitsInSlot(holds, slot);
 }
 
 export async function assertSlotCapacity(tx: DbTx, input: CapacityCheckInput): Promise<void> {

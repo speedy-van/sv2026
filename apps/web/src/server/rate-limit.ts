@@ -12,14 +12,20 @@ export type PublicRateLimitKind =
   | 'addressRetrieve'
   | 'authOtpRequest'
   | 'authOtpVerify'
+  | 'authPasswordLogin'
   | 'authRefresh'
   | 'catalogue'
   | 'contact'
+  | 'chatRead'
+  | 'chatWrite'
   | 'mapStatic'
   | 'manageLink'
   | 'quote'
   | 'manualQuote'
+  | 'visitorPresence'
   | 'booking';
+
+type RateLimitKind = PublicRateLimitKind | 'authPasswordAccount' | 'adminChat' | 'adminDriver';
 
 interface LimitRule {
   limit: number;
@@ -34,11 +40,20 @@ const rules = {
   addressRetrieve: [{ limit: 30, windowSeconds: 60 }],
   authOtpRequest: [{ limit: 10, windowSeconds: 3600 }],
   authOtpVerify: [{ limit: 10, windowSeconds: 3600 }],
+  authPasswordLogin: [{ limit: 10, windowSeconds: 3600 }],
+  authPasswordAccount: [{ limit: 10, windowSeconds: 3600 }],
+  adminChat: [{ limit: 300, windowSeconds: 60 }],
+  adminDriver: [{ limit: 300, windowSeconds: 60 }],
   authRefresh: [{ limit: 60, windowSeconds: 3600 }],
   catalogue: [{ limit: 120, windowSeconds: 60 }],
   contact: [
     { limit: 5, windowSeconds: 3600 },
     { limit: 20, windowSeconds: 86400 },
+  ],
+  chatRead: [{ limit: 180, windowSeconds: 60 }],
+  chatWrite: [
+    { limit: 20, windowSeconds: 60 },
+    { limit: 100, windowSeconds: 3600 },
   ],
   mapStatic: [{ limit: 60, windowSeconds: 60 }],
   manageLink: [{ limit: 5, windowSeconds: 3600 }],
@@ -47,8 +62,9 @@ const rules = {
     { limit: 60, windowSeconds: 3600 },
   ],
   manualQuote: [{ limit: 5, windowSeconds: 3600 }],
+  visitorPresence: [{ limit: 120, windowSeconds: 60 }],
   booking: [{ limit: 10, windowSeconds: 3600 }],
-} as const satisfies Record<PublicRateLimitKind, readonly LimitRule[]>;
+} as const satisfies Record<RateLimitKind, readonly LimitRule[]>;
 
 const memoryHits = new Map<string, number[]>();
 const ratelimitCache = new Map<string, Ratelimit>();
@@ -75,7 +91,7 @@ function redisClient(): Redis | null {
   });
 }
 
-function upstashLimiter(kind: PublicRateLimitKind, rule: LimitRule): Ratelimit | null {
+function upstashLimiter(kind: RateLimitKind, rule: LimitRule): Ratelimit | null {
   const redis = redisClient();
   if (!redis) return null;
   const key = `${kind}:${String(rule.limit)}:${String(rule.windowSeconds)}`;
@@ -91,7 +107,7 @@ function upstashLimiter(kind: PublicRateLimitKind, rule: LimitRule): Ratelimit |
   return limiter;
 }
 
-function enforceMemoryLimit(identifier: string, kind: PublicRateLimitKind, rule: LimitRule): void {
+function enforceMemoryLimit(identifier: string, kind: RateLimitKind, rule: LimitRule): void {
   const now = Date.now();
   const key = `${kind}:${identifier}:${String(rule.limit)}:${String(rule.windowSeconds)}`;
   const cutoff = now - rule.windowSeconds * 1000;
@@ -103,8 +119,8 @@ function enforceMemoryLimit(identifier: string, kind: PublicRateLimitKind, rule:
   memoryHits.set(key, hits);
 }
 
-export async function enforceRateLimit(request: Request, kind: PublicRateLimitKind): Promise<void> {
-  const identifier = hashKey(ipFrom(request));
+async function enforceIdentifierLimit(value: string, kind: RateLimitKind): Promise<void> {
+  const identifier = hashKey(value);
   for (const rule of rules[kind]) {
     const limiter = upstashLimiter(kind, rule);
     if (limiter) {
@@ -124,4 +140,24 @@ export async function enforceRateLimit(request: Request, kind: PublicRateLimitKi
     }
     enforceMemoryLimit(identifier, kind, rule);
   }
+}
+
+export async function enforceRateLimit(request: Request, kind: PublicRateLimitKind): Promise<void> {
+  await enforceIdentifierLimit(ipFrom(request), kind);
+}
+
+export async function enforcePasswordAccountRateLimit(email: string): Promise<void> {
+  await enforceIdentifierLimit(`account:${email.trim().toLowerCase()}`, 'authPasswordAccount');
+}
+
+export async function enforceChatSessionRateLimit(conversationId: string): Promise<void> {
+  await enforceIdentifierLimit(`chat-session:${conversationId}`, 'chatWrite');
+}
+
+export async function enforceAdminChatRateLimit(userId: string): Promise<void> {
+  await enforceIdentifierLimit(`admin-chat:${userId}`, 'adminChat');
+}
+
+export async function enforceAdminDriverRateLimit(userId: string): Promise<void> {
+  await enforceIdentifierLimit(`admin-driver:${userId}`, 'adminDriver');
 }

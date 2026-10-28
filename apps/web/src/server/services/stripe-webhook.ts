@@ -49,7 +49,7 @@ async function findPayment(intent: Stripe.PaymentIntent) {
   });
 }
 
-async function confirmBookingPayment(paymentId: string, now: Date): Promise<void> {
+async function confirmBookingPayment(paymentId: string, now: Date, stripeData: { stripeChargeId: string | null; stripePaymentIntentId: string }): Promise<void> {
   await prisma.$transaction(async (tx) => {
     const payment = await tx.payment.findUnique({
       where: { id: paymentId },
@@ -74,7 +74,12 @@ async function confirmBookingPayment(paymentId: string, now: Date): Promise<void
       },
     });
     if (!payment) throw new AppError('NOT_FOUND', 'Payment not found.');
-    if (payment.status === 'SUCCEEDED' && payment.booking.status === 'CONFIRMED') return;
+    if (payment.status === 'SUCCEEDED' && payment.booking.status !== 'PENDING_PAYMENT') {
+      if (payment.booking.status === 'CONFIRMED' || payment.booking.status === 'IN_PROGRESS') {
+        await tx.booking.updateMany({ where: { id: payment.bookingId, deletedAt: { not: null } }, data: { deletedAt: null, version: { increment: 1 } } });
+      }
+      return;
+    }
 
     const holdExpired = !payment.booking.holdExpiresAt || payment.booking.holdExpiresAt.getTime() <= now.getTime() || payment.booking.status === 'EXPIRED';
     if (holdExpired) {
@@ -88,9 +93,9 @@ async function confirmBookingPayment(paymentId: string, now: Date): Promise<void
         });
       } catch (error) {
         if (!(error instanceof AppError) || error.code !== 'SLOT_UNAVAILABLE') throw error;
-        await tx.payment.update({ data: { status: 'SUCCEEDED' }, where: { id: payment.id } });
+        await tx.payment.update({ data: { ...stripeData, status: 'SUCCEEDED' }, where: { id: payment.id } });
         await tx.booking.update({
-          data: { holdExpiresAt: null, status: 'EXPIRED' },
+          data: { deletedAt: null, holdExpiresAt: null, status: 'EXPIRED' },
           where: { id: payment.bookingId },
         });
         await recomputeBookingMoney(tx, payment.bookingId);
@@ -108,9 +113,9 @@ async function confirmBookingPayment(paymentId: string, now: Date): Promise<void
       }
     }
 
-    await tx.payment.update({ data: { status: 'SUCCEEDED' }, where: { id: payment.id } });
+    await tx.payment.update({ data: { ...stripeData, status: 'SUCCEEDED' }, where: { id: payment.id } });
     await tx.booking.update({
-      data: { holdExpiresAt: null, status: 'CONFIRMED' },
+      data: { deletedAt: null, holdExpiresAt: null, status: 'CONFIRMED' },
       where: { id: payment.bookingId },
     });
     await recomputeBookingMoney(tx, payment.bookingId);
@@ -144,6 +149,7 @@ async function applyReschedulePayment(paymentId: string, now: Date): Promise<voi
       await recomputeBookingMoney(tx, payment.bookingId);
       return;
     }
+    await tx.booking.updateMany({ where: { id: payment.bookingId, deletedAt: { not: null } }, data: { deletedAt: null, version: { increment: 1 } } });
     await tx.slotHold.delete({ where: { id: hold.id } });
     if (hold.expiresAt.getTime() <= now.getTime()) {
       await recomputeBookingMoney(tx, payment.bookingId);
@@ -215,7 +221,7 @@ async function applyExtraChargePayment(paymentId: string): Promise<void> {
       await tx.extraCharge.update({ data: { status: 'PAID' }, where: { id: payment.extraCharge.id } });
     }
     await tx.booking.update({
-      data: { totalPence: { increment: payment.amountPence }, version: { increment: 1 } },
+      data: { deletedAt: null, totalPence: { increment: payment.amountPence }, version: { increment: 1 } },
       where: { id: payment.bookingId },
     });
     await recomputeBookingMoney(tx, payment.bookingId);
@@ -246,17 +252,28 @@ async function handlePaymentIntentSucceeded(intent: Stripe.PaymentIntent, now: D
     });
     return;
   }
-  await prisma.payment.update({
-    data: {
-      status: 'SUCCEEDED',
-      stripeChargeId: typeof intent.latest_charge === 'string' ? intent.latest_charge : intent.latest_charge?.id ?? null,
-      stripePaymentIntentId: intent.id,
-    },
-    where: { id: payment.id },
-  });
+  const stripeData = {
+    stripeChargeId: typeof intent.latest_charge === 'string' ? intent.latest_charge : intent.latest_charge?.id ?? null,
+    stripePaymentIntentId: intent.id,
+  };
   if (payment.kind === 'BOOKING' || payment.kind === 'ADMIN_BOOKING' || payment.kind === 'MANUAL_QUOTE') {
-    await confirmBookingPayment(payment.id, now);
-  } else if (payment.kind === 'RESCHEDULE_DIFFERENCE') {
+    await confirmBookingPayment(payment.id, now, stripeData);
+    return;
+  }
+  await prisma.$transaction(async (tx) => {
+    const updated = await tx.payment.updateMany({
+      data: {
+        status: 'SUCCEEDED',
+        ...stripeData,
+      },
+      where: { id: payment.id, status: { not: 'SUCCEEDED' } },
+    });
+    // Never keep a financial record hidden while its confirmation/refund is being reconciled.
+    if (updated.count === 1) {
+      await tx.booking.updateMany({ where: { id: payment.bookingId, deletedAt: { not: null } }, data: { deletedAt: null, version: { increment: 1 } } });
+    }
+  });
+  if (payment.kind === 'RESCHEDULE_DIFFERENCE') {
     await applyReschedulePayment(payment.id, now);
   } else {
     await applyExtraChargePayment(payment.id);
@@ -266,14 +283,19 @@ async function handlePaymentIntentSucceeded(intent: Stripe.PaymentIntent, now: D
 async function handlePaymentIntentStatus(intent: Stripe.PaymentIntent, status: 'PROCESSING' | 'REQUIRES_PAYMENT' | 'CANCELED'): Promise<void> {
   const payment = await findPayment(intent);
   if (!payment) return;
-  await prisma.payment.update({
-    data: {
-      failureCode: intent.last_payment_error?.code ?? null,
-      failureMessage: intent.last_payment_error?.message ?? null,
-      status,
-      stripePaymentIntentId: intent.id,
-    },
-    where: { id: payment.id },
+  await prisma.$transaction(async (tx) => {
+    const updated = await tx.payment.updateMany({
+      data: {
+        failureCode: intent.last_payment_error?.code ?? null,
+        failureMessage: intent.last_payment_error?.message ?? null,
+        status,
+        stripePaymentIntentId: intent.id,
+      },
+      where: { id: payment.id, status: { notIn: ['SUCCEEDED', 'CANCELED'] } },
+    });
+    if (status === 'PROCESSING' && updated.count === 1) {
+      await tx.booking.updateMany({ where: { id: payment.bookingId, deletedAt: { not: null } }, data: { deletedAt: null, version: { increment: 1 } } });
+    }
   });
 }
 

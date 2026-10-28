@@ -89,11 +89,34 @@ test('validateInput rejects every public typed error category', () => {
   assert.throws(
     () =>
       computeQuote(
-        { ...validInput, service: 'rubbish', variant: 'standard', dropoff: { floor: 0, hasLift: false } },
-        C,
+        { ...validInput, service: 'ikea', variant: 'standard', distanceMiles: 3, dropoff: { floor: 0, hasLift: false } },
+        configWith((config) => {
+          config.services.ikea.requiresDropoff = false;
+        }),
         '2026-11-02',
       ),
     { code: 'DROPOFF_NOT_ALLOWED' },
+  );
+  assert.throws(
+    () =>
+      computeQuote(
+        { ...validInput, service: 'ikea', variant: 'standard', distanceMiles: 3, dropoff: null },
+        configWith((config) => {
+          config.services.ikea.requiresDropoff = false;
+        }),
+        '2026-11-02',
+      ),
+    { code: 'INVALID_DISTANCE' },
+  );
+  assert.equal(
+    computeQuote(
+      { ...validInput, service: 'ikea', variant: 'standard', distanceMiles: 0, dropoff: null },
+      configWith((config) => {
+        config.services.ikea.requiresDropoff = false;
+      }),
+      '2026-11-02',
+    ).breakdown.distance.pence,
+    0,
   );
   assert.throws(
     () => computeQuote({ ...validInput, inventory: [{ itemId: '', name: 'Broken', quantity: 1, unitVolumeM3: 1 }] }, C, '2026-11-02'),

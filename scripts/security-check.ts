@@ -81,6 +81,35 @@ function read(relativePath: string): string {
   return readFileSync(join(repoRoot, relativePath), 'utf8');
 }
 
+function unquoteEnvValue(value: string): string {
+  const trimmed = value.trim();
+  if ((trimmed.startsWith('"') && trimmed.endsWith('"')) || (trimmed.startsWith("'") && trimmed.endsWith("'"))) {
+    return trimmed.slice(1, -1);
+  }
+  return trimmed;
+}
+
+function readEnvFileValue(relativePath: string, key: string): string | undefined {
+  let raw: string;
+  try {
+    raw = read(relativePath);
+  } catch {
+    return undefined;
+  }
+  for (const line of raw.split(/\r?\n/u)) {
+    const match = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)\s*$/u);
+    if (!match || match[1] !== key) continue;
+    return unquoteEnvValue(match[2] ?? '');
+  }
+  return undefined;
+}
+
+function buildSecretScanValues(): readonly { name: string; value: string }[] {
+  const mapboxToken = process.env.MAPBOX_SECRET_TOKEN ?? readEnvFileValue('.env.local', 'MAPBOX_SECRET_TOKEN');
+  if (!mapboxToken || mapboxToken.length < 12) return [];
+  return [{ name: 'MAPBOX_SECRET_TOKEN', value: mapboxToken }];
+}
+
 function filesUnder(relativePath: string, predicate: (path: string) => boolean): string[] {
   const root = join(repoRoot, relativePath);
   const found: string[] = [];
@@ -182,10 +211,14 @@ function checkNoSecretPrefixesInBuild(): void {
   const nextDir = 'apps/web/.next';
   const builtFiles = filesUnder(nextDir, (path) => /\.(?:html|js|json|map|txt)$/u.test(path));
   const secretPattern = /\b(?:sk|rk)_(?:live|test)_[A-Za-z0-9]{8,}\b|\bwhsec_[A-Za-z0-9]{8,}\b|\bsk\.[A-Za-z0-9._-]{20,}\b/u;
+  const configuredSecrets = buildSecretScanValues();
   const offenders: string[] = [];
   for (const path of builtFiles) {
     const content = readFileSync(path, 'utf8');
     if (secretPattern.test(content)) offenders.push(relative(repoRoot, path));
+    for (const secret of configuredSecrets) {
+      if (content.includes(secret.value)) offenders.push(`${relative(repoRoot, path)} (${secret.name})`);
+    }
   }
   assert(offenders.length === 0, `Build output contains secret-looking values:\n${offenders.join('\n')}`);
 }

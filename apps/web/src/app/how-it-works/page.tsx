@@ -4,11 +4,16 @@ import type { ReactNode } from 'react';
 import { BookingStartCard } from '@/components/booking/booking-start-card';
 import { howItWorksSteps } from '@/content/marketing';
 
-export const metadata: Metadata = {
-  alternates: { canonical: '/how-it-works' },
-  description: 'How to get a Speedy Van price, choose a slot, manage a booking and track the move.',
-  title: 'How it works',
-};
+import { createPageMetadata, getSeoSettings } from '@/server/seo';
+
+export async function generateMetadata(): Promise<Metadata> {
+  return createPageMetadata({
+    path: '/how-it-works',
+    settings: await getSeoSettings(),
+    description: 'How to get a Speedy Van price, choose a slot, manage a booking and track the move.',
+    title: 'How it works',
+  });
+}
 
 export default function HowItWorksPage(): ReactNode {
   return (

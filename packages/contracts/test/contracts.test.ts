@@ -97,7 +97,6 @@ describe('booking state machine', () => {
       'UNLOADING',
       'COMPLETED',
     ]);
-    expect(stagePathFor('rubbish')).toEqual(['NOT_STARTED', 'EN_ROUTE_TO_PICKUP', 'AT_PICKUP', 'LOADING', 'COMPLETED']);
     expect(dispatchCanChangeWhile('CONFIRMED')).toBe(true);
     expect(dispatchCanChangeWhile('IN_PROGRESS')).toBe(true);
     expect(dispatchCanChangeWhile('PENDING_PAYMENT')).toBe(false);
@@ -144,7 +143,6 @@ describe('booking state machine', () => {
     expect(canJobStageTransition(override)).toBe(true);
     expect(canJobStageTransition({ ...override, actor: 'OWNER' })).toBe(true);
     expect(canJobStageTransition({ ...override, overrideReason: '   ' })).toBe(false);
-    expect(canJobStageTransition({ ...override, service: 'rubbish', to: 'AT_DROPOFF' })).toBe(false);
     expect(() => {
       assertJobStageTransition({ ...override, actor: 'OWNER' });
     }).not.toThrow();
@@ -229,12 +227,12 @@ describe('core schemas and helpers', () => {
     ).toBe(false);
     expect(
       QuoteRequestSchema.safeParse({
-        service: 'rubbish',
+        service: 'man-and-van',
         variant: 'standard',
         pickup: address,
-        dropoff: null,
+        dropoff: address,
         pickupAccess: access,
-        dropoffAccess: null,
+        dropoffAccess: access,
         items: [],
         addons: { helpers: 0, packing: false, assembly: false },
       }).success,

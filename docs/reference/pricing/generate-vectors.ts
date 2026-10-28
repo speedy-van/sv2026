@@ -36,13 +36,13 @@ const cases: { id: string; note: string; today: string; input: PricingInput }[] 
     },
   },
   {
-    id: 'gv-03-rubbish-feb-eom',
-    note: 'Example C: single address, float-safe 1.0 m³ threshold, February',
+    id: 'gv-03-furniture-feb-eom',
+    note: 'Example C: float-safe 1.0 m³ threshold, February',
     today: '2027-02-20',
     input: {
-      service: 'rubbish', variant: 'standard', distanceMiles: 0,
-      pickup: { floor: 0, hasLift: false }, dropoff: null,
-      inventory: [line('bag-black', 6, 0.05), line('mattress-double', 1, 0.7)],
+      service: 'furniture', variant: 'standard', distanceMiles: 5,
+      pickup: { floor: 0, hasLift: false }, dropoff: { floor: 0, hasLift: false },
+      inventory: [line('box-small', 6, 0.05), line('mattress-double', 1, 0.7)],
       access: { carryMetres: 30, narrowAccess: false, permitZone: false },
       addons: { helpers: 0, packing: false, assembly: false },
     },

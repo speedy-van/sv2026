@@ -531,22 +531,25 @@
       }
     },
     {
-      "id": "gv-03-rubbish-feb-eom",
-      "note": "Example C: single address, float-safe 1.0 m³ threshold, February",
+      "id": "gv-03-furniture-feb-eom",
+      "note": "Example C: float-safe 1.0 m³ threshold, February",
       "today": "2027-02-20",
       "input": {
-        "service": "rubbish",
+        "service": "furniture",
         "variant": "standard",
-        "distanceMiles": 0,
+        "distanceMiles": 5,
         "pickup": {
           "floor": 0,
           "hasLift": false
         },
-        "dropoff": null,
+        "dropoff": {
+          "floor": 0,
+          "hasLift": false
+        },
         "inventory": [
           {
-            "itemId": "bag-black",
-            "name": "bag-black",
+            "itemId": "box-small",
+            "name": "box-small",
             "quantity": 6,
             "unitVolumeM3": 0.05
           },
@@ -569,13 +572,13 @@
         }
       },
       "expected": {
-        "staticSubtotalPence": 17500,
+        "staticSubtotalPence": 14500,
         "breakdown": {
-          "basePence": 9000,
+          "basePence": 6000,
           "variantMultiplier": 1,
-          "baseAfterVariantPence": 9000,
+          "baseAfterVariantPence": 6000,
           "distance": {
-            "miles": 0,
+            "miles": 5,
             "billableMiles": 0,
             "fullRateMiles": 0,
             "discountedMiles": 0,
@@ -604,177 +607,177 @@
             "assemblyPence": 0,
             "pence": 0
           },
-          "staticSubtotalPence": 17500
+          "staticSubtotalPence": 14500
         },
         "requiresManualQuote": false,
         "calendar": [
           {
             "date": "2027-02-20",
-            "MORNING": 29584,
-            "AFTERNOON": 28175,
-            "EVENING": 30993
+            "MORNING": 24512,
+            "AFTERNOON": 23345,
+            "EVENING": 25680
           },
           {
             "date": "2027-02-21",
-            "MORNING": 25358,
-            "AFTERNOON": 24150,
-            "EVENING": 26565
+            "MORNING": 21011,
+            "AFTERNOON": 20010,
+            "EVENING": 22011
           },
           {
             "date": "2027-02-22",
-            "MORNING": 20213,
-            "AFTERNOON": 19250,
-            "EVENING": 21175
+            "MORNING": 16748,
+            "AFTERNOON": 15950,
+            "EVENING": 17545
           },
           {
             "date": "2027-02-23",
-            "MORNING": 18375,
-            "AFTERNOON": 17500,
-            "EVENING": 19250
+            "MORNING": 15225,
+            "AFTERNOON": 14500,
+            "EVENING": 15950
           },
           {
             "date": "2027-02-24",
-            "MORNING": 18375,
-            "AFTERNOON": 17500,
-            "EVENING": 19250
+            "MORNING": 15225,
+            "AFTERNOON": 14500,
+            "EVENING": 15950
           },
           {
             "date": "2027-02-25",
-            "MORNING": 18375,
-            "AFTERNOON": 17500,
-            "EVENING": 19250
+            "MORNING": 15225,
+            "AFTERNOON": 14500,
+            "EVENING": 15950
           },
           {
             "date": "2027-02-26",
-            "MORNING": 19845,
-            "AFTERNOON": 18900,
-            "EVENING": 20790
+            "MORNING": 16443,
+            "AFTERNOON": 15660,
+            "EVENING": 17226
           },
           {
             "date": "2027-02-27",
-            "MORNING": 22822,
-            "AFTERNOON": 21735,
-            "EVENING": 23909
+            "MORNING": 18909,
+            "AFTERNOON": 18009,
+            "EVENING": 19810
           },
           {
             "date": "2027-02-28",
-            "MORNING": 22822,
-            "AFTERNOON": 21735,
-            "EVENING": 23909
+            "MORNING": 18909,
+            "AFTERNOON": 18009,
+            "EVENING": 19810
           },
           {
             "date": "2027-03-01",
-            "MORNING": 18375,
-            "AFTERNOON": 17500,
-            "EVENING": 19250
+            "MORNING": 15225,
+            "AFTERNOON": 14500,
+            "EVENING": 15950
           },
           {
             "date": "2027-03-02",
-            "MORNING": 18375,
-            "AFTERNOON": 17500,
-            "EVENING": 19250
+            "MORNING": 15225,
+            "AFTERNOON": 14500,
+            "EVENING": 15950
           },
           {
             "date": "2027-03-03",
-            "MORNING": 18375,
-            "AFTERNOON": 17500,
-            "EVENING": 19250
+            "MORNING": 15225,
+            "AFTERNOON": 14500,
+            "EVENING": 15950
           },
           {
             "date": "2027-03-04",
-            "MORNING": 18375,
-            "AFTERNOON": 17500,
-            "EVENING": 19250
+            "MORNING": 15225,
+            "AFTERNOON": 14500,
+            "EVENING": 15950
           },
           {
             "date": "2027-03-05",
-            "MORNING": 18375,
-            "AFTERNOON": 17500,
-            "EVENING": 19250
+            "MORNING": 15225,
+            "AFTERNOON": 14500,
+            "EVENING": 15950
           },
           {
             "date": "2027-03-06",
-            "MORNING": 21131,
-            "AFTERNOON": 20125,
-            "EVENING": 22138
+            "MORNING": 17509,
+            "AFTERNOON": 16675,
+            "EVENING": 18343
           },
           {
             "date": "2027-03-07",
-            "MORNING": 21131,
-            "AFTERNOON": 20125,
-            "EVENING": 22138
+            "MORNING": 17509,
+            "AFTERNOON": 16675,
+            "EVENING": 18343
           },
           {
             "date": "2027-03-08",
-            "MORNING": 18375,
-            "AFTERNOON": 17500,
-            "EVENING": 19250
+            "MORNING": 15225,
+            "AFTERNOON": 14500,
+            "EVENING": 15950
           },
           {
             "date": "2027-03-09",
-            "MORNING": 18375,
-            "AFTERNOON": 17500,
-            "EVENING": 19250
+            "MORNING": 15225,
+            "AFTERNOON": 14500,
+            "EVENING": 15950
           },
           {
             "date": "2027-03-10",
-            "MORNING": 18375,
-            "AFTERNOON": 17500,
-            "EVENING": 19250
+            "MORNING": 15225,
+            "AFTERNOON": 14500,
+            "EVENING": 15950
           },
           {
             "date": "2027-03-11",
-            "MORNING": 18375,
-            "AFTERNOON": 17500,
-            "EVENING": 19250
+            "MORNING": 15225,
+            "AFTERNOON": 14500,
+            "EVENING": 15950
           },
           {
             "date": "2027-03-12",
-            "MORNING": 18375,
-            "AFTERNOON": 17500,
-            "EVENING": 19250
+            "MORNING": 15225,
+            "AFTERNOON": 14500,
+            "EVENING": 15950
           },
           {
             "date": "2027-03-13",
-            "MORNING": 21131,
-            "AFTERNOON": 20125,
-            "EVENING": 22138
+            "MORNING": 17509,
+            "AFTERNOON": 16675,
+            "EVENING": 18343
           },
           {
             "date": "2027-03-14",
-            "MORNING": 21131,
-            "AFTERNOON": 20125,
-            "EVENING": 22138
+            "MORNING": 17509,
+            "AFTERNOON": 16675,
+            "EVENING": 18343
           },
           {
             "date": "2027-03-15",
-            "MORNING": 18375,
-            "AFTERNOON": 17500,
-            "EVENING": 19250
+            "MORNING": 15225,
+            "AFTERNOON": 14500,
+            "EVENING": 15950
           },
           {
             "date": "2027-03-16",
-            "MORNING": 18375,
-            "AFTERNOON": 17500,
-            "EVENING": 19250
+            "MORNING": 15225,
+            "AFTERNOON": 14500,
+            "EVENING": 15950
           },
           {
             "date": "2027-03-17",
-            "MORNING": 18375,
-            "AFTERNOON": 17500,
-            "EVENING": 19250
+            "MORNING": 15225,
+            "AFTERNOON": 14500,
+            "EVENING": 15950
           },
           {
             "date": "2027-03-18",
-            "MORNING": 18375,
-            "AFTERNOON": 17500,
-            "EVENING": 19250
+            "MORNING": 15225,
+            "AFTERNOON": 14500,
+            "EVENING": 15950
           },
           {
             "date": "2027-03-19",
-            "MORNING": 18375,
-            "AFTERNOON": 17500,
-            "EVENING": 19250
+            "MORNING": 15225,
+            "AFTERNOON": 14500,
+            "EVENING": 15950
           }
         ]
       }

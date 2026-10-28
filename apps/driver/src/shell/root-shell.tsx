@@ -1,21 +1,20 @@
 import { BricolageGrotesque_700Bold } from '@expo-google-fonts/bricolage-grotesque';
 import { Manrope_500Medium, Manrope_700Bold } from '@expo-google-fonts/manrope';
 import * as Sentry from '@sentry/react-native';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useFonts } from 'expo-font';
 import * as Notifications from 'expo-notifications';
 import { router } from 'expo-router';
 import * as Updates from 'expo-updates';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AppText, Button, Card } from '@/components/primitives';
 import { OfflineBanner } from '@/components/offline-banner';
-import { DriverPermissionGates } from '@/components/permission-gates';
 import { JobOfferModal, type JobOfferAlert } from '@/notifications/job-offer-modal';
 import { registerPushDevice } from '@/notifications/register-push';
 import { routeFromNotificationData, type NotificationData } from '@/notifications/routing';
 import { AuthProvider, useAuth } from '@/state/auth';
+import { DriverQuerySession } from '@/state/query-session';
 
 const sentryDsn = typeof process.env.EXPO_PUBLIC_SENTRY_DSN === 'string' ? process.env.EXPO_PUBLIC_SENTRY_DSN : '';
 
@@ -34,28 +33,19 @@ Notifications.setNotificationHandler({
 });
 
 export function RootShell(props: { children: React.ReactNode }): React.ReactElement {
-  const queryClient = useMemo(() => new QueryClient(), []);
   const [fontsLoaded] = useFonts({
     BricolageGrotesque_700Bold,
     Manrope_500Medium,
     Manrope_700Bold
   });
-  useEffect(() => {
-    const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
-      router.push(routeFromNotificationData(notificationData(response.notification.request.content.data)));
-    });
-    const response = Notifications.getLastNotificationResponse();
-    if (response) router.push(routeFromNotificationData(notificationData(response.notification.request.content.data)));
-    return () => { subscription.remove(); };
-  }, []);
   if (!fontsLoaded) return <View />;
   return (
     <SafeAreaProvider>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
+      <AuthProvider>
+        <DriverQuerySession>
           <RuntimeGates>{props.children}</RuntimeGates>
-        </AuthProvider>
-      </QueryClientProvider>
+        </DriverQuerySession>
+      </AuthProvider>
     </SafeAreaProvider>
   );
 }
@@ -63,8 +53,22 @@ export function RootShell(props: { children: React.ReactNode }): React.ReactElem
 function RuntimeGates(props: { children: React.ReactNode }): React.ReactElement {
   const auth = useAuth();
   const [alerts, setAlerts] = useState<JobOfferAlert[]>([]);
+  const routedNotification = useRef<string | null>(null);
   useEffect(() => {
-    if (auth.status !== 'signed-in') return;
+    if (auth.status !== 'signed-in' || auth.appLocked) return;
+    function open(response: Notifications.NotificationResponse): void {
+      const id = response.notification.request.identifier;
+      if (routedNotification.current === id) return;
+      routedNotification.current = id;
+      router.push(routeFromNotificationData(notificationData(response.notification.request.content.data)));
+    }
+    const subscription = Notifications.addNotificationResponseReceivedListener(open);
+    const response = Notifications.getLastNotificationResponse();
+    if (response) open(response);
+    return () => { subscription.remove(); };
+  }, [auth.status, auth.appLocked]);
+  useEffect(() => {
+    if (auth.status !== 'signed-in' || auth.appLocked) return;
     let cleanup: (() => void) | undefined;
     let cancelled = false;
     void registerPushDevice(auth.api)
@@ -80,7 +84,7 @@ function RuntimeGates(props: { children: React.ReactNode }): React.ReactElement 
       cancelled = true;
       cleanup?.();
     };
-  }, [auth.api, auth.status]);
+  }, [auth.api, auth.status, auth.appLocked]);
   useEffect(() => {
     void Notifications.setNotificationCategoryAsync('JOB_OFFERED', [
       { buttonTitle: 'Open', identifier: 'OPEN', options: { opensAppToForeground: true } },
@@ -93,31 +97,18 @@ function RuntimeGates(props: { children: React.ReactNode }): React.ReactElement 
     return () => { subscription.remove(); };
   }, []);
   return (
-    <DriverPermissionGates>
+    <>
       <UpdateBanner />
-      <OfflineBanner />
-      {auth.appLocked ? <AppLockGate /> : props.children}
-      <JobOfferModal
+      {auth.status === 'signed-in' && !auth.appLocked ? <OfflineBanner /> : null}
+      {props.children}
+      {auth.status === 'signed-in' && !auth.appLocked ? <JobOfferModal
         alerts={alerts}
         onOpen={(bookingId) => {
           setAlerts([]);
           router.push(`/(app)/offers/${bookingId}`);
         }}
-      />
-    </DriverPermissionGates>
-  );
-}
-
-function AppLockGate(): React.ReactElement {
-  const auth = useAuth();
-  return (
-    <SafeAreaView style={{ flex: 1, justifyContent: 'center', padding: 20 }}>
-      <Card>
-        <AppText size="lg" weight="bold">Unlock Driver</AppText>
-        <AppText muted>Use Face ID before viewing jobs, pay or customer details.</AppText>
-        <Button label="Unlock" onPress={() => { void auth.unlock(); }} />
-      </Card>
-    </SafeAreaView>
+      /> : null}
+    </>
   );
 }
 

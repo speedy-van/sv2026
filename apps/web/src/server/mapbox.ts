@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { AddressSchema, AppError, normalisePostcode } from '@sv/contracts';
+import { AddressSchema, AppError, isValidUkPostcode, normalisePostcode } from '@sv/contracts';
 import type { z } from 'zod';
 import { getRedis } from './redis';
 import { serverEnv } from './env';
@@ -28,8 +28,10 @@ interface MapboxFeature {
   properties?: {
     coordinates?: { latitude?: number; longitude?: number };
     context?: {
+      locality?: { name?: string };
       place?: { name?: string };
       postcode?: { name?: string };
+      region?: { name?: string };
     };
     feature_type?: string;
     full_address?: string;
@@ -67,6 +69,7 @@ interface MapboxDirectionsResponse {
 }
 
 const metresPerMile = 1609.344;
+const postcodePattern = /\b[A-Z]{1,2}[0-9][A-Z0-9]?\s*[0-9][A-Z]{2}\b/iu;
 const routeCache = new Map<string, RouteResult>();
 
 const mockAddresses: Record<string, Address> = {
@@ -175,14 +178,22 @@ function kindFromFeatureType(featureType: string | undefined): AddressSuggestion
   return 'address';
 }
 
+function extractFullPostcode(...values: Array<string | null | undefined>): string | null {
+  for (const value of values) {
+    const match = value ? postcodePattern.exec(value) : null;
+    if (match && isValidUkPostcode(match[0])) return normalisePostcode(match[0]);
+  }
+  return null;
+}
+
 function addressFromFeature(feature: MapboxFeature): Address | { needsPostcode: true; address: Omit<Address, 'postcode'> } {
   const props = feature.properties;
   const coordinates = props?.coordinates;
   const lng = coordinates?.longitude ?? feature.geometry?.coordinates?.[0];
   const lat = coordinates?.latitude ?? feature.geometry?.coordinates?.[1];
-  const postcode = props?.context?.postcode?.name;
-  const town = props?.context?.place?.name ?? props?.place_formatted?.split(',').at(-1)?.trim() ?? 'Unknown';
-  const line1 = props?.name ?? props?.full_address?.split(',')[0] ?? 'Selected address';
+  const postcode = extractFullPostcode(props?.context?.postcode?.name, props?.name, props?.full_address);
+  const town = props?.context?.place?.name ?? props?.context?.locality?.name ?? props?.place_formatted?.split(',')[0]?.trim() ?? 'Unknown';
+  const line1 = props?.feature_type === 'postcode' && postcode ? postcode : props?.name ?? props?.full_address?.split(',')[0] ?? 'Selected address';
   const label = props?.full_address ?? [line1, town, postcode].filter(Boolean).join(', ');
   if (typeof lat !== 'number' || typeof lng !== 'number') {
     throw new AppError('UPSTREAM_UNAVAILABLE', 'Address search returned an incomplete address.');
@@ -221,12 +232,15 @@ export async function suggestAddresses(q: string, sessionToken: string, proximit
     url.searchParams.set('proximity', '-4.2026,56.4907');
   }
   const body = await fetchJson<MapboxSuggestResponse>(url);
-  return (body.suggestions ?? []).map((suggestion) => ({
-    id: suggestion.mapbox_id ?? suggestion.full_address ?? suggestion.name ?? '',
-    kind: kindFromFeatureType(suggestion.feature_type),
-    primary: suggestion.name ?? suggestion.full_address ?? 'Address',
-    secondary: suggestion.place_formatted ?? '',
-  })).filter((suggestion) => suggestion.id.length > 0);
+  return (body.suggestions ?? [])
+    .map((suggestion) => ({
+      id: suggestion.mapbox_id ?? suggestion.full_address ?? suggestion.name ?? '',
+      kind: kindFromFeatureType(suggestion.feature_type),
+      primary: suggestion.name ?? suggestion.full_address ?? 'Address',
+      secondary: suggestion.place_formatted ?? '',
+    }))
+    .filter((suggestion) => suggestion.id.length > 0)
+    .filter((suggestion) => suggestion.kind !== 'postcode' || extractFullPostcode(suggestion.primary, suggestion.secondary) !== null);
 }
 
 export async function retrieveAddress(id: string, sessionToken: string): Promise<Address | { needsPostcode: true; address: Omit<Address, 'postcode'> }> {

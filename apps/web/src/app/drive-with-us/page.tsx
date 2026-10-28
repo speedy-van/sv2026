@@ -3,11 +3,16 @@ import { NoPrefetchLink as Link } from '@/components/navigation/no-prefetch-link
 import type { ReactNode } from 'react';
 import { getPublicSettings } from '@/server/settings';
 
-export const metadata: Metadata = {
-  alternates: { canonical: '/drive-with-us' },
-  description: 'Driver information for Speedy Van.',
-  title: 'Drive with us',
-};
+import { createPageMetadata, getSeoSettings } from '@/server/seo';
+
+export async function generateMetadata(): Promise<Metadata> {
+  return createPageMetadata({
+    path: '/drive-with-us',
+    settings: await getSeoSettings(),
+    description: 'Driver information for Speedy Van.',
+    title: 'Drive with us',
+  });
+}
 
 export default async function DriveWithUsPage(): Promise<ReactNode> {
   const settings = await getPublicSettings();

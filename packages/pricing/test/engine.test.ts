@@ -128,15 +128,15 @@ test('B: large-inventory distance override is used only when configured', () => 
   assert.equal(q.breakdown.distance.pence, 9260); // 46.3 × £2
 });
 
-// ---------- Example C: single-address job, February end of month ----------
+// ---------- Example C: float-safe volume threshold, February end of month ----------
 const exampleC: PricingInput = {
-  service: 'rubbish',
+  service: 'furniture',
   variant: 'standard',
-  distanceMiles: 0,
+  distanceMiles: 5,
   pickup: { floor: 0, hasLift: false },
-  dropoff: null,
+  dropoff: { floor: 0, hasLift: false },
   inventory: [
-    { itemId: 'bag-black', name: 'Black bag', quantity: 6, unitVolumeM3: 0.05 },
+    { itemId: 'box-small', name: 'Small box', quantity: 6, unitVolumeM3: 0.05 },
     { itemId: 'mattress-double', name: 'Double mattress', quantity: 1, unitVolumeM3: 0.7 },
   ], // 7 items, 0.30000000000000004 + 0.7 must count as exactly 1.0 m³
   access: { carryMetres: 30, narrowAccess: false, permitZone: false },
@@ -149,11 +149,11 @@ test('C: float-safe volume threshold and large-inventory minimum', () => {
   assert.equal(q.breakdown.inventory.mode, 'LARGE');
   assert.equal(q.breakdown.inventory.pence, 7500); // max(£75, 7×£4 + 1×£12 = £40)
   assert.equal(q.breakdown.access.carryPence, 1000);
-  assert.equal(q.breakdown.staticSubtotalPence, 17500);
-  assert.equal(price(q, '2027-02-20', 'MORNING'), 29584); // ×1.4 ×1.15 ×1.05 = 29583.75
-  assert.equal(price(q, '2027-02-26', 'AFTERNOON'), 18900); // Feb has 28 days: 26th is in the last 3 → ×1.08
-  assert.equal(price(q, '2027-02-27', 'AFTERNOON'), 21735); // Sat + EOM ×1.15 ×1.08
-  assert.equal(price(q, '2027-03-01', 'AFTERNOON'), 17500); // Monday 1 March, no multipliers
+  assert.equal(q.breakdown.staticSubtotalPence, 14500);
+  assert.equal(price(q, '2027-02-20', 'MORNING'), 24512); // ×1.4 ×1.15 ×1.05 = 24512.25
+  assert.equal(price(q, '2027-02-26', 'AFTERNOON'), 15660); // Feb has 28 days: 26th is in the last 3 → ×1.08
+  assert.equal(price(q, '2027-02-27', 'AFTERNOON'), 18009); // Sat + EOM ×1.15 ×1.08
+  assert.equal(price(q, '2027-03-01', 'AFTERNOON'), 14500); // Monday 1 March, no multipliers
 });
 
 test('leap year: 29 Feb 2028 handled, last-3-days = 27, 28, 29', () => {
@@ -193,7 +193,6 @@ test('variants flagged for survey require a manual quote', () => {
 test('invalid inputs throw typed errors', () => {
   assert.throws(() => computeQuote({ ...exampleA, variant: 'nope' }, C, '2026-11-02'), { code: 'UNKNOWN_VARIANT' });
   assert.throws(() => computeQuote({ ...exampleA, dropoff: null }, C, '2026-11-02'), { code: 'DROPOFF_REQUIRED' });
-  assert.throws(() => computeQuote({ ...exampleC, distanceMiles: 3 }, C, '2027-02-20'), { code: 'INVALID_DISTANCE' });
   assert.throws(() => computeQuote({ ...exampleA, distanceMiles: -1 }, C, '2026-11-02'), { code: 'INVALID_DISTANCE' });
   assert.throws(() => computeQuote({ ...exampleA, pickup: { floor: 1.5, hasLift: false } }, C, '2026-11-02'), {
     code: 'INVALID_FLOOR',

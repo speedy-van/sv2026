@@ -4,6 +4,9 @@ import { addDays, fromDbDate, londonToday } from '@sv/contracts';
 import { enqueueOutbox, prisma, type Prisma } from '@sv/db';
 import { dbDateLabel, slotLabel } from './london-time';
 import { getSetting } from './settings';
+import { pruneVisitorPresence } from './visitor-presence';
+import { pruneExpiredChatConversations } from './chat/retention';
+import { outboxProcessFrom } from './env';
 
 function json(value: unknown): Prisma.InputJsonValue {
   return value as Prisma.InputJsonValue;
@@ -24,24 +27,29 @@ function routeLabel(pickup: unknown, dropoff: unknown): string {
   return dropoffTown ? `${pickupTown} to ${dropoffTown}` : pickupTown;
 }
 
-export async function runDataRetention(now = new Date()): Promise<{ authOtpDeleted: number; oldPushTicketsDeleted: number }> {
+export async function runDataRetention(now = new Date()): Promise<{ authOtpDeleted: number; oldPushTicketsDeleted: number; chatsDeleted: number }> {
   const authOtp = await prisma.authOtp.deleteMany({
     where: { createdAt: { lt: new Date(now.getTime() - 30 * 86_400_000) } },
   });
   const pushTickets = await prisma.pushTicket.deleteMany({
     where: { checkedAt: { lt: new Date(now.getTime() - 14 * 86_400_000) } },
   });
-  return { authOtpDeleted: authOtp.count, oldPushTicketsDeleted: pushTickets.count };
+  const chatsDeleted = await pruneExpiredChatConversations(now);
+  return { authOtpDeleted: authOtp.count, oldPushTicketsDeleted: pushTickets.count, chatsDeleted };
 }
 
 export async function runIntegrityChecks(now = new Date()): Promise<{ alertsQueued: number; stuckOutboxReset: number }> {
+  const processFrom = outboxProcessFrom();
   const stuck = await prisma.outboxEvent.updateMany({
     data: {
       lastError: 'Reset by integrity cron after being stuck in PROCESSING.',
       nextAttemptAt: now,
       status: 'PENDING',
     },
-    where: { nextAttemptAt: { lt: new Date(now.getTime() - 10 * 60_000) }, status: 'PROCESSING' },
+    where: {
+      nextAttemptAt: { lt: new Date(now.getTime() - 10 * 60_000) }, status: 'PROCESSING',
+      ...(processFrom ? { createdAt: { gte: processFrom } } : {}),
+    },
   });
   if (stuck.count === 0) return { alertsQueued: 0, stuckOutboxReset: 0 };
   await prisma.outboxEvent.create({
@@ -276,14 +284,16 @@ export async function runHourlyCron(now = new Date()): Promise<{
   documentAlerts: number;
   hour: number;
   reminders: number;
+  visitorPresenceDeleted: number;
 }> {
   const today = londonToday(now);
   const hour = londonHour(now);
-  const [reminders, dailySummaries, documentAlerts, businessAlarms] = await Promise.all([
+  const [reminders, dailySummaries, documentAlerts, businessAlarms, visitorPresenceDeleted] = await Promise.all([
     hour === 17 ? runReminders(today) : Promise.resolve(0),
     hour === 7 ? runDailySummary(today) : Promise.resolve(0),
     hour === 6 ? runDocumentExpiry(today) : Promise.resolve(0),
     runBusinessAlarms(now),
+    pruneVisitorPresence(now),
   ]);
-  return { businessAlerts: businessAlarms.alertsQueued, dailySummaries, documentAlerts, hour, reminders };
+  return { businessAlerts: businessAlarms.alertsQueued, dailySummaries, documentAlerts, hour, reminders, visitorPresenceDeleted };
 }

@@ -1,19 +1,12 @@
-'use client';
-
-import { Menu, Phone, X } from 'lucide-react';
+import { ChevronRight, MapPin, Phone } from 'lucide-react';
 import { NoPrefetchLink as Link } from '@/components/navigation/no-prefetch-link';
-import { useEffect, useState, type ReactNode } from 'react';
-import { cityLinks, services } from '@/content/navigation';
+import type { ReactNode } from 'react';
+import { cityLinks, headerCopy, headerLinks, services } from '@/content/navigation';
+import { HeaderDropdown, HeaderShell, MobileMenu } from './header-interactions';
 import { Logo } from './logo';
+import { StartBookingLink } from './start-booking-link';
 
 export function Header({ phoneDisplay, phoneHref }: { phoneDisplay: string | null; phoneHref: string | null }): ReactNode {
-  const [mobileOpen, setMobileOpen] = useState(false);
-
-  useEffect(() => {
-    document.body.classList.toggle('no-scroll', mobileOpen);
-    return () => { document.body.classList.remove('no-scroll'); };
-  }, [mobileOpen]);
-
   const phoneLink = phoneHref ? (
     <Link aria-label={`Call ${phoneDisplay ?? 'Speedy Van'}`} className="button button-secondary icon-button" href={phoneHref}>
       <Phone aria-hidden="true" size={20} />
@@ -21,113 +14,81 @@ export function Header({ phoneDisplay, phoneHref }: { phoneDisplay: string | nul
   ) : null;
 
   return (
-    <header className="site-header">
+    <HeaderShell>
       <div className="container header-inner">
         <Logo />
-        <nav aria-label="Main navigation" className="desktop-nav">
-          <div className="nav-panel-wrap">
-            <button className="nav-trigger" type="button">
-              Services
-            </button>
-            <div className="nav-panel service-panel">
+        <nav aria-label={headerCopy.mainNavigation} className="desktop-nav">
+          <HeaderDropdown label={headerCopy.services}>
+            <p className="nav-panel-heading">{headerCopy.servicesIntro}</p>
+            <div className="service-panel">
               {services.map((service) => {
                 const Icon = service.icon;
                 return (
                   <Link className="panel-link" href={service.href} key={service.href}>
-                    <Icon aria-hidden="true" color="#6D3BD7" size={22} />
-                    <span>
+                    <span aria-hidden="true" className="panel-icon"><Icon size={20} /></span>
+                    <span className="panel-link-copy">
                       <strong>{service.label}</strong>
-                      <br />
-                      {service.summary}
+                      <span>{service.summary}</span>
                     </span>
                   </Link>
                 );
               })}
             </div>
-          </div>
-          <div className="nav-panel-wrap">
-            <button className="nav-trigger" type="button">
-              Areas
-            </button>
-            <div className="nav-panel service-panel">
+            <Link className="nav-panel-footer" href="/services">
+              {headerCopy.allServices}<ChevronRight aria-hidden="true" size={17} />
+            </Link>
+          </HeaderDropdown>
+          <HeaderDropdown label={headerCopy.areas}>
+            <p className="nav-panel-heading">{headerCopy.areasIntro}</p>
+            <div className="areas-panel">
               {cityLinks.map((city) => (
-                <Link className="panel-link" href={city.href} key={city.href}>
-                  <span>
-                    <strong>{city.label}</strong>
-                    <br />
-                    Moves around {city.label}
-                  </span>
+                <Link className="area-panel-link" href={city.href} key={city.href}>
+                  <MapPin aria-hidden="true" size={17} />
+                  {city.label}
+                  <ChevronRight aria-hidden="true" size={15} />
                 </Link>
               ))}
-              <Link className="panel-link" href="/areas">
-                <span>
-                  <strong>All areas</strong>
-                  <br />
-                  Mainland Scotland coverage
-                </span>
-              </Link>
             </div>
-          </div>
-          <Link className="nav-link" href="/pricing">
-            Prices
-          </Link>
-          <Link className="nav-link" href="/help">
-            Help
-          </Link>
-          <Link className="nav-link" href="/contact">
-            Contact
-          </Link>
+            <Link className="nav-panel-footer" href="/areas">
+              {headerCopy.allAreas}<ChevronRight aria-hidden="true" size={17} />
+            </Link>
+          </HeaderDropdown>
+          {headerLinks.map((link) => (
+            <Link className="nav-link" href={link.href} key={link.href}>{link.label}</Link>
+          ))}
         </nav>
         <div className="header-actions">
           {phoneDisplay && phoneHref ? (
-            <Link className="nav-link" href={phoneHref}>
-              {phoneDisplay}
+            <Link aria-label={`Call ${phoneDisplay}`} className="header-phone" href={phoneHref}>
+              <Phone aria-hidden="true" size={18} />
+              <span>{phoneDisplay}</span>
             </Link>
           ) : null}
-          <Link className="button button-primary" href="/book">
-            Get a price
-          </Link>
+          <StartBookingLink className="button button-primary header-price" />
         </div>
         <div className="mobile-actions">
+          <StartBookingLink className="button button-primary mobile-header-price" />
           {phoneLink}
-          <button aria-expanded={mobileOpen} aria-label="Open menu" className="button button-secondary icon-button" onClick={() => { setMobileOpen(true); }} type="button">
-            <Menu aria-hidden="true" size={21} />
-          </button>
+          <MobileMenu logo={<Logo />}>
+            <nav aria-label={headerCopy.mobileNavigation} className="mobile-menu-links">
+              <Link href="/services">{headerCopy.services}<ChevronRight aria-hidden="true" size={20} /></Link>
+              <Link href="/areas">{headerCopy.areas}<ChevronRight aria-hidden="true" size={20} /></Link>
+              {headerLinks.map((link) => (
+                <Link href={link.href} key={link.href}>{link.label}<ChevronRight aria-hidden="true" size={20} /></Link>
+              ))}
+              <Link href="/contact">{headerCopy.contact}<ChevronRight aria-hidden="true" size={20} /></Link>
+            </nav>
+            <div className="mobile-menu-footer">
+              {phoneDisplay && phoneHref ? (
+                <Link className="mobile-menu-phone" href={phoneHref}>
+                  <Phone aria-hidden="true" size={20} />{phoneDisplay}
+                </Link>
+              ) : null}
+              <StartBookingLink className="button button-primary" />
+            </div>
+          </MobileMenu>
         </div>
       </div>
-      <div className="mobile-menu" hidden={!mobileOpen}>
-        <div className="mobile-menu-header">
-          <Logo />
-          <button aria-label="Close menu" className="button button-secondary icon-button" onClick={() => { setMobileOpen(false); }} type="button">
-            <X aria-hidden="true" size={21} />
-          </button>
-        </div>
-        <nav aria-label="Mobile navigation" className="mobile-menu-links">
-          <Link href="/book" onClick={() => { setMobileOpen(false); }}>
-            Get a price
-          </Link>
-          <Link href="/services" onClick={() => { setMobileOpen(false); }}>
-            Services
-          </Link>
-          <Link href="/areas" onClick={() => { setMobileOpen(false); }}>
-            Areas
-          </Link>
-          <Link href="/pricing" onClick={() => { setMobileOpen(false); }}>
-            Prices
-          </Link>
-          <Link href="/help" onClick={() => { setMobileOpen(false); }}>
-            Help
-          </Link>
-          <Link href="/contact" onClick={() => { setMobileOpen(false); }}>
-            Contact
-          </Link>
-          {phoneDisplay && phoneHref ? (
-            <Link href={phoneHref} onClick={() => { setMobileOpen(false); }}>
-              Call {phoneDisplay}
-            </Link>
-          ) : null}
-        </nav>
-      </div>
-    </header>
+    </HeaderShell>
   );
 }

@@ -113,7 +113,7 @@ export async function requestManualQuote(publicId: string, input: z.infer<typeof
 export async function getBookingStatus(token: string) {
   return jsonFetch(
     `/api/v1/bookings/status?token=${encodeURIComponent(token)}`,
-    { cache: 'no-store', headers: { accept: 'application/json' } },
+    { cache: 'no-store', headers: { accept: 'application/json' }, signal: AbortSignal.timeout(10_000) },
     (body) => BookingStatusResponseSchema.parse(body),
   );
 }

@@ -20,14 +20,12 @@ async function selectAddress(page: Page, label: string, query: string, match: Re
 }
 
 async function addCustomItem(page: Page, name: string): Promise<void> {
-  await page.getByPlaceholder('Search items, like sofa or wardrobe').fill(`custom ${name}`);
   await page.getByPlaceholder('Item name').fill(name);
   await page.getByRole('button', { name: 'Add own item' }).click();
   await expect(page.getByText(/items selected/)).toBeVisible();
 }
 
-async function revealPrices(page: Page): Promise<void> {
-  await page.getByRole('button', { name: 'Reveal prices' }).click();
+async function waitForPrices(page: Page): Promise<void> {
   await expect(page.locator('.hero-price')).toContainText('From', { timeout: 20_000 });
 }
 
@@ -51,11 +49,15 @@ function quotePublicIdFromDraft(raw: string | null): string | null {
 }
 
 async function completeMoveDetails(page: Page, service: string, from = 'Glasgow', to = 'Edinburgh'): Promise<void> {
-  await page.getByRole('radio', { name: service }).click();
-  await selectAddress(page, service === 'Rubbish' ? 'Collection address' : 'From', from, from === 'Glasgow' ? /1 George Square/ : /10 Downing Street/);
-  if (service !== 'Rubbish') {
-    await selectAddress(page, 'To', to, to === 'Edinburgh' ? /1 Princes Street/ : to === 'Rothesay' ? /1 Ferry Road/ : /10 Downing Street/);
-  }
+  await page.getByLabel('Move type').selectOption({ label: service });
+  await selectAddress(page, 'From', from, from === 'Glasgow' ? /1 George Square/ : /10 Downing Street/);
+  await selectAddress(page, 'To', to, to === 'Edinburgh' ? /1 Princes Street/ : to === 'Rothesay' ? /1 Ferry Road/ : /10 Downing Street/);
+}
+
+async function continueThroughAccess(page: Page): Promise<void> {
+  await page.getByRole('button', { name: 'Continue to access' }).click();
+  await expect(page.getByRole('heading', { name: 'Access' })).toBeVisible();
+  await page.getByRole('button', { name: 'Continue to items' }).click();
 }
 
 test('@booking customer can complete a mock-paid booking', async ({ page }, testInfo) => {
@@ -65,6 +67,9 @@ test('@booking customer can complete a mock-paid booking', async ({ page }, test
   await checkA11y(page);
 
   await completeMoveDetails(page, 'Man and van');
+  await page.getByRole('button', { name: 'Continue to access' }).click();
+  await expect(page.getByRole('heading', { name: 'Access' })).toBeVisible();
+  await checkA11y(page);
   await page.getByRole('button', { name: 'Continue to items' }).click();
   await expect(page.getByRole('heading', { name: 'Items' })).toBeVisible();
   await checkA11y(page);
@@ -72,7 +77,7 @@ test('@booking customer can complete a mock-paid booking', async ({ page }, test
   await addCustomItem(page, 'Three archive boxes');
   await page.getByRole('button', { name: 'See my prices' }).click();
   await expect(page.getByRole('heading', { name: 'Prices' })).toBeVisible();
-  await revealPrices(page);
+  await waitForPrices(page);
   await chooseBookingSlot(page, testInfo);
   await checkA11y(page);
 
@@ -96,10 +101,9 @@ test('@booking customer can complete a mock-paid booking', async ({ page }, test
 test('@booking ferry routes go to manual quote request', async ({ page }) => {
   await page.goto('/book');
   await completeMoveDetails(page, 'Home move', 'Glasgow', 'Rothesay');
-  await page.getByRole('button', { name: 'Continue to items' }).click();
+  await continueThroughAccess(page);
   await addCustomItem(page, 'Packed kitchen boxes');
   await page.getByRole('button', { name: 'See my prices' }).click();
-  await page.getByRole('button', { name: 'Reveal prices' }).click();
 
   await expect(page.getByRole('heading', { name: 'We will price this move individually' })).toBeVisible();
   await page.getByPlaceholder('Full name').fill('Manual Quote Test');
@@ -110,23 +114,11 @@ test('@booking ferry routes go to manual quote request', async ({ page }) => {
   await checkA11y(page);
 });
 
-test('@booking rubbish uses a single address path', async ({ page }) => {
-  await page.goto('/book');
-  await completeMoveDetails(page, 'Rubbish');
-  await expect(page.getByLabel('To')).toHaveCount(0);
-  await page.getByRole('button', { name: 'Continue to items' }).click();
-  await addCustomItem(page, 'Two bin bags');
-  await page.getByRole('button', { name: 'See my prices' }).click();
-  await revealPrices(page);
-  await expect(page.locator('.hero-price')).toBeVisible();
-  await checkA11y(page);
-});
-
 test('@booking outside-area routes are blocked before quote', async ({ page }) => {
   await page.goto('/book');
   await completeMoveDetails(page, 'Home move', 'London', 'London');
   await expect(page.getByText('We move people to and from Scotland. One address needs to be in Scotland.')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Continue to items' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Continue to access' })).toBeDisabled();
   await checkA11y(page);
 });
 
@@ -135,10 +127,10 @@ test('@booking draft reload and quote resume keep the customer in flow', async (
   await completeMoveDetails(page, 'A few items');
   await page.reload();
   await expect(page.getByText('1 George Square, Glasgow G2 1DU')).toBeVisible();
-  await page.getByRole('button', { name: 'Continue to items' }).click();
+  await continueThroughAccess(page);
   await addCustomItem(page, 'Small armchair');
   await page.getByRole('button', { name: 'See my prices' }).click();
-  await revealPrices(page);
+  await waitForPrices(page);
   const publicId = quotePublicIdFromDraft(await page.evaluate(() => sessionStorage.getItem('sv-booking-draft-v1')));
   expect(publicId).toBeTruthy();
   await page.evaluate(() => { sessionStorage.clear(); });

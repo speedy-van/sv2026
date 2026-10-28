@@ -60,13 +60,6 @@ export const DEFAULT_PRICING_CONFIG: PricingConfig = {
       ],
     },
     ikea: { label: 'IKEA & flat-pack delivery', basePrice: 70, requiresDropoff: true, variants: standard() },
-    rubbish: {
-      label: 'Rubbish removal',
-      basePrice: 90,
-      // OWNER-DECISION P4: single-address job, distance = 0.
-      requiresDropoff: false,
-      variants: standard(),
-    },
     piano: {
       label: 'Piano moving',
       basePrice: 200,

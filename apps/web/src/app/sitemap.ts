@@ -1,6 +1,5 @@
 import type { MetadataRoute } from 'next';
 import {
-  canonicalOrigin,
   citySlugs,
   cityUrl,
   isIndexableLocation,
@@ -11,13 +10,16 @@ import {
   routePages,
   routeUrl,
 } from '@/content/locations';
-import { serviceContent } from '@/content/services';
-import { getPublicSettings } from '@/server/settings';
+import { serviceLandingPages } from '@/content/services';
+import { getPublishedLocationContentMap } from '@/server/location-content';
+import { getSeoSettings } from '@/server/seo';
+
+// Match town-page eligibility caching; publication changes can take up to 24 hours.
+export const revalidate = 86400;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const settings = await getPublicSettings().catch(() => null);
-  const origin = settings?.web.canonicalOrigin ?? canonicalOrigin();
-  const now = new Date();
+  const [settings, localContent] = await Promise.all([getSeoSettings(), getPublishedLocationContentMap()]);
+  const origin = settings.web.canonicalOrigin.replace(/\/$/, '');
   const paths = [
     '/',
     '/services',
@@ -28,18 +30,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '/reviews',
     '/help',
     '/drive-with-us',
-    '/accessibility',
     '/areas',
-    ...serviceContent.map((service) => `/services/${service.slug}`),
+    ...serviceLandingPages.map((service) => `/services/${service.slug}`),
     ...regions.map((region) => `/areas/${region.slug}`),
-    ...locationPages.filter((location) => isIndexableLocation(location, settings?.seo.indexTier3 ?? false)).map(locationUrl),
+    ...locationPages
+      .filter((location) =>
+        isIndexableLocation(location, settings.seo.indexTier3, localContent.get(location.slug)?.localNotes),
+      )
+      .map(locationUrl),
     ...routePages.map(routeUrl),
-    ...citySlugs.map((slug) => locationsBySlug.get(slug)).filter((location): location is NonNullable<typeof location> => Boolean(location)).map(cityUrl),
+    ...citySlugs
+      .map((slug) => locationsBySlug.get(slug))
+      .filter((location): location is NonNullable<typeof location> => Boolean(location))
+      .map(cityUrl),
   ];
   return paths.map((path) => ({
     changeFrequency: path === '/' ? 'daily' : 'weekly',
-    lastModified: now,
-    priority: path === '/' ? 1 : path.startsWith('/removals/') || path.startsWith('/man-and-van/') ? 0.75 : 0.65,
+    priority:
+      path === '/' ? 1 : path.startsWith('/removals/') || path.startsWith('/man-and-van/') ? 0.75 : 0.65,
     url: `${origin}${path}`,
   }));
 }

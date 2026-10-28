@@ -112,6 +112,68 @@ export async function cancelPaymentIntent(paymentIntentId: string | null): Promi
   }
 }
 
+export interface CleanupPaymentIdentity { bookingId: string; paymentId: string }
+
+/** Resolve old test checkouts explicitly; a missing live object alone never proves cancellation. */
+async function cleanupIntent(stripe: Stripe, paymentIntentId: string, identity: CleanupPaymentIdentity | undefined): Promise<{ stripe: Stripe; intent: Stripe.PaymentIntent }> {
+  try {
+    return { stripe, intent: await stripe.paymentIntents.retrieve(paymentIntentId) };
+  } catch (error) {
+    if (!(error instanceof Stripe.errors.StripeInvalidRequestError) || error.code !== 'resource_missing') throw error;
+    const legacyKey = serverEnv().STRIPE_LEGACY_TEST_SECRET_KEY;
+    const unavailable = (): AppError => new AppError('CONFLICT', 'This payment belongs to a different Stripe account or mode and must be reconciled before deleting this job.');
+    if (!identity || !legacyKey?.startsWith('sk_test_')) throw unavailable();
+    const legacy = new Stripe(legacyKey, { maxNetworkRetries: 1, timeout: 10_000 });
+    let intent: Stripe.PaymentIntent;
+    try {
+      intent = await legacy.paymentIntents.retrieve(paymentIntentId);
+    } catch (legacyError) {
+      if (legacyError instanceof Stripe.errors.StripeInvalidRequestError && legacyError.code === 'resource_missing') throw unavailable();
+      throw legacyError;
+    }
+    if (intent.livemode || intent.metadata.bookingId !== identity.bookingId || intent.metadata.paymentId !== identity.paymentId) {
+      throw new AppError('CONFLICT', 'The historical payment could not be matched to this booking. Nothing was deleted.');
+    }
+    return { stripe: legacy, intent };
+  }
+}
+
+/** Cleanup must prove cancellation; a missing client or an ambiguous Stripe response is not success. */
+export async function cancelPaymentIntentForCleanup(paymentIntentId: string, identity?: CleanupPaymentIdentity): Promise<void> {
+  if (paymentIntentId.startsWith('pi_mock_')) {
+    const testMode = process.env.NODE_ENV === 'test' || (process.env.NODE_ENV === 'development' && process.env.E2E === '1');
+    if (testMode) return;
+    throw new AppError('CONFLICT', 'This payment must be checked before removing the booking.');
+  }
+  const configuredStripe = stripeClient();
+  if (!configuredStripe) throw new AppError('UPSTREAM_UNAVAILABLE', 'Payment cancellation is unavailable. Please try again later.');
+  const assertUnpaid = (intent: Stripe.PaymentIntent): void => {
+    if (intent.status === 'processing' || intent.status === 'succeeded' || intent.status === 'requires_capture'
+      || intent.amount_received > 0 || intent.amount_capturable > 0) {
+      throw new AppError('CONFLICT', 'A payment is processing or has received funds. Refresh this booking before removing it.');
+    }
+  };
+  try {
+    const { stripe, intent: current } = await cleanupIntent(configuredStripe, paymentIntentId, identity);
+    assertUnpaid(current);
+    if (current.status === 'canceled') return;
+    try {
+      const canceled = await stripe.paymentIntents.cancel(paymentIntentId, {}, { idempotencyKey: `cleanup_cancel_${paymentIntentId}` });
+      assertUnpaid(canceled);
+      if (canceled.status !== 'canceled') throw new AppError('CONFLICT', 'Payment cancellation could not be confirmed. Refresh this booking.');
+    } catch (error) {
+      if (!(error instanceof Stripe.errors.StripeInvalidRequestError)) throw error;
+      // Another request may have canceled or confirmed the intent after the first retrieve.
+      const latest = await stripe.paymentIntents.retrieve(paymentIntentId);
+      assertUnpaid(latest);
+      if (latest.status !== 'canceled') throw error;
+    }
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    throw stripeError(error);
+  }
+}
+
 export async function createStripeRefund(refund: RefundTarget): Promise<{ id: string; status: 'PENDING' | 'SUCCEEDED' }> {
   const paymentIntent = refund.payment.stripePaymentIntentId;
   if (!paymentIntent || paymentIntent.startsWith('pi_mock_')) {

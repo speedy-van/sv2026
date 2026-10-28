@@ -12,7 +12,6 @@ export const SERVICE_KEYS = [
   'man-and-van',
   'student',
   'ikea',
-  'rubbish',
   'piano',
   'same-day',
 ] as const;
@@ -48,7 +47,7 @@ export interface ServicePricing {
   label: string;
   /** £ base price before variant multiplier. */
   basePrice: number;
-  /** false = single address job (e.g. rubbish removal); distance is 0. */
+  /** false = single-address job; distance is 0. */
   requiresDropoff: boolean;
   variants: VariantPricing[];
 }
