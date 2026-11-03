@@ -249,6 +249,7 @@ model PushDevice {
   platform         DevicePlatform
   expoPushToken    String         @unique
   enabled          Boolean        @default(true)
+  pendingBookingAlerts Boolean     @default(false)
   lastRegisteredAt DateTime       @default(now())
   lastError        String?
   createdAt        DateTime       @default(now())
@@ -450,6 +451,7 @@ model Quote {
   createdAt           DateTime             @default(now())
   bookings            Booking[]
   manualQuote         ManualQuote?
+  bookingActivity     BookingActivity?
 
   @@index([createdAt])
   @@index([status, expiresAt])
@@ -525,6 +527,7 @@ model Booking {
   locations                   DriverLocation[]
   manualQuote                 ManualQuote?
   slotHolds                   SlotHold[]
+  bookingActivity             BookingActivity?
 
   @@index([moveDate, slot, status])
   @@index([status, createdAt])
@@ -736,6 +739,7 @@ model ExtraCharge {
   booking       Booking           @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   description   String
   amountPence   Int
+  includedInBookingTotal Boolean @default(false) // admin edit balance already included in the agreed total
   status        ExtraChargeStatus @default(REQUESTED)
   requestedById String // driver or admin user id
   decidedById   String?
@@ -837,6 +841,22 @@ model WebsiteVisitorPresence {
   lastSeenAt DateTime
 
   @@index([lastSeenAt])
+}
+
+// Consenting booking-form sessions. No contact information is stored here;
+// customer identity is available only through a booking submitted by this session.
+model BookingActivity {
+  id         String   @id @db.Uuid
+  stage      String
+  service    String?
+  startedAt  DateTime @default(now())
+  lastSeenAt DateTime
+  quoteId    String?  @unique
+  quote      Quote?   @relation(fields: [quoteId], references: [id], onDelete: SetNull)
+  bookingId  String?  @unique
+  booking    Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+
+  @@index([lastSeenAt, id])
 }
 
 // Customer credentials are random opaque cookies. Only their SHA-256 hashes are stored.

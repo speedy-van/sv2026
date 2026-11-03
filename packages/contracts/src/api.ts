@@ -570,7 +570,9 @@ export const AdminBookingPatchSchema = ExpectedVersionSchema.extend({
   contact: ContactSchema.optional(),
   notes: z.string().trim().max(1000).optional(),
   vanId: z.string().min(1).nullable().optional(),
-}).strict();
+}).strict().refine((input) => input.contact !== undefined || input.notes !== undefined || input.vanId !== undefined, {
+  message: 'Choose at least one booking detail to update.',
+});
 export const AdminPhoneBookingSchema = z
   .object({
     quotePublicId: PublicIdSchema,
@@ -584,31 +586,44 @@ export const AdminPhoneBookingSchema = z
     notes: z.string().trim().max(1000).optional(),
   })
   .strict();
-export const RepricePreviewSchema = z.object({ changes: z.record(z.string(), z.unknown()) }).strict();
+export const AdminBookingRepriceChangesSchema = QuoteRequestSchema.refine((input) => input.attribution === undefined, {
+  message: 'Booking attribution cannot be changed when editing a move.',
+  path: ['attribution'],
+});
+export const RepricePreviewSchema = ExpectedVersionSchema.extend({ changes: AdminBookingRepriceChangesSchema }).strict();
 export const RepriceApplySchema = ExpectedVersionSchema.extend({
-  changes: z.record(z.string(), z.unknown()),
+  changes: AdminBookingRepriceChangesSchema,
+  expectedTotalPence: PenceSchema,
+  expectedSettlementPence: PenceSchema,
   settle: z.enum(['EXTRA_CHARGE', 'REFUND', 'NONE']),
   reason: z.string().trim().min(1).max(500),
 }).strict();
-export const AdminRescheduleSchema = ExpectedVersionSchema.extend({
+export const AdminReschedulePreviewRequestSchema = ExpectedVersionSchema.extend({
   date: IsoDateSchema,
   slot: SlotSchema,
   priceMode: z.enum(['KEEP_PRICE', 'NEW_PRICE']),
-  settle: z.enum(['EXTRA_CHARGE', 'REFUND', 'NONE']),
   reason: z.string().trim().min(1).max(500),
   overrideCapacity: z.boolean().optional(),
+}).strict();
+export const AdminRescheduleSchema = AdminReschedulePreviewRequestSchema.extend({
+  expectedTotalPence: PenceSchema,
+  expectedSettlementPence: PenceSchema,
+  settle: z.enum(['EXTRA_CHARGE', 'REFUND', 'NONE']),
 }).strict();
 export const AssignBookingSchema = ExpectedVersionSchema.extend({
   driverId: z.string().min(1),
   vanId: z.string().min(1).optional(),
   mode: z.enum(['DIRECT', 'OFFER']),
 }).strict();
-export const OfferBookingSchema = z
-  .object({
+export const OfferBookingSchema = ExpectedVersionSchema
+  .extend({
     driverIds: z.array(z.string().min(1)).min(1),
     expiresInMinutes: z.number().int().min(1).max(1440),
   })
   .strict();
+export const AdminUnassignBookingSchema = ExpectedVersionSchema.extend({
+  reason: z.string().trim().min(1).max(500),
+}).strict();
 export const AdminStatusChangeSchema = ExpectedVersionSchema.extend({
   to: BookingStatusSchema,
   reason: z.string().trim().min(1).max(500),

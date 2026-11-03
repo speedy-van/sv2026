@@ -98,6 +98,21 @@ it('reports changed-token registration failure instead of silently losing push s
   dispose();
 });
 
+it('does not register a token after the requesting session has changed', async () => {
+  const api = client();
+  const request = jest.spyOn(api, 'request').mockResolvedValue({ ok: true });
+  let resolveToken: ((token: Notifications.ExpoPushToken) => void) | undefined;
+  jest.mocked(Notifications.getExpoPushTokenAsync).mockReturnValueOnce(new Promise((resolve) => { resolveToken = resolve; }));
+  let active = true;
+  const registration = registerPushDevice(api, undefined, () => active);
+  await waitFor(() => { expect(Notifications.getExpoPushTokenAsync).toHaveBeenCalledTimes(1); });
+  active = false;
+  resolveToken?.({ type: 'expo', data: 'ExpoPushToken[old-session]' });
+  const dispose = await registration;
+  expect(request).not.toHaveBeenCalled();
+  dispose();
+});
+
 it('fails clearly when the Expo project is missing instead of pretending pushes are registered', async () => {
   mockProjectId = 'placeholder-project';
   await expect(registerPushDevice(client())).rejects.toThrow('configured Expo project');

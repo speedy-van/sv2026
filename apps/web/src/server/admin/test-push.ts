@@ -3,11 +3,15 @@ import 'server-only';
 import { AppError } from '@sv/contracts';
 import { prisma } from '@sv/db';
 import { processOutboxEventNow } from '../outbox/processor';
+import { enforceAdminNotificationTestRateLimit } from '../rate-limit';
+import { randomUUID } from 'node:crypto';
 
-export async function sendAdminTestPush(staff: { userId: string }): Promise<{ id: string; ok: true; queued: boolean }> {
+export async function sendAdminTestPush(staff: { userId: string }, input: { deviceId?: string | undefined } = {}): Promise<{ id: string; ok: true; queued: true }> {
+  await enforceAdminNotificationTestRateLimit(staff.userId);
   const devices = await prisma.pushDevice.count({
     where: {
       app: 'ADMIN', enabled: true, userId: staff.userId,
+      ...(input.deviceId ? { id: input.deviceId } : {}),
       user: { status: 'ACTIVE', role: { in: ['OWNER', 'ADMIN'] } },
     },
   });
@@ -16,9 +20,10 @@ export async function sendAdminTestPush(staff: { userId: string }): Promise<{ id
   }
   const event = await prisma.outboxEvent.create({
     data: {
-      dedupeKey: `admin.test_push:${staff.userId}:${new Date().toISOString()}`,
+      dedupeKey: `admin.test_push:${staff.userId}:${randomUUID()}`,
       payload: {
         app: 'ADMIN',
+        ...(input.deviceId ? { deviceId: input.deviceId } : {}),
         body: 'If this arrived, this phone can receive urgent booking alerts.',
         category: 'NEW_BOOKING',
         data: { eventType: 'admin.test_push', type: 'NEW_BOOKING' },

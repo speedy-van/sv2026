@@ -310,12 +310,16 @@ describe('transactional external chat notifications', () => {
   });
 
   it('does not report a committed message or dispatch when enqueueing its durable push fails', async () => {
-    mocks.queuePush.mockRejectedValue(new Error('Unit outbox unavailable'));
+    const failure = new Error('Unit outbox unavailable');
+    mocks.queuePush.mockRejectedValue(failure);
     const response = await messagesPOST(request('/chat/messages', { body: 'Hello', clientMessageId }));
     expect(response.status).toBe(500);
     expect(mocks.after).not.toHaveBeenCalled();
     expect(mocks.dispatchPush).not.toHaveBeenCalled();
-    expect(mocks.capture).toHaveBeenCalledOnce();
+    expect(mocks.capture).toHaveBeenCalledExactlyOnceWith(failure, {
+      tags: { component: 'api' },
+      extra: { requestId: response.headers.get('x-request-id'), path: '/api/v1/chat/messages' },
+    });
   });
 
   it('keeps the committed send successful and reports unavailable post-response scheduling', async () => {
@@ -425,10 +429,14 @@ describe('admin chat route authorization', () => {
   });
 
   it('reports unexpected database failures without returning internal errors or customer data', async () => {
-    mocks.conversationFind.mockRejectedValue(new Error('Database unavailable'));
+    const failure = new Error('Database unavailable');
+    mocks.conversationFind.mockRejectedValue(failure);
     const response = await sessionGET(request('/chat/session'));
     expect(response.status).toBe(500);
-    expect(mocks.capture).toHaveBeenCalledOnce();
+    expect(mocks.capture).toHaveBeenCalledExactlyOnceWith(failure, {
+      tags: { component: 'api' },
+      extra: { requestId: response.headers.get('x-request-id'), path: '/api/v1/chat/session' },
+    });
     expect(JSON.stringify(await response.json())).not.toContain('Database unavailable');
   });
 });

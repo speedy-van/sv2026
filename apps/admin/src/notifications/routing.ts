@@ -15,7 +15,7 @@ export function routeFromNotificationData(data: NotificationData): string {
   if (data.url?.startsWith('speedyvan-admin://')) {
     return data.url.replace('speedyvan-admin://', '/');
   }
-  if (data.type === 'NEW_BOOKING' && data.bookingId) return `/(app)/bookings/${data.bookingId}`;
-  if (data.type === 'QUOTE_REQUEST') return '/(app)/more?section=leads';
+  if ((data.type === 'NEW_BOOKING' || data.type === 'PENDING_BOOKING') && data.bookingId) return `/(app)/bookings/${encodeURIComponent(data.bookingId)}`;
+  if (data.type === 'QUOTE_REQUEST') return '/(app)/manual-quotes';
   return '/(app)/today';
 }

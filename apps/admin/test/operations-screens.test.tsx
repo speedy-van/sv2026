@@ -514,6 +514,8 @@ describe('operational screens', () => {
     expect(view.getByText('admin@example.test')).toBeTruthy();
     expect(view.queryByText('Pricing')).toBeNull();
     expect(view.queryByText('Save changes')).toBeNull();
+    await fireEvent.press(view.getByRole('button', { name: 'Open Notifications' }));
+    expect(router.push).toHaveBeenCalledWith('/(app)/notifications');
     await fireEvent.press(view.getByRole('button', { name: 'Open Live chat' }));
     expect(router.push).toHaveBeenCalledWith('/(app)/chat');
     await fireEvent.changeText(view.getByLabelText('Find in your workspace'), 'schedule');

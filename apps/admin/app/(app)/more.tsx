@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import {
   CalendarDays,
   ChevronRight,
+  Inbox,
   LayoutDashboard,
   LogOut,
   MessageCircle,
@@ -24,6 +25,18 @@ import { useAuth } from '@/state/auth';
 import { useAppAppearance, useAppColors, type AppAppearance } from '@/theme/theme';
 
 const tools = [
+  { description: 'Booking activity, pending payments and abandoned checkouts', icon: Users, key: 'leads', route: '/(app)/leads', title: 'Leads' },
+  { description: 'Create a customer booking and send a payment link', icon: LayoutDashboard, key: 'new-booking', route: '/(app)/new-booking', title: 'New phone booking' },
+  { description: 'Review, price and decline manual quote requests', icon: Inbox, key: 'manual-quotes', route: '/(app)/manual-quotes', title: 'Quote requests' },
+  { description: 'Booking totals, payment summaries and CSV exports', icon: LayoutDashboard, key: 'reports', route: '/(app)/reports', title: 'Reports' },
+  { description: 'Phone registration, pending alerts and test notifications', icon: Settings, key: 'notification-settings', route: '/(app)/notification-settings', title: 'Notification settings' },
+  {
+    description: 'Read booking, contact and system notifications',
+    icon: Inbox,
+    key: 'notifications',
+    route: '/(app)/notifications',
+    title: 'Notifications',
+  },
   {
     description: 'Read website messages and reply to customers',
     icon: MessageCircle,
@@ -117,7 +130,7 @@ export default function MoreScreen(): React.ReactElement {
 
         <SearchField
           label="Find in your workspace"
-          placeholder="Search chat, bookings, schedule or drivers"
+          placeholder="Search notifications, chat, bookings or tools"
           value={search}
           onChangeText={setSearch}
           autoCapitalize="none"
@@ -177,7 +190,7 @@ export default function MoreScreen(): React.ReactElement {
           ) : (
             <Card>
               <AppText weight="bold">No matching tools</AppText>
-              <AppText muted>Try chat, bookings, schedule or drivers.</AppText>
+              <AppText muted>Try leads, reports, quotes, notifications, chat or bookings.</AppText>
               <Button
                 label="Clear search"
                 tone="secondary"

@@ -199,6 +199,7 @@ export function useChatThread(conversationId: string): AdminChatThreadResult {
     await Promise.all([
       client.invalidateQueries({ queryKey: ['admin', auth.user?.id, 'chat-unread'] }),
       client.invalidateQueries({ queryKey: ['admin', auth.user?.id, 'chat-inbox'] }),
+      client.invalidateQueries({ queryKey: ['admin', auth.user?.id, 'notifications'] }),
     ]);
   };
   const query = useQuery<AdminChatThread>({

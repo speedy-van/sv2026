@@ -47,7 +47,8 @@ export async function dispatchPendingOutbox(paymentIntentId: string): Promise<vo
         where: {
           type: 'payment.refund',
           dedupeKey: { in: refunds.flatMap((refund) => [
-            `late-payment-refund:${refund.id}`, `expired-reschedule-refund:${refund.id}`, `taken-reschedule-refund:${refund.id}`,
+            `late-payment-refund:${refund.id}`, `expired-reschedule-refund:${refund.id}`, `taken-reschedule-refund:${refund.id}`, `admin-late-payment-refund:${refund.id}`,
+            ...(payment.kind === 'EXTRA_CHARGE' ? [`cancelled-admin-edit:${payment.id}:${refund.id}`] : []),
           ]) },
         },
         select: { id: true },

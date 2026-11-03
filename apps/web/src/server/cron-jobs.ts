@@ -1,15 +1,50 @@
 import 'server-only';
+import { pruneBookingActivity } from './booking-activity';
 
-import { addDays, fromDbDate, londonToday } from '@sv/contracts';
+import { addDays, fromDbDate, londonToday, OperationsCronResultSchema, type OperationsCronResult } from '@sv/contracts';
 import { enqueueOutbox, prisma, type Prisma } from '@sv/db';
 import { dbDateLabel, slotLabel } from './london-time';
 import { getSetting } from './settings';
 import { pruneVisitorPresence } from './visitor-presence';
 import { pruneExpiredChatConversations } from './chat/retention';
 import { outboxProcessFrom } from './env';
+import { expireBookingHolds } from './services/hold-expiry';
+import { runRepeatAlerts } from './notifications/repeat-alerts';
+import { checkPushReceipts } from './integrations/expo-push';
+import { processOutboxBatch } from './outbox/processor';
 
 function json(value: unknown): Prisma.InputJsonValue {
   return value as Prisma.InputJsonValue;
+}
+
+/** Invoked only by the protected route; the external schedule starts disabled. */
+export async function runOperationsCron(now = new Date()): Promise<OperationsCronResult> {
+  // Fail closed before doing any operational work if production has no cutoff.
+  outboxProcessFrom();
+  // Leave headroom for one already-started provider request and its retries.
+  const deadline = Date.now() + 20_000;
+  const result: OperationsCronResult = { bookingsExpired: 0, slotHoldsExpired: 0, bookingsChecked: 0, pushesQueued: 0,
+    receiptsChecked: 0, devicesDisabled: 0, receiptErrors: 0, outboxDone: 0, outboxFailed: 0, deferred: false };
+  Object.assign(result, await expireBookingHolds(now, deadline));
+  if (Date.now() < deadline) Object.assign(result, await runRepeatAlerts(now, deadline));
+  if (Date.now() < deadline) {
+    const receipts = await checkPushReceipts(now, 25);
+    result.receiptsChecked = receipts.checked;
+    result.devicesDisabled = receipts.disabled;
+    result.receiptErrors = receipts.errors;
+  }
+  // Claims inherit the activation cutoff and atomic SKIP LOCKED semantics of
+  // the established processor. Never turn an entire backlog into one request.
+  let batchLimitReached = false;
+  for (let claim = 0; claim < 50 && Date.now() < deadline; claim += 1) {
+    const batch = await processOutboxBatch(1);
+    result.outboxDone += batch.done;
+    result.outboxFailed += batch.failed;
+    if (batch.done + batch.failed === 0) break;
+    if (claim === 49) batchLimitReached = true;
+  }
+  result.deferred = batchLimitReached || Date.now() >= deadline;
+  return OperationsCronResultSchema.parse(result);
 }
 
 function londonHour(now: Date): number {
@@ -28,6 +63,7 @@ function routeLabel(pickup: unknown, dropoff: unknown): string {
 }
 
 export async function runDataRetention(now = new Date()): Promise<{ authOtpDeleted: number; oldPushTicketsDeleted: number; chatsDeleted: number }> {
+  await pruneBookingActivity(now);
   const authOtp = await prisma.authOtp.deleteMany({
     where: { createdAt: { lt: new Date(now.getTime() - 30 * 86_400_000) } },
   });

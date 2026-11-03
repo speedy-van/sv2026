@@ -61,17 +61,9 @@ async function body<T>(request: Request, schema: ZodType<T>): Promise<T> {
   return validated(schema, value);
 }
 
-async function reportFailure(operation: () => Promise<Response>): Promise<Response> {
-  try { return await operation(); }
-  catch (error) {
-    if (!(error instanceof AppError)) Sentry.captureException(error, { tags: { component: 'live-chat' } });
-    throw error;
-  }
-}
-
 export async function handlePublicChat(request: Request, action: ChatAction): Promise<Response> {
   const mutation = action === 'send' || action === 'read' || action === 'start';
-  return withApi(request, { auth: false, rateLimit: mutation ? 'chatWrite' : 'chatRead' }, ({ requestId }) => reportFailure(async () => {
+  return withApi(request, { auth: false, rateLimit: mutation ? 'chatWrite' : 'chatRead' }, async ({ requestId }) => {
     if (mutation) assertChatOrigin(request);
     if (action === 'session') return apiJson(await getChatSession(request), {}, requestId);
     if (action === 'start') {
@@ -91,11 +83,11 @@ export async function handlePublicChat(request: Request, action: ChatAction): Pr
     }
     const input = await body(request, ChatReadRequestSchema);
     return apiJson(await markCustomerMessagesRead(request, input.messageId), {}, requestId);
-  }));
+  });
 }
 
 export async function handleAdminChat(request: Request, action: AdminChatAction, id?: string): Promise<Response> {
-  return withApi(request, { auth: { app: 'admin', roles: ['OWNER', 'ADMIN'] } }, (context: ApiContext<undefined>) => reportFailure(async () => {
+  return withApi(request, { auth: { app: 'admin', roles: ['OWNER', 'ADMIN'] } }, async (context: ApiContext<undefined>) => {
     const { requestId, staff } = context;
     if (!staff) throw new AppError('UNAUTHORIZED', 'Sign in required.');
     await enforceAdminChatRateLimit(staff.userId);
@@ -107,5 +99,5 @@ export async function handleAdminChat(request: Request, action: AdminChatAction,
     if (action === 'send') return apiJson(await sendAdminMessage(conversationId, await body(request, AdminChatSendRequestSchema), staff.userId), {}, requestId);
     const input = await body(request, ChatReadRequestSchema);
     return apiJson(await markMessagesRead(conversationId, input.messageId, 'ADMIN'), {}, requestId);
-  }));
+  });
 }

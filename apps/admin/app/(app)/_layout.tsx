@@ -88,7 +88,15 @@ export default function AppTabs(): React.ReactElement {
             <Tabs.Screen name="drivers/[id]" options={{ href: null }} />
             <Tabs.Screen name="drivers/add" options={{ href: null }} />
             <Tabs.Screen name="new-booking" options={{ href: null }} />
+            <Tabs.Screen name="edit-booking" options={{ href: null }} />
             <Tabs.Screen name="more-section" options={{ href: null }} />
+            <Tabs.Screen name="notifications" options={{ href: null }} />
+            <Tabs.Screen name="leads" options={{ href: null }} />
+            <Tabs.Screen name="notification-settings" options={{ href: null }} />
+            <Tabs.Screen name="manual-quotes" options={{ href: null }} />
+            <Tabs.Screen name="manual-quote" options={{ href: null }} />
+            <Tabs.Screen name="reports" options={{ href: null }} />
+            <Tabs.Screen name="booking-actions" options={{ href: null }} />
             <Tabs.Screen name="chat/index" options={{ href: null }} />
             <Tabs.Screen name="chat/[id]" options={{ href: null }} />
           </Tabs>

@@ -1,0 +1,32 @@
+name: Operations scheduler
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: operations-cron
+  cancel-in-progress: false
+
+jobs:
+  operations:
+    # Deliberately disabled until the owner approves activation after deployment.
+    # GitHub schedules may be delayed; this is not an exact five-minute SLA.
+    if: ${{ vars.OPERATIONS_CRON_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Run protected operations batch
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo 'CRON_SECRET is required for the operations scheduler.' >&2
+            exit 1
+          fi
+          curl --fail --silent --show-error --max-time 70 \
+            --header "Authorization: Bearer $CRON_SECRET" \
+            https://www.speedyvan.uk/api/cron/operations

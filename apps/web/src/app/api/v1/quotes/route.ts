@@ -2,6 +2,8 @@ import { AppError, QuoteRequestSchema, QuoteStreamEventSchema, errorEnvelope } f
 import { apiError, apiJson, ndjsonResponse, parseJson, requestIdFrom } from '@/server/request';
 import { enforceRateLimit } from '@/server/rate-limit';
 import { createQuote, type QuoteRequest } from '@/server/services/quote';
+import { linkBookingActivityQuote } from '@/server/booking-activity';
+import * as Sentry from '@sentry/nextjs';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -17,6 +19,11 @@ function appErrorFrom(error: unknown): AppError {
   return new AppError('INTERNAL', 'Something went wrong. Try again in a moment.');
 }
 
+async function linkActivity(request: Request, quotePublicId: string): Promise<void> {
+  try { await linkBookingActivityQuote(request, quotePublicId); }
+  catch (error) { Sentry.captureException(error, { tags: { feature: 'quote-activity-link' } }); }
+}
+
 export async function POST(request: Request): Promise<Response> {
   const requestId = requestIdFrom(request);
   let input: QuoteRequest;
@@ -30,6 +37,7 @@ export async function POST(request: Request): Promise<Response> {
   if (request.headers.get('accept')?.includes('application/json')) {
     try {
       const result = await createQuote(input);
+      await linkActivity(request, result.quote.publicId);
       if (result.manualReasons.length > 0) {
         return apiJson({
           manualQuote: {
@@ -53,6 +61,7 @@ export async function POST(request: Request): Promise<Response> {
             controller.enqueue(encodeEvent(event));
           },
         });
+        await linkActivity(request, result.quote.publicId);
         if (result.manualReasons.length > 0) {
           controller.enqueue(encodeEvent({
             quotePublicId: result.quote.publicId,

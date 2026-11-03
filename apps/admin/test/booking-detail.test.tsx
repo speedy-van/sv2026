@@ -163,6 +163,11 @@ afterEach(() => {
 });
 
 describe('booking detail uses actual records without fixture fallbacks', () => {
+  it('opens the working booking editor for the selected booking', async () => {
+    const view = await render(<BookingDetailScreen />);
+    await fireEvent.press(view.getByRole('button', { name: 'Edit booking' }));
+    expect(router.push).toHaveBeenCalledWith('/(app)/edit-booking?id=booking-test');
+  });
   it('labels the recorded creation timestamp separately from the move date and payment attempts', async () => {
     const view = await render(<BookingDetailScreen />);
     expect(view.getByText('Booking created')).toBeTruthy();

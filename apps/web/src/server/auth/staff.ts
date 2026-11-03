@@ -2,6 +2,9 @@ import 'server-only';
 
 import {
   AppError,
+  NotificationsQuerySchema,
+  NotificationsResponseSchema,
+  type NotificationsResponse,
   type DeviceSchema,
   type OtpRequestSchema,
   type OtpVerifySchema,
@@ -17,6 +20,7 @@ import type { z } from 'zod';
 import { serverEnv } from '../env';
 import { getPublicSettings } from '../settings';
 import { verifyStaffPassword } from './password';
+import { readNotificationCounts } from '../notifications/counts';
 
 export type StaffRole = z.infer<typeof StaffRoleSchema>;
 export type StaffApp = 'admin' | 'driver';
@@ -672,21 +676,40 @@ export async function revokeOwnSession(staff: StaffContext, sessionId: string): 
   });
 }
 
-export async function listNotifications(staff: StaffContext) {
-  const notifications = await prisma.notification.findMany({
-    orderBy: { createdAt: 'desc' },
-    select: { body: true, createdAt: true, data: true, id: true, readAt: true, title: true, type: true },
-    take: 50,
-    where: { userId: staff.userId },
-  });
-  return {
-    items: notifications.map((notification) => ({
+export async function listNotifications(
+  staff: StaffContext,
+  search = new URLSearchParams(),
+): Promise<NotificationsResponse> {
+  const parsed = NotificationsQuerySchema.safeParse(Object.fromEntries(search));
+  if (!parsed.success) throw new AppError('VALIDATION_ERROR', 'Choose a valid notification page.');
+  const query = parsed.data;
+  if (query.cursor) {
+    const cursor = await prisma.notification.findFirst({
+      where: { id: query.cursor, userId: staff.userId },
+      select: { id: true },
+    });
+    if (!cursor) throw new AppError('VALIDATION_ERROR', 'Choose a valid notification cursor.');
+  }
+  const [notifications, counts] = await Promise.all([
+    prisma.notification.findMany({
+      orderBy: [{ readAt: { sort: 'asc', nulls: 'first' } }, { createdAt: 'desc' }, { id: 'desc' }],
+      select: { body: true, createdAt: true, data: true, id: true, readAt: true, title: true, type: true },
+      take: query.limit + 1,
+      where: { userId: staff.userId },
+      ...(query.cursor ? { cursor: { id: query.cursor }, skip: 1 } : {}),
+    }),
+    readNotificationCounts(staff.userId, staff.app === 'admin' && (staff.role === 'ADMIN' || staff.role === 'OWNER')),
+  ]);
+  const page = notifications.slice(0, query.limit);
+  return NotificationsResponseSchema.parse({
+    items: page.map((notification) => ({
       ...notification,
       createdAt: notification.createdAt.toISOString(),
       readAt: notification.readAt?.toISOString() ?? null,
     })),
-    nextCursor: null,
-  };
+    nextCursor: notifications.length > query.limit ? (page.at(-1)?.id ?? null) : null,
+    ...counts,
+  });
 }
 
 export async function markNotificationsRead(
@@ -697,6 +720,7 @@ export async function markNotificationsRead(
     data: { readAt: new Date() },
     where: {
       userId: staff.userId,
+      readAt: null,
       ...('all' in input ? {} : { id: { in: input.ids } }),
     },
   });

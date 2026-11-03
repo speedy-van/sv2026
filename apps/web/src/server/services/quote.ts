@@ -138,7 +138,7 @@ function derivePricingAccess(input: QuoteRequest): PricingInput['access'] {
   };
 }
 
-async function snapshotInventory(input: QuoteRequest, customSizes: PricingInputCustomSizes): Promise<InventoryLine[]> {
+export async function snapshotInventory(input: QuoteRequest, customSizes: PricingInputCustomSizes): Promise<InventoryLine[]> {
   const slugs = [...new Set(input.items.filter((item) => item.kind === 'catalogue').map((item) => item.itemSlug))];
   const cached = itemSnapshotCache && itemSnapshotCache.expiresAt > Date.now() ? itemSnapshotCache.bySlug : null;
   const missing = cached ? slugs.filter((slug) => !cached.has(slug)) : slugs;
@@ -180,7 +180,7 @@ async function snapshotInventory(input: QuoteRequest, customSizes: PricingInputC
 
 type PricingInputCustomSizes = Record<'S' | 'M' | 'L' | 'XL', number>;
 
-function assertServiceArea(input: QuoteRequest, operations: OperationsSettings): void {
+export function assertServiceArea(input: QuoteRequest, operations: OperationsSettings): void {
   const pickupInScotland = isScottishPostcode(input.pickup.postcode);
   const dropoffInScotland = input.dropoff ? isScottishPostcode(input.dropoff.postcode) : null;
 
@@ -204,7 +204,7 @@ function assertServiceArea(input: QuoteRequest, operations: OperationsSettings):
   }
 }
 
-function buildPricingInput(input: QuoteRequest, inventory: InventoryLine[], route: RouteResult): PricingInput {
+export function buildPricingInput(input: QuoteRequest, inventory: InventoryLine[], route: RouteResult): PricingInput {
   return {
     access: derivePricingAccess(input),
     addons: input.addons,

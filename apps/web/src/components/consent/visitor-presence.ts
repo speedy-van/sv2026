@@ -1,7 +1,6 @@
 import { CONSENT_MAX_AGE_SECONDS, VISITOR_HEARTBEAT_INTERVAL_SECONDS } from '@sv/contracts';
 import type { SavedConsent } from './consent';
 
-const endpoint = '/api/v1/visitors/presence';
 const requestTimeoutMs = 10_000;
 const heartbeatMs = VISITOR_HEARTBEAT_INTERVAL_SECONDS * 1000;
 
@@ -20,10 +19,12 @@ interface PendingRequest {
   started: boolean;
 }
 
-export function startVisitorPresence(environment: VisitorPresenceEnvironment): () => void {
+export function startVisitorPresence(environment: VisitorPresenceEnvironment, configuration: {
+  endpoint: string; lockName: string; body(): unknown; withdrawOnStartWithoutConsent?: boolean; retryWithdrawal?: boolean; settleInFlightWhenHidden?: boolean;
+} = { endpoint: '/api/v1/visitors/presence', lockName: 'sv-visitor-presence', body: () => ({}) }): () => void {
   let stopped = false;
   let hadAnalytics = false;
-  let withdrawalRequested = false;
+  let withdrawalRequested = configuration.withdrawOnStartWithoutConsent === true && !environment.readConsent()?.analytics;
   let failures = 0;
   let retryAt = 0;
   let heartbeat: ReturnType<typeof setTimeout> | undefined;
@@ -57,7 +58,7 @@ export function startVisitorPresence(environment: VisitorPresenceEnvironment): (
   function options(method: 'POST' | 'DELETE', signal: AbortSignal): RequestInit {
     return {
       method,
-      body: '{}',
+      body: JSON.stringify(method === 'POST' ? configuration.body() : {}),
       cache: 'no-store',
       credentials: 'same-origin',
       headers: { 'content-type': 'application/json' },
@@ -87,12 +88,12 @@ export function startVisitorPresence(environment: VisitorPresenceEnvironment): (
       )
         return;
       request.started = true;
-      return environment.fetch(endpoint, options(method, request.controller.signal));
+      return environment.fetch(configuration.endpoint, options(method, request.controller.signal));
     }
     if (!environment.locks) return insideLock();
     try {
       return await environment.locks.request(
-        'sv-visitor-presence',
+        configuration.lockName,
         { mode: 'exclusive', signal: request.controller.signal },
         insideLock,
       );
@@ -110,16 +111,27 @@ export function startVisitorPresence(environment: VisitorPresenceEnvironment): (
 
   async function removePresence(): Promise<void> {
     if (stopped || post || removal || !withdrawalRequested) return;
+    if (configuration.retryWithdrawal && retryAt > Date.now()) {
+      scheduleHeartbeat(retryAt - Date.now());
+      return;
+    }
     withdrawalRequested = false;
     const request = pending();
     removal = request;
+    let succeeded = false;
     try {
-      await send('DELETE', request);
+      const response = await send('DELETE', request);
+      succeeded = response?.ok === true;
     } catch {
       // Cleanup is best effort. The server counts only the bounded active window.
     } finally {
       clearTimeout(request.timeout);
       removal = null;
+      if (configuration.retryWithdrawal) {
+        withdrawalRequested = !succeeded;
+        failures = succeeded ? 0 : Math.min(failures + 1, 5);
+        retryAt = succeeded ? 0 : Date.now() + Math.min(300_000, heartbeatMs * 2 ** (failures - 1));
+      }
       if (!isStopped()) synchronize();
     }
   }
@@ -186,7 +198,7 @@ export function startVisitorPresence(environment: VisitorPresenceEnvironment): (
     }
     if (!environment.isVisible()) {
       clearHeartbeat();
-      abortHeartbeat();
+      if (!configuration.settleInFlightWhenHidden || !post?.started) abortHeartbeat();
       return;
     }
     if (post) return;

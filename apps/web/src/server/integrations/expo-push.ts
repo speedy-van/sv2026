@@ -7,6 +7,7 @@ import { randomUUID } from 'node:crypto';
 import { Expo, type ExpoPushMessage, type ExpoPushReceipt, type ExpoPushTicket } from 'expo-server-sdk';
 import { serverEnv } from '../env';
 import { shouldSendChatPush } from '../chat/push';
+import { readNotificationCounts } from '../notifications/counts';
 import { withExpoTransport } from './expo-transport';
 
 type AppKind = 'ADMIN' | 'DRIVER';
@@ -14,6 +15,7 @@ type PushSound = 'default' | 'job-offer.wav' | 'new-job.wav' | 'chat-message.wav
 
 export interface PushSendPayload {
   app?: AppKind;
+  deviceId?: string;
   body: string;
   category: string;
   data?: Record<string, unknown>;
@@ -108,7 +110,7 @@ function messageFor(payload: PushSendPayload, token: string, badge: number): Exp
     interruptionLevel: payload.timeSensitive ? 'time-sensitive' : 'active',
     priority: 'high',
     sound: payload.app === 'ADMIN'
-      ? payload.category === 'CHAT_MESSAGE' ? 'chat-message.wav' : 'new-job.wav'
+      ? payload.category === 'CHAT_MESSAGE' ? 'chat-message.wav' : payload.category === 'PENDING_BOOKING' ? 'default' : 'new-job.wav'
       : payload.sound,
     title: payload.title,
     to: token,
@@ -135,22 +137,38 @@ async function createTicket(device: PushDeviceRow, outboxEventId: string, ticket
 }
 
 export async function sendPushOutbox(payload: PushSendPayload, outboxEventId: string): Promise<{ devices: number; tickets: number }> {
+  if (payload.app === 'ADMIN' && payload.category === 'PENDING_BOOKING') {
+    const bookingId = payload.data?.bookingId;
+    const booking = typeof bookingId === 'string' ? await prisma.booking.findFirst({
+      where: { id: bookingId, status: 'PENDING_PAYMENT', deletedAt: null, holdExpiresAt: { gt: new Date() } }, select: { id: true },
+    }) : null;
+    if (!booking) return { devices: 0, tickets: 0 };
+  }
   if (payload.app === 'ADMIN' && payload.category === 'CHAT_MESSAGE' && !await shouldSendChatPush(payload.data)) {
     return { devices: 0, tickets: 0 };
   }
   if (payload.app === 'ADMIN' && payload.category === 'NEW_BOOKING' && payload.data?.eventType !== 'admin.test_push') {
     const bookingId = payload.data?.bookingId;
+    const repeat = payload.data?.eventType === 'booking.confirmed.repeat';
     const booking = typeof bookingId === 'string' && bookingId ? await prisma.booking.findFirst({
-      where: { id: bookingId, status: 'CONFIRMED', deletedAt: null, moveDate: { gte: new Date(`${londonToday()}T00:00:00.000Z`) } },
+      where: { id: bookingId, status: 'CONFIRMED', deletedAt: null, moveDate: { gte: new Date(`${londonToday()}T00:00:00.000Z`) }, ...(repeat ? { dispatchStatus: 'UNASSIGNED' } : {}) },
       select: { id: true },
     }) : null;
     if (!booking) return { devices: 0, tickets: 0 };
+    // A queued repeat may outlive an admin acknowledgement or assignment.
+    // Re-check immediately before device selection, including outbox retries.
+    if (repeat && await prisma.notification.findFirst({
+      where: { type: 'booking.confirmed', data: { path: ['bookingId'], equals: booking.id }, readAt: { not: null } },
+      select: { id: true },
+    })) return { devices: 0, tickets: 0 };
   }
   const devices = await prisma.pushDevice.findMany({
     orderBy: { lastRegisteredAt: 'desc' },
     select: { app: true, expoPushToken: true, id: true, userId: true },
     where: {
       enabled: true,
+      ...(payload.deviceId ? { id: payload.deviceId } : {}),
+      ...(payload.category === 'PENDING_BOOKING' ? { pendingBookingAlerts: true } : {}),
       userId: payload.userId,
       user: {
         status: 'ACTIVE',
@@ -169,7 +187,7 @@ export async function sendPushOutbox(payload: PushSendPayload, outboxEventId: st
     }
   }
   if (validDevices.length === 0) {
-    if (payload.app === 'ADMIN') await warnAdminWithoutDevice(payload.userId);
+    if (payload.app === 'ADMIN' && payload.category !== 'PENDING_BOOKING') await warnAdminWithoutDevice(payload.userId);
     return { devices: 0, tickets: 0 };
   }
 
@@ -188,7 +206,7 @@ export async function sendPushOutbox(payload: PushSendPayload, outboxEventId: st
   const pendingDevices = validDevices.filter((device) => !acceptedDeviceIds.has(device.id));
   if (pendingDevices.length === 0) return { devices: validDevices.length, tickets: 0 };
 
-  const unreadCount = await prisma.notification.count({ where: { readAt: null, userId: payload.userId } });
+  const counts = await readNotificationCounts(payload.userId, pendingDevices.some((device) => device.app === 'ADMIN'));
 
   if (capturing) {
     for (const device of pendingDevices) {
@@ -206,7 +224,7 @@ export async function sendPushOutbox(payload: PushSendPayload, outboxEventId: st
     return { devices: validDevices.length, tickets: pendingDevices.length };
   }
 
-  const messages = pendingDevices.map((device) => messageFor(payload, device.expoPushToken, unreadCount));
+  const messages = pendingDevices.map((device) => messageFor(payload, device.expoPushToken, device.app === 'ADMIN' ? counts.badgeCount : counts.unreadCount));
   let cursor = 0;
   let tickets = 0;
   const failures = new Set<string>();

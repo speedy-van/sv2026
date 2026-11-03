@@ -191,6 +191,8 @@ export function useBookingAlerts(): {
           if (current.current.api === client) {
             unreadAcknowledgements.current.delete(bookingId);
             if (!unreadAcknowledgements.current.size) setReadError(null);
+            void queries.invalidateQueries({ queryKey: ['admin', current.current.userId, 'notifications'] });
+            void queries.invalidateQueries({ queryKey: ['admin', current.current.userId, 'notification-inbox'] });
           }
         })
         .catch((cause: unknown) => {
@@ -201,7 +203,7 @@ export function useBookingAlerts(): {
           Sentry.captureException(cause, { tags: { feature: 'admin-booking-alert-read' } });
         });
     },
-    [auth.api],
+    [auth.api, queries],
   );
 
   const open = useCallback(

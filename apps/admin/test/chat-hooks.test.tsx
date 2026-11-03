@@ -368,6 +368,7 @@ describe('admin live chat data', () => {
 
   it('posts the visible message watermark and applies the real team unread response', async () => {
     const context = setup();
+    context.client.setQueryData(['admin', 'chat-admin', 'notifications'], { badgeCount: 3 });
     const hook = await renderHook(useObservedThread, { wrapper: context.wrapper });
     await waitFor(() => {
       expect(hook.result.current.query.isSuccess).toBe(true);
@@ -383,6 +384,7 @@ describe('admin live chat data', () => {
     await waitFor(() => {
       expect(hook.result.current.query.data?.conversation.unreadCount).toBe(0);
     });
+    expect(context.client.getQueryState(['admin', 'chat-admin', 'notifications'])?.isInvalidated).toBe(true);
   });
 
   it('prepends older messages without losing a current reply', async () => {

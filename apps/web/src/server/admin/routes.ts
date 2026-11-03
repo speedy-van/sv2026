@@ -3,9 +3,14 @@ import 'server-only';
 import {
   AdminBookingPatchSchema,
   AdminBookingCleanupRequestSchema,
-  AdminCancelSchema,
-  AdminPhoneBookingSchema,
+  AdminCancelApplySchema, AdminCancelPreviewRequestSchema,
+  AdminPhoneBookingCreateSchema, QuoteRequestSchema,
+  AdminPaymentRefundRequestSchema, AdminOfflinePaymentRequestSchema, AdminExtraChargeRequestSchema, AdminResendEmailRequestSchema,
+  AdminManualQuotePriceRequestSchema, AdminManualQuoteDeclineRequestSchema,
+  AdminNotificationSettingsUpdateSchema, AdminTestPushRequestSchema,
   AdminRescheduleSchema,
+  AdminReschedulePreviewRequestSchema,
+  AdminUnassignBookingSchema,
   AdminStatusChangeSchema,
   AdminSlotClosureRequestSchema,
   AppError,
@@ -17,17 +22,13 @@ import {
   DriverInviteSchema,
   DriverCreateSchema,
   DriverPatchSchema,
-  ExtraChargeCreateSchema,
   FaqAdminSchema,
-  ManualQuotePriceSchema,
   OfferBookingSchema,
-  OfflinePaymentSchema,
   PayoutCreateSchema,
   PresetAdminSchema,
   PricingDraftCreateSchema,
   PricingDraftPatchSchema,
   PricingSimulateSchema,
-  RefundCreateSchema,
   RepriceApplySchema,
   RepricePreviewSchema,
   SettingKeySchema,
@@ -46,6 +47,8 @@ import { createDriverAccount } from './driver-account';
 import { enforceAdminDriverRateLimit } from '../rate-limit';
 import { assertBrowserSessionOrigin } from '../auth/browser-session';
 import { acknowledgeBookingAlerts, readBookingAlerts } from '../notifications/booking-alerts';
+import { handleAdminBookingEdit } from './booking-edit-routes';
+import { handleAdminTools } from './tool-routes';
 
 export type AdminMethod = 'DELETE' | 'GET' | 'PATCH' | 'POST' | 'PUT';
 
@@ -76,7 +79,6 @@ const ExtraChargeDecisionSchema = z
     reason: z.string().trim().min(1).max(500),
   })
   .strict();
-const ResendEmailSchema = z.object({ template: z.string().trim().min(1).max(80) }).strict();
 const LocationContentPutSchema = z
   .object({
     localNotes: z.string().trim().max(2000).nullable(),
@@ -88,7 +90,6 @@ const ContactMessagePatchSchema = z.object({ status: z.enum(['HANDLED', 'NEW']) 
 const SettingsPutSchema = z.object({ key: SettingKeySchema.optional(), value: z.unknown(), reason: z.string().trim().max(500).optional() }).strict();
 const TeamPatchSchema = z.object({ name: z.string().trim().min(1).max(80).optional(), role: z.enum(['OWNER', 'ADMIN', 'DRIVER']).optional(), status: z.enum(['INVITED', 'ACTIVE', 'DISABLED']).optional() }).strict();
 const CustomerPatchSchema = z.object({ name: z.string().trim().min(1).max(80).optional(), notes: z.string().trim().max(2000).optional(), phone: z.string().trim().min(7).max(30).optional() }).strict();
-const ManualQuoteDeclineSchema = z.object({ message: z.string().trim().min(1).max(1000) }).strict();
 
 function json(value: unknown): Prisma.InputJsonValue {
   return value as Prisma.InputJsonValue;
@@ -101,35 +102,44 @@ export const ADMIN_ROUTE_DEFINITIONS: readonly AdminRouteDefinition[] = [
   { action: 'admin.feed.read', entityType: 'notification', input: BookingAlertReadRequestSchema, method: 'POST', pattern: 'feed/read', response: 'ok' },
   { action: 'admin.system.health', entityType: 'system', method: 'GET', pattern: 'system/health', response: 'health' },
   { action: 'admin.system.outbox_retry', entityType: 'outboxEvent', input: EmptyBodySchema, method: 'POST', pattern: 'system/outbox/:id/retry', response: 'ok' },
-  { action: 'admin.test_push', entityType: 'pushDevice', input: EmptyBodySchema, method: 'POST', pattern: 'test-push', response: 'ok' },
+  { action: 'admin.test_push', entityType: 'pushDevice', input: AdminTestPushRequestSchema, method: 'POST', pattern: 'test-push', response: 'ok' },
+  { action: 'admin.notifications.settings', entityType: 'pushDevice', method: 'GET', pattern: 'notification-settings', response: 'detail' },
+  { action: 'admin.notifications.update', entityType: 'pushDevice', input: AdminNotificationSettingsUpdateSchema, method: 'PATCH', pattern: 'notification-settings', response: 'ok' },
+  { action: 'admin.leads.activity', entityType: 'bookingActivity', method: 'GET', pattern: 'leads/activity', response: 'list' },
+  { action: 'admin.bookings.create_context', entityType: 'booking', method: 'GET', pattern: 'bookings/create-context', response: 'detail' },
+  { action: 'admin.quotes.create', entityType: 'quote', input: QuoteRequestSchema, method: 'POST', pattern: 'quotes', response: 'detail' },
+  { action: 'admin.bookings.actions_context', entityType: 'booking', method: 'GET', pattern: 'bookings/:id/actions-context', response: 'detail' },
+  { action: 'admin.bookings.cancel_preview', entityType: 'booking', input: AdminCancelPreviewRequestSchema, method: 'POST', pattern: 'bookings/:id/cancel-preview', response: 'detail' },
 
   { action: 'admin.bookings.list', entityType: 'booking', method: 'GET', pattern: 'bookings', response: 'list' },
   { action: 'admin.bookings.view', entityType: 'booking', method: 'GET', pattern: 'bookings/:id', response: 'detail' },
+  { action: 'admin.bookings.edit_context', entityType: 'booking', method: 'GET', pattern: 'bookings/:id/edit-context', response: 'detail' },
+  { action: 'admin.bookings.assignment_options', entityType: 'booking', method: 'GET', pattern: 'bookings/:id/assignment-options', response: 'detail' },
   { action: 'admin.bookings.delete', entityType: 'booking', input: AdminBookingCleanupRequestSchema, method: 'DELETE', pattern: 'bookings/:id', response: 'ok' },
   { action: 'admin.bookings.restore', entityType: 'booking', input: AdminBookingCleanupRequestSchema, method: 'POST', pattern: 'bookings/:id/restore', response: 'ok' },
-  { action: 'admin.bookings.create', entityType: 'booking', input: AdminPhoneBookingSchema, method: 'POST', pattern: 'bookings', response: 'ok' },
+  { action: 'admin.bookings.create', entityType: 'booking', input: AdminPhoneBookingCreateSchema, method: 'POST', pattern: 'bookings', response: 'ok' },
   { action: 'admin.bookings.patch', entityType: 'booking', input: AdminBookingPatchSchema, method: 'PATCH', pattern: 'bookings/:id', response: 'ok' },
   { action: 'admin.bookings.reprice_preview', entityType: 'booking', input: RepricePreviewSchema, method: 'POST', pattern: 'bookings/:id/reprice-preview', response: 'detail' },
   { action: 'admin.bookings.reprice_apply', entityType: 'booking', input: RepriceApplySchema, method: 'POST', pattern: 'bookings/:id/reprice-apply', response: 'ok' },
   { action: 'admin.bookings.calendar', entityType: 'booking', method: 'GET', pattern: 'bookings/:id/calendar', response: 'list' },
-  { action: 'admin.bookings.reschedule_preview', entityType: 'booking', input: AdminRescheduleSchema, method: 'POST', pattern: 'bookings/:id/reschedule-preview', response: 'detail' },
+  { action: 'admin.bookings.reschedule_preview', entityType: 'booking', input: AdminReschedulePreviewRequestSchema, method: 'POST', pattern: 'bookings/:id/reschedule-preview', response: 'detail' },
   { action: 'admin.bookings.reschedule', entityType: 'booking', input: AdminRescheduleSchema, method: 'POST', pattern: 'bookings/:id/reschedule', response: 'ok' },
   { action: 'admin.bookings.assign', entityType: 'booking', input: AssignBookingSchema, method: 'POST', pattern: 'bookings/:id/assign', response: 'ok' },
   { action: 'admin.bookings.offer', entityType: 'booking', input: OfferBookingSchema, method: 'POST', pattern: 'bookings/:id/offer', response: 'ok' },
-  { action: 'admin.bookings.unassign', entityType: 'booking', input: ReasonSchema, method: 'POST', pattern: 'bookings/:id/unassign', response: 'ok' },
+  { action: 'admin.bookings.unassign', entityType: 'booking', input: AdminUnassignBookingSchema, method: 'POST', pattern: 'bookings/:id/unassign', response: 'ok' },
   { action: 'admin.bookings.status', entityType: 'booking', input: AdminStatusChangeSchema, method: 'POST', pattern: 'bookings/:id/status', response: 'ok' },
-  { action: 'admin.bookings.cancel', entityType: 'booking', input: AdminCancelSchema, method: 'POST', pattern: 'bookings/:id/cancel', response: 'ok' },
-  { action: 'admin.bookings.refund', entityType: 'refund', input: RefundCreateSchema, method: 'POST', pattern: 'bookings/:id/refunds', response: 'ok' },
-  { action: 'admin.bookings.extra_charge', entityType: 'extraCharge', input: ExtraChargeCreateSchema, method: 'POST', pattern: 'bookings/:id/extra-charges', response: 'ok' },
+  { action: 'admin.bookings.cancel', entityType: 'booking', input: AdminCancelApplySchema, method: 'POST', pattern: 'bookings/:id/cancel', response: 'ok' },
+  { action: 'admin.bookings.refund', entityType: 'refund', input: AdminPaymentRefundRequestSchema, method: 'POST', pattern: 'bookings/:id/refunds', response: 'ok' },
+  { action: 'admin.bookings.extra_charge', entityType: 'extraCharge', input: AdminExtraChargeRequestSchema, method: 'POST', pattern: 'bookings/:id/extra-charges', response: 'ok' },
   { action: 'admin.extra_charges.decision', entityType: 'extraCharge', input: ExtraChargeDecisionSchema, method: 'POST', pattern: 'extra-charges/:id/decision', response: 'ok' },
-  { action: 'admin.bookings.offline_payment', entityType: 'payment', input: OfflinePaymentSchema, method: 'POST', ownerOnly: true, pattern: 'bookings/:id/payments/offline', response: 'ok' },
-  { action: 'admin.bookings.resend_email', entityType: 'booking', input: ResendEmailSchema, method: 'POST', pattern: 'bookings/:id/resend-email', response: 'ok' },
+  { action: 'admin.bookings.offline_payment', entityType: 'payment', input: AdminOfflinePaymentRequestSchema, method: 'POST', ownerOnly: true, pattern: 'bookings/:id/payments/offline', response: 'ok' },
+  { action: 'admin.bookings.resend_email', entityType: 'booking', input: AdminResendEmailRequestSchema, method: 'POST', pattern: 'bookings/:id/resend-email', response: 'ok' },
 
   { action: 'admin.checkouts.abandoned', entityType: 'booking', method: 'GET', pattern: 'checkouts/abandoned', response: 'list' },
   { action: 'admin.manual_quotes.list', entityType: 'manualQuote', method: 'GET', pattern: 'manual-quotes', response: 'list' },
   { action: 'admin.manual_quotes.view', entityType: 'manualQuote', method: 'GET', pattern: 'manual-quotes/:id', response: 'detail' },
-  { action: 'admin.manual_quotes.price', entityType: 'manualQuote', input: ManualQuotePriceSchema, method: 'POST', pattern: 'manual-quotes/:id/price', response: 'ok' },
-  { action: 'admin.manual_quotes.decline', entityType: 'manualQuote', input: ManualQuoteDeclineSchema, method: 'POST', pattern: 'manual-quotes/:id/decline', response: 'ok' },
+  { action: 'admin.manual_quotes.price', entityType: 'manualQuote', input: AdminManualQuotePriceRequestSchema, method: 'POST', pattern: 'manual-quotes/:id/price', response: 'ok' },
+  { action: 'admin.manual_quotes.decline', entityType: 'manualQuote', input: AdminManualQuoteDeclineRequestSchema, method: 'POST', pattern: 'manual-quotes/:id/decline', response: 'ok' },
 
   { action: 'admin.schedule.view', entityType: 'schedule', method: 'GET', pattern: 'schedule', response: 'list' },
   { action: 'admin.capacity.rules.view', entityType: 'capacityRule', method: 'GET', pattern: 'capacity/rules', response: 'list' },
@@ -195,6 +205,7 @@ export const ADMIN_ROUTE_DEFINITIONS: readonly AdminRouteDefinition[] = [
   { action: 'admin.team.patch', entityType: 'user', input: TeamPatchSchema, method: 'PATCH', ownerOnly: true, pattern: 'team/:id', response: 'ok' },
   { action: 'admin.team.revoke_sessions', entityType: 'session', input: ReasonSchema, method: 'POST', ownerOnly: true, pattern: 'team/:id/revoke-sessions', response: 'ok' },
 
+  { action: 'admin.reports.summary', entityType: 'report', method: 'GET', pattern: 'reports', response: 'summary' },
   { action: 'admin.reports.summary', entityType: 'report', method: 'GET', pattern: 'reports/summary', response: 'summary' },
   { action: 'admin.reports.funnel', entityType: 'report', method: 'GET', pattern: 'reports/funnel', response: 'summary' },
   { action: 'admin.reports.areas', entityType: 'report', method: 'GET', pattern: 'reports/areas', response: 'summary' },
@@ -302,6 +313,12 @@ export async function handleAdminRoute(request: Request, method: AdminMethod, pa
     },
     async ({ input, requestId, staff }) => {
       if (!staff) throw new Error('Missing staff context.');
+      const toolsResult = await handleAdminTools({ action: match.definition.action, id: match.params.id, body: input, staff, requestId, request });
+      if (toolsResult !== undefined) return apiJson(toolsResult, { status: match.definition.action === 'admin.bookings.create' ? 201 : 200 }, requestId);
+      const bookingEdit = await handleAdminBookingEdit({
+        action: match.definition.action, id: match.params.id, body: input, staff, requestId, request,
+      });
+      if (bookingEdit !== undefined) return apiJson(bookingEdit, { status: 200 }, requestId);
       if (match.definition.action === 'admin.drivers.create') {
         if (request.headers.has('origin')) assertBrowserSessionOrigin(request);
         await enforceAdminDriverRateLimit(staff.userId);
@@ -331,10 +348,15 @@ export async function handleAdminRoute(request: Request, method: AdminMethod, pa
       if (match.definition.action === 'admin.capacity.closures.put') {
         return apiJson(await setAdminSlotClosure(AdminSlotClosureRequestSchema.parse(input), { userId: staff.userId, requestId }), {}, requestId);
       }
-      await writeAudit(input, match, staff, requestId);
-      if (match.definition.action === 'admin.test_push') {
-        return apiJson(await sendAdminTestPush(staff), { status: 201 }, requestId);
+      if (match.definition.action.startsWith('admin.bookings.')) {
+        throw new AppError('CONFLICT', 'This booking action is not available yet. No changes were saved.');
       }
+      if (match.definition.action === 'admin.test_push') {
+        if (request.headers.has('origin')) assertBrowserSessionOrigin(request);
+        await writeAudit(input, match, staff, requestId);
+        return apiJson(await sendAdminTestPush(staff, AdminTestPushRequestSchema.parse(input)), { status: 201 }, requestId);
+      }
+      await writeAudit(input, match, staff, requestId);
       return apiJson(responseFor(match), { status: method === 'POST' && match.definition.response === 'ok' ? 201 : 200 }, requestId);
     },
   );

@@ -18,7 +18,7 @@ vi.mock('@sv/db', () => ({
   assertSlotCapacity: vi.fn(),
   enqueueOutbox: mocks.enqueue,
   Prisma: {},
-  prisma: { booking: { findUniqueOrThrow: mocks.findBooking }, $transaction: mocks.transaction },
+  prisma: { booking: { findUniqueOrThrow: mocks.findBooking }, extraCharge: { findFirst: vi.fn() }, refund: { findFirst: vi.fn() }, $transaction: mocks.transaction },
 }));
 vi.mock('@sv/pricing', async (importOriginal) => ({
   ...await importOriginal<typeof Pricing>(),

@@ -1,4 +1,4 @@
-import { VISITOR_PRESENCE_COOKIE_NAME } from '@sv/contracts';
+import { BOOKING_ACTIVITY_COOKIE_NAME, VISITOR_PRESENCE_COOKIE_NAME } from '@sv/contracts';
 
 export type ConsentCategory = 'necessary' | 'analytics' | 'advertising';
 export const consentSaveError =
@@ -9,6 +9,11 @@ export const liveChatPrivacyNotice = {
   body: 'If you use website chat, your messages and optional name are stored so the Speedy Van admin team can read and reply. A necessary, secure chat cookie connects this browser to the conversation for 30 days. Please do not send card details or passwords in chat.',
 } as const;
 
+export const bookingActivityPrivacyNotice = {
+  heading: 'Booking progress analytics',
+  body: 'With analytics consent, the admin team can see the service and stage reached by this browser. This record is anonymous until it is linked to a booking when payment is started. Activity is visible for 24 hours after the last activity; expired records are deleted during the next activity or scheduled cleanup. Withdrawing analytics consent removes the browser activity when the request reaches our server. Booking and payment records have their separate operational retention periods.',
+} as const;
+
 export interface CookieInventoryItem {
   category: ConsentCategory;
   name: string;
@@ -17,6 +22,12 @@ export interface CookieInventoryItem {
 }
 
 export const cookieInventory: CookieInventoryItem[] = [
+  {
+    category: 'analytics',
+    name: BOOKING_ACTIVITY_COOKIE_NAME,
+    purpose: 'Shows the admin team which booking stage this browser has reached. It can be linked to the booking when payment is started. Activity expires from the admin view after 24 hours; expired records are deleted at the next cleanup.',
+    setWhen: 'Only after analytics consent during the booking flow; expires after 24 hours. Removed when analytics consent is withdrawn.',
+  },
   {
     category: 'necessary',
     name: 'sv_consent',

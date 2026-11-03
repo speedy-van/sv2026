@@ -12,7 +12,7 @@ import { z } from 'zod';
 import { enforceChatSessionRateLimit } from '../rate-limit';
 import { queueCustomerChatPush } from './push';
 import {
-  adminChatUnreadCounts, conversationDto, conversationSelect, conversationWithUnread, findCustomerConversation, latestCustomerMessages, lockConversation, messageDto,
+  adminChatUnreadCounts, adminChatUnreadSummary, conversationDto, conversationSelect, conversationWithUnread, findCustomerConversation, latestCustomerMessages, lockConversation, messageDto,
   messageInConversation, messageSelect, requireConversation, type ChatViewer, type ConversationRecord,
 } from './repository';
 import { CHAT_SESSION_SECONDS, chatCookie, chatTokenHash, createChatToken, readChatToken } from './session';
@@ -165,16 +165,12 @@ export async function getAdminChatInbox(query: AdminChatInboxQuery, now = new Da
       lastCustomerMessageSequence: lastCustomer?.sequence.toString() ?? null,
     };
   });
-  const unreadRows = await prisma.$queryRaw<{ count: bigint; latestCustomerSequence: string | null }[]>`
-    SELECT COUNT(*) FILTER (WHERE m."sequence" > c."adminReadSequence")::bigint AS "count",
-      MAX(m."sequence")::text AS "latestCustomerSequence" FROM "ChatMessage" AS m
-    JOIN "ChatConversation" AS c ON c."id" = m."conversationId"
-    WHERE m."sender" = 'CUSTOMER' AND c."expiresAt" > ${now}`;
+  const unread = await adminChatUnreadSummary(now);
   const last = page.at(-1);
   return AdminChatInboxResponseSchema.parse({
     items,
     nextCursor: rows.length > query.limit && last ? Buffer.from(JSON.stringify({ id: last.id, at: last.lastMessageAt.toISOString() })).toString('base64url') : null,
-    unreadCount: Number(unreadRows[0]?.count ?? 0n),
-    latestCustomerSequence: unreadRows[0]?.latestCustomerSequence ?? null,
+    unreadCount: unread.unreadCount,
+    latestCustomerSequence: unread.latestCustomerSequence,
   });
 }

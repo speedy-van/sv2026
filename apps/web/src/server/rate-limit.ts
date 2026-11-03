@@ -26,7 +26,7 @@ export type PublicRateLimitKind =
   | 'booking'
   | 'coupon';
 
-type RateLimitKind = PublicRateLimitKind | 'authPasswordAccount' | 'adminChat' | 'adminDriver';
+type RateLimitKind = PublicRateLimitKind | 'authPasswordAccount' | 'adminChat' | 'adminDriver' | 'adminNotificationTest';
 
 interface LimitRule {
   limit: number;
@@ -45,6 +45,7 @@ const rules = {
   authPasswordAccount: [{ limit: 10, windowSeconds: 3600 }],
   adminChat: [{ limit: 300, windowSeconds: 60 }],
   adminDriver: [{ limit: 300, windowSeconds: 60 }],
+  adminNotificationTest: [{ limit: 3, windowSeconds: 60 }],
   authRefresh: [{ limit: 60, windowSeconds: 3600 }],
   catalogue: [{ limit: 120, windowSeconds: 60 }],
   contact: [
@@ -163,4 +164,8 @@ export async function enforceAdminChatRateLimit(userId: string): Promise<void> {
 
 export async function enforceAdminDriverRateLimit(userId: string): Promise<void> {
   await enforceIdentifierLimit(`admin-driver:${userId}`, 'adminDriver');
+}
+
+export async function enforceAdminNotificationTestRateLimit(userId: string): Promise<void> {
+  await enforceIdentifierLimit(`admin-notification-test:${userId}`, 'adminNotificationTest');
 }

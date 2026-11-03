@@ -5,6 +5,7 @@ vi.mock('@sv/db', () => ({ prisma: {
   pushDevice: { count: mocks.devices }, outboxEvent: { create: mocks.create }, pushTicket: { count: mocks.accepted },
 } }));
 vi.mock('../src/server/outbox/processor', () => ({ processOutboxEventNow: mocks.process }));
+vi.mock('../src/server/rate-limit', () => ({ enforceAdminNotificationTestRateLimit: vi.fn() }));
 import { sendAdminTestPush } from '../src/server/admin/test-push';
 
 beforeEach(() => {

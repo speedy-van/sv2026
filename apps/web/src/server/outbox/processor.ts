@@ -3,13 +3,15 @@ import 'server-only';
 import { addDays as addLondonDays, formatGBP, fromDbDate, londonToday } from '@sv/contracts';
 import { enqueueOutbox, Prisma, prisma, type DbTx } from '@sv/db';
 import type { EmailTemplateData, EmailTemplateKey } from '@sv/emails';
+import { z } from 'zod';
 import { sendPushOutbox, type PushSendPayload } from '../integrations/expo-push';
 import { sendTransactionalEmail, type EmailSendPayload } from '../integrations/resend';
 import { dbDateLabel, londonDateTimeToUtc, slotLabel } from '../london-time';
 import { channelsForEvent, type MatrixChannels } from '../notifications/matrix';
 import { getSetting } from '../settings';
-import { bookingPurposeLink, manageLinkForBooking } from '../auth/customer-links';
-import { payLinkForExtraCharge, payLinkForManualQuote } from '../services/customer-self-service';
+import { bookingPurposeLink, contactEmailHash, manageLinkForBooking } from '../auth/customer-links';
+import { actionEmailStillValid, readActionEmailGuard, type ActionEmailGuard } from '../notifications/action-email-guard';
+import { payLinkForBooking, payLinkForExtraCharge, payLinkForManualQuote } from '../services/customer-self-service';
 import { runRefundOutbox } from '../services/payments';
 import { outboxProcessFrom } from '../env';
 
@@ -21,6 +23,9 @@ interface ClaimedOutboxEvent {
 }
 
 interface EventPayload {
+  expectedUpdatedAt?: string;
+  notifyCustomer?: boolean;
+  template?: 'CONFIRMATION' | 'PAYMENT_LINK' | 'MANAGE_LINK';
   bookingId?: string;
   contactMessageId?: string;
   driverId?: string;
@@ -29,11 +34,51 @@ interface EventPayload {
   manualQuoteId?: string;
   paymentId?: string;
   payoutId?: string;
-  previousDriverId?: string;
+  previousDriverId?: string | null;
+  bookingVersion?: number;
+  assignmentIds?: string[];
+  driverIds?: string[];
   quoteId?: string;
   refundId?: string;
   refundPence?: number;
   toStage?: string;
+}
+
+const DispatchSnapshotSchema = z.object({
+  kind: z.enum(['booking.assigned', 'booking.offered', 'booking.driver_accepted']),
+  bookingId: z.string().min(1), bookingVersion: z.number().int().nonnegative(),
+  assignmentIds: z.array(z.string().min(1)).min(1), driverIds: z.array(z.string().min(1)).min(1),
+}).strict();
+type DispatchSnapshot = z.infer<typeof DispatchSnapshotSchema>;
+
+function dispatchSnapshot(event: ClaimedOutboxEvent): DispatchSnapshot | null {
+  if (!['booking.assigned', 'booking.offered', 'booking.driver_accepted'].includes(event.type)) return null;
+  const payload = asPayload(event.payload);
+  // Older durable events have no snapshot. Keep their original processing path.
+  if (payload.bookingVersion === undefined) return null;
+  return DispatchSnapshotSchema.parse({ kind: event.type, bookingId: payload.bookingId, bookingVersion: payload.bookingVersion,
+    assignmentIds: payload.assignmentIds, driverIds: payload.driverIds });
+}
+function channelDispatchSnapshot(value: unknown): DispatchSnapshot | null {
+  if (!value || typeof value !== 'object' || !('dispatchSnapshot' in value)) return null;
+  return DispatchSnapshotSchema.parse(value.dispatchSnapshot);
+}
+async function snapshotRecipients(tx: DbTx, snapshot: DispatchSnapshot): Promise<string[]> {
+  const booking = await tx.booking.findUnique({ where: { id: snapshot.bookingId },
+    select: { version: true, status: true, deletedAt: true, dispatchStatus: true, driverId: true } });
+  const offered = snapshot.kind === 'booking.offered';
+  if (!booking || booking.deletedAt || booking.version < snapshot.bookingVersion
+    || !['CONFIRMED', 'IN_PROGRESS'].includes(booking.status)
+    || booking.dispatchStatus !== (offered ? 'OFFERED' : 'ACCEPTED')) return [];
+  const assignments = await tx.assignment.findMany({
+    where: { id: { in: snapshot.assignmentIds }, bookingId: snapshot.bookingId, driverId: { in: snapshot.driverIds },
+      status: offered ? 'OFFERED' : 'ACCEPTED', ...(offered ? { expiresAt: { gt: new Date() } } : {}) },
+    select: { driverId: true },
+  });
+  // Assignment identity survives notes/contact edits but changes on reassigning
+  // even the same driver. This prevents old events notifying a replacement.
+  return [...new Set(assignments.map((assignment) => assignment.driverId))]
+    .filter((driverId) => snapshot.driverIds.includes(driverId) && (offered || booking.driverId === driverId));
 }
 
 type AdminPushConfig = NonNullable<MatrixChannels['adminPush']>;
@@ -47,6 +92,14 @@ function json(value: unknown): Prisma.InputJsonValue {
 
 function asPayload(value: unknown): EventPayload {
   return value && typeof value === 'object' ? value : {};
+}
+
+function publicEventPayload(payload: EventPayload): EventPayload {
+  const data = { ...payload };
+  delete data.assignmentIds;
+  delete data.driverIds;
+  delete data.bookingVersion;
+  return data;
 }
 
 function routeLabel(pickup: unknown, dropoff: unknown): string {
@@ -122,6 +175,7 @@ async function manualQuoteEmailData(tx: DbTx, payload: EventPayload): Promise<{ 
     select: {
       contactEmail: true,
       details: true,
+      adminMessage: true,
       id: true,
       pricePence: true,
       quoteId: true,
@@ -135,7 +189,7 @@ async function manualQuoteEmailData(tx: DbTx, payload: EventPayload): Promise<{ 
   });
   if (!quote) throw new Error('Manual quote source quote not found');
   const [web, contact] = await Promise.all([getSetting('web'), getSetting('contact')]);
-  const details = manualQuote.details ?? undefined;
+  const details = manualQuote.adminMessage ?? manualQuote.details ?? undefined;
   const payToken = manualQuote.pricePence && manualQuote.validUntil ? await payLinkForManualQuote(manualQuote) : null;
   return {
     customerEmail: manualQuote.contactEmail,
@@ -170,13 +224,13 @@ async function contactEmailData(tx: DbTx, payload: EventPayload): Promise<{ cust
   };
 }
 
-async function enqueueEmail(tx: DbTx, event: ClaimedOutboxEvent, template: EmailTemplateKey, to: string | string[], data: EmailTemplateData): Promise<void> {
+async function enqueueEmail(tx: DbTx, event: ClaimedOutboxEvent, template: EmailTemplateKey, to: string | string[], data: EmailTemplateData, actionEmailGuard?: ActionEmailGuard): Promise<void> {
   const recipients = Array.isArray(to) ? to : [to];
   if (recipients.length === 0) return;
   await enqueueOutbox(
     tx,
     'email.send',
-    json({ data, template, to: recipients } satisfies EmailSendPayload),
+    json({ ...({ data, template, to: recipients } satisfies EmailSendPayload), ...(dispatchSnapshot(event) ? { dispatchSnapshot: dispatchSnapshot(event) } : {}), ...(actionEmailGuard ? { actionEmailGuard } : {}) }),
     `${event.id}:email:${template}:${recipients.join(',')}`,
   );
 }
@@ -194,7 +248,7 @@ async function enqueueAdminNotification(
     await enqueueOutbox(
       tx,
       'notification.create',
-      json({ body, data: { ...data, deliveryKey: `${event.id}:notification:${user.id}` }, title, type: event.type, userId: user.id }),
+      json({ body, data: { ...data, deliveryKey: `${event.id}:notification:${user.id}` }, title, type: event.type, userId: user.id, ...(dispatchSnapshot(event) ? { dispatchSnapshot: dispatchSnapshot(event) } : {}) }),
       `${event.id}:notification:${user.id}`,
     );
   }
@@ -211,7 +265,7 @@ async function enqueuePush(
     data: {
       ...(options.nextAttemptAt ? { nextAttemptAt: options.nextAttemptAt } : {}),
       dedupeKey: `${event.id}:push:${options.dedupeSuffix}:${userId}`,
-      payload: json({ ...payload, userId } satisfies PushSendPayload),
+      payload: json({ ...({ ...payload, userId } satisfies PushSendPayload), ...(dispatchSnapshot(event) ? { dispatchSnapshot: dispatchSnapshot(event) } : {}) }),
       type: 'push.send',
     },
   });
@@ -308,7 +362,7 @@ async function driverPushDelay(tx: DbTx, event: ClaimedOutboxEvent, payload: Eve
 async function driverRecipients(tx: DbTx, payload: EventPayload, target: DriverPushTarget): Promise<string[]> {
   if (target === 'payload-driver') return payload.driverId ? [payload.driverId] : [];
   if (target === 'previous-driver') {
-    if (payload.previousDriverId) return [payload.previousDriverId];
+    if ('previousDriverId' in payload) return payload.previousDriverId ? [payload.previousDriverId] : [];
     if (!payload.bookingId) return [];
     const assignment = await tx.assignment.findFirst({
       orderBy: { respondedAt: 'desc' },
@@ -340,7 +394,8 @@ async function enqueueDriverPush(
   const channels = channelsForEvent(event.type);
   const driverPush = channels?.driverPush;
   if (!driverPush) return;
-  const recipients = await driverRecipients(tx, payload, driverPush.target);
+  const snapshot = dispatchSnapshot(event);
+  const recipients = snapshot ? await snapshotRecipients(tx, snapshot) : await driverRecipients(tx, payload, driverPush.target);
   const nextAttemptAt = await driverPushDelay(tx, event, payload);
   for (const userId of recipients) {
     await enqueuePush(
@@ -365,6 +420,19 @@ async function expandDomainEvent(tx: DbTx, event: ClaimedOutboxEvent): Promise<v
   const channels = channelsForEvent(event.type);
   if (!channels) return;
   const payload = asPayload(event.payload);
+  let actionEmailGuard: ActionEmailGuard | undefined;
+  if ((event.type === 'manual_quote.priced' || event.type === 'manual_quote.declined') && payload.manualQuoteId && payload.expectedUpdatedAt) {
+    actionEmailGuard = { kind: 'manual-quote', id: payload.manualQuoteId, expectedUpdatedAt: payload.expectedUpdatedAt, status: event.type === 'manual_quote.priced' ? 'PRICED' : 'DECLINED' };
+    if (!await actionEmailStillValid(tx, actionEmailGuard)) return;
+  }
+  if (event.type === 'booking.pending_payment') {
+    const pending = payload.bookingId ? await tx.booking.findFirst({ where: {
+      id: payload.bookingId, status: 'PENDING_PAYMENT', deletedAt: null, holdExpiresAt: { gt: new Date() },
+    }, select: { id: true } }) : null;
+    if (!pending) return;
+  }
+  const snapshot = dispatchSnapshot(event);
+  if (snapshot && (await snapshotRecipients(tx, snapshot)).length === 0) return;
   if (event.type === 'payment.after_expiry_refunded') {
     const payment = payload.paymentId ? await tx.payment.findUnique({
       where: { id: payload.paymentId },
@@ -393,16 +461,34 @@ async function expandDomainEvent(tx: DbTx, event: ClaimedOutboxEvent): Promise<v
     if (firstName) customer = { ...customer, data: { ...customer.data, driverFirstName: firstName } };
   }
 
+  const resendTemplate = payload.template === 'CONFIRMATION' ? 'booking-confirmed' : payload.template === 'PAYMENT_LINK' ? 'payment-link' : payload.template === 'MANAGE_LINK' ? 'manage-link' : null;
+  const customerTemplate = event.type === 'booking.email_resent' ? resendTemplate : channels.customerEmail;
+  if (event.type === 'booking.confirmed' && payload.bookingId && customer) {
+    actionEmailGuard = { kind: 'booking-confirmation', id: payload.bookingId, emailHash: contactEmailHash(customer.customerEmail) };
+    if (!await actionEmailStillValid(tx, actionEmailGuard)) return;
+  }
+  if ((event.type === 'booking.email_resent' || event.type === 'booking.payment_requested') && payload.bookingId && customer) {
+    if (typeof payload.bookingVersion !== 'number') throw new Error('Booking email version missing.');
+    actionEmailGuard = { kind: 'booking', id: payload.bookingId, version: payload.bookingVersion, emailHash: contactEmailHash(customer.customerEmail), template: event.type === 'booking.payment_requested' ? 'PAYMENT_LINK' : payload.template ?? 'MANAGE_LINK' };
+    if (!await actionEmailStillValid(tx, actionEmailGuard)) return;
+  }
+  if (customerTemplate === 'payment-link' && payload.bookingId && customer) {
+    const booking = await tx.booking.findUnique({ where: { id: payload.bookingId }, select: { id: true, contactEmail: true, holdExpiresAt: true, status: true, deletedAt: true } });
+    if (!booking || booking.deletedAt || booking.status !== 'PENDING_PAYMENT' || !booking.holdExpiresAt || booking.holdExpiresAt <= new Date()) return;
+    const token = await payLinkForBooking(booking);
+    customer = { ...customer, data: { ...customer.data, payUrl: `/pay/${encodeURIComponent(token)}`, holdExpiresAt: booking.holdExpiresAt.toISOString() } };
+  }
+
   const title = event.type === 'booking.confirmed'
     ? `New booking - ${customer?.data.amountPence ? formatGBP(customer.data.amountPence) : 'paid'}`
-    : event.type.replaceAll('_', ' ').replaceAll('.', ' ');
+    : event.type === 'booking.pending_payment' ? 'Booking awaiting payment' : event.type.replaceAll('_', ' ').replaceAll('.', ' ');
   const body = event.type === 'booking.confirmed' && customer
     ? `${customer.data.serviceLabel ?? 'Move'}, ${customer.data.moveDateLabel ?? ''} ${customer.data.slotLabel ?? ''}. ${customer.data.routeLabel ?? ''}`.trim()
-    : payload.issue ?? customer?.data.routeLabel ?? 'Open Speedy Van admin.';
+    : event.type === 'booking.pending_payment' ? `${customer?.data.routeLabel ?? 'New checkout'}. Payment has not been confirmed.` : payload.issue ?? customer?.data.routeLabel ?? 'Open Speedy Van admin.';
   // Only non-sensitive booking facts belong in push payloads. Never copy email data
   // wholesale: it also contains signed customer links and contact information.
   const alertData: Record<string, unknown> = {
-    ...payload, eventType: event.type,
+    ...publicEventPayload(payload), eventType: event.type,
     ...(event.type === 'booking.confirmed' && customer ? {
       type: 'NEW_BOOKING',
       reference: customer.data.reference,
@@ -415,7 +501,7 @@ async function expandDomainEvent(tx: DbTx, event: ClaimedOutboxEvent): Promise<v
     } : {}),
   };
 
-  if (channels.customerEmail && customer) {
+  if (customerTemplate && customer && payload.notifyCustomer !== false) {
     const refund = payload.refundId
       ? await tx.refund.findUnique({ where: { id: payload.refundId }, select: { amountPence: true } })
       : null;
@@ -426,13 +512,13 @@ async function expandDomainEvent(tx: DbTx, event: ClaimedOutboxEvent): Promise<v
         })
       : null;
     const extraPayToken = extraCharge ? await payLinkForExtraCharge(extraCharge) : null;
-    await enqueueEmail(tx, event, channels.customerEmail as EmailTemplateKey, customer.customerEmail, {
+    await enqueueEmail(tx, event, customerTemplate as EmailTemplateKey, customer.customerEmail, {
       ...customer.data,
       ...(extraCharge ? { amountPence: extraCharge.amountPence, message: extraCharge.description } : {}),
       ...(extraPayToken ? { payUrl: `/pay/${encodeURIComponent(extraPayToken)}` } : {}),
       ...(typeof payload.refundPence === 'number' ? { refundPence: payload.refundPence } : {}),
       ...(refund ? { refundPence: refund.amountPence } : {}),
-    });
+    }, actionEmailGuard);
   }
   if (channels.adminEmail) {
     const emails = await adminEmails(tx);
@@ -452,17 +538,30 @@ async function expandDomainEvent(tx: DbTx, event: ClaimedOutboxEvent): Promise<v
     await enqueueAdminPush(tx, event, title, body, { ...alertData, category: channels.adminPush.category }, channels.adminPush);
   }
   if (channels.driverPush) {
-    await enqueueDriverPush(tx, event, title, body, { ...payload, category: channels.driverPush.category, eventType: event.type }, payload);
+    await enqueueDriverPush(tx, event, title, body, { ...publicEventPayload(payload), category: channels.driverPush.category, eventType: event.type }, payload);
   }
 }
 
 async function handleEvent(event: ClaimedOutboxEvent): Promise<void> {
   if (event.type === 'email.send') {
+    const actionGuard = readActionEmailGuard(event.payload);
+    if (actionGuard && !await actionEmailStillValid(prisma, actionGuard)) return;
+    const snapshot = channelDispatchSnapshot(event.payload);
+    if (snapshot && (await snapshotRecipients(prisma, snapshot)).length === 0) return;
     await sendTransactionalEmail(event.payload as EmailSendPayload, event.id);
     return;
   }
   if (event.type === 'notification.create') {
+    const snapshot = channelDispatchSnapshot(event.payload);
+    if (snapshot && (await snapshotRecipients(prisma, snapshot)).length === 0) return;
     const payload = event.payload as { body: string; data?: Prisma.InputJsonValue; title: string; type: string; userId: string };
+    if (payload.type === 'booking.pending_payment') {
+      const data = asPayload(payload.data);
+      const pending = data.bookingId ? await prisma.booking.findFirst({ where: {
+        id: data.bookingId, status: 'PENDING_PAYMENT', deletedAt: null, holdExpiresAt: { gt: new Date() },
+      }, select: { id: true } }) : null;
+      if (!pending) return;
+    }
     await prisma.notification.upsert({
       where: { id: event.id },
       update: {},
@@ -478,13 +577,19 @@ async function handleEvent(event: ClaimedOutboxEvent): Promise<void> {
     return;
   }
   if (event.type === 'push.send') {
-    await sendPushOutbox(event.payload as PushSendPayload, event.id);
+    const snapshot = channelDispatchSnapshot(event.payload);
+    const payload = event.payload as PushSendPayload;
+    if (snapshot) {
+      const recipients = await snapshotRecipients(prisma, snapshot);
+      if (payload.app === 'DRIVER' ? !recipients.includes(payload.userId) : recipients.length === 0) return;
+    }
+    await sendPushOutbox(payload, event.id);
     return;
   }
   if (event.type === 'payment.refund') {
     const payload = asPayload(event.payload);
     if (!payload.refundId) throw new Error('refundId missing');
-    await prisma.$transaction(async (tx) => runRefundOutbox(tx, payload.refundId as string));
+    await prisma.$transaction(async (tx) => runRefundOutbox(tx, payload.refundId as string, { notifyCustomer: payload.notifyCustomer !== false }));
     return;
   }
   await prisma.$transaction(async (tx) => expandDomainEvent(tx, event));

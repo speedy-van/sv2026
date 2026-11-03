@@ -1,7 +1,10 @@
 import { AppError } from '@sv/contracts';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mocks = vi.hoisted(() => ({ after: vi.fn(), batch: vi.fn(), create: vi.fn() }));
+const mocks = vi.hoisted(() => ({ after: vi.fn(), batch: vi.fn(), create: vi.fn(), roots: vi.fn(), link: vi.fn() }));
+vi.mock('@sv/db', () => ({ prisma: { outboxEvent: { findMany: mocks.roots } } }));
+vi.mock('../src/server/booking-activity', () => ({ linkBookingActivityBooking: mocks.link }));
+vi.mock('../src/server/status-token', () => ({ verifyBookingStatusToken: vi.fn(() => ({ bookingId: 'new-booking' })) }));
 vi.mock('next/server', () => ({ after: mocks.after }));
 vi.mock('../src/server/services/booking', () => ({ createBookingFromQuote: mocks.create }));
 vi.mock('../src/server/outbox/processor', () => ({ processOutboxBatch: mocks.batch }));
@@ -33,6 +36,8 @@ function request(input: unknown = bookingInput): Request {
 beforeEach(() => {
   vi.resetAllMocks();
   mocks.create.mockResolvedValue({ reference: 'SV-UNIT01' });
+  mocks.roots.mockResolvedValue([{ id: 'pending-root' }]);
+  mocks.batch.mockResolvedValue({ done: 0, failed: 0 });
 });
 afterEach(() => vi.unstubAllEnvs());
 
@@ -43,8 +48,11 @@ describe('unpaid checkout isolation from historical outbox work', () => {
     expect(response.status).toBe(201);
     expect(await response.json()).toEqual({ reference: 'SV-UNIT01' });
     expect(mocks.create).toHaveBeenCalledExactlyOnceWith(bookingInput);
-    expect(mocks.after).not.toHaveBeenCalled();
-    expect(mocks.batch).not.toHaveBeenCalled();
+    expect(mocks.after).toHaveBeenCalledOnce();
+    const task = mocks.after.mock.calls[0]?.[0] as (() => Promise<void>);
+    await task();
+    expect(mocks.roots).toHaveBeenCalledWith({ where: { dedupeKey: 'booking.pending_payment:new-booking' }, select: { id: true }, take: 25 });
+    expect(mocks.batch).toHaveBeenCalledExactlyOnceWith(1, undefined, { rootEventId: 'pending-root' });
   });
 
   it('does not create a booking or run delivery after an invalid request', async () => {
@@ -59,5 +67,10 @@ describe('unpaid checkout isolation from historical outbox work', () => {
     expect((await POST(request())).status).toBe(409);
     expect(mocks.after).not.toHaveBeenCalled();
     expect(mocks.batch).not.toHaveBeenCalled();
+  });
+  it('does not turn a successful booking into an error when optional activity linking fails', async () => {
+    mocks.link.mockRejectedValue(new Error('Optional analytics unavailable'));
+    expect((await POST(request())).status).toBe(201);
+    expect(mocks.after).toHaveBeenCalledOnce();
   });
 });

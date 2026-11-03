@@ -72,12 +72,13 @@ export default function BookingsScreen(): React.ReactElement {
 
   const toolbar = (
     <View style={styles.toolbar}>
+      <Button label="New phone booking" onPress={() => { router.push('/(app)/new-booking'); }} />
       {notice ? <Card tone="brand">
         <AppText accessibilityLiveRegion="polite" weight="bold">{notice === 'deleted' ? 'Job moved to Deleted jobs.' : 'Job restored.'}</AppText>
         <View style={styles.reset}><Button label="Dismiss notice" tone="secondary" onPress={() => { router.setParams({ notice: undefined }); }} /></View>
       </Card> : null}
       <SearchField label="Find a booking" placeholder="Reference, name, email, phone or postcode" value={search} onChangeText={setSearch} maxLength={120} autoCapitalize="none" autoCorrect={false} />
-      <SegmentedControl label="Filter bookings" options={filters} value={filter} onChange={changeFilter} />
+      <SegmentedControl label="Filter bookings" options={filters} sizing="content" value={filter} onChange={changeFilter} />
       {filter === 'deleted' ? <AppText muted size="sm">Deleted jobs are kept for your records. Restoring a job does not reactivate a cancelled checkout.</AppText> : null}
       {filter === 'needs-driver' ? <AppText muted size="sm">Confirmed bookings waiting for a driver.</AppText> : null}
       {search || filter !== 'all' ? <View style={styles.reset}><Button label="Clear filters" tone="secondary" onPress={resetFilters} /></View> : null}

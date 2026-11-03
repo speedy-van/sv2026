@@ -76,6 +76,48 @@ function deferred<T>(): { promise: Promise<T>; resolve(value: T): void } {
     },
   };
 }
+
+describe('booking activity uses the consent lifecycle without storing form details', () => {
+  it('lets an initial session cookie settle after leaving booking before removing it on withdrawal', async () => {
+    const view = fixture();
+    const pending = deferred<Response>();
+    view.fetch.mockReturnValueOnce(pending.promise);
+    stops.push(startVisitorPresence(view.environment, { endpoint: '/api/v1/bookings/activity', lockName: 'sv-booking-activity', body: () => ({ stage: 'MOVE', service: null }), settleInFlightWhenHidden: true }));
+    view.setVisible(false); view.changeConsent(choice(false));
+    expect(view.fetch).toHaveBeenCalledTimes(1);
+    expect(view.fetch.mock.calls[0]?.[1]?.signal?.aborted).toBe(false);
+    pending.resolve(new Response('{}', { status: 200 }));
+    await vi.advanceTimersByTimeAsync(1);
+    expect(view.fetch).toHaveBeenLastCalledWith('/api/v1/bookings/activity', expect.objectContaining({ method: 'DELETE' }));
+  });
+  it('retries an interrupted withdrawal after reload without sending new activity', async () => {
+    const view = fixture(choice(false));
+    view.fetch.mockRejectedValueOnce(new Error('Offline'));
+    stops.push(startVisitorPresence(view.environment, { endpoint: '/api/v1/bookings/activity', lockName: 'sv-booking-activity', body: () => null, withdrawOnStartWithoutConsent: true, retryWithdrawal: true }));
+    await vi.advanceTimersByTimeAsync(1);
+    expect(view.fetch).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(30_000);
+    expect(view.fetch).toHaveBeenCalledTimes(2);
+    expect(view.fetch).toHaveBeenLastCalledWith('/api/v1/bookings/activity', expect.objectContaining({ method: 'DELETE', body: '{}' }));
+  });
+  it('sends only the current stage/service and withdraws when consent is removed off the booking page', async () => {
+    const view = fixture();
+    const stop = startVisitorPresence(view.environment, { endpoint: '/api/v1/bookings/activity', lockName: 'sv-booking-activity', body: () => ({ stage: 'PAYMENT', service: 'man-and-van' }) });
+    stops.push(stop);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(view.fetch).toHaveBeenCalledWith('/api/v1/bookings/activity', expect.objectContaining({ method: 'POST', body: JSON.stringify({ stage: 'PAYMENT', service: 'man-and-van' }) }));
+    view.setVisible(false);
+    view.changeConsent(choice(false));
+    await vi.advanceTimersByTimeAsync(1);
+    expect(view.fetch).toHaveBeenLastCalledWith('/api/v1/bookings/activity', expect.objectContaining({ method: 'DELETE', body: '{}' }));
+  });
+  it('does not send booking stage updates without analytics consent', async () => {
+    const view = fixture(choice(false));
+    stops.push(startVisitorPresence(view.environment, { endpoint: '/api/v1/bookings/activity', lockName: 'sv-booking-activity', body: () => ({ stage: 'MOVE', service: 'man-and-van' }) }));
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(view.fetch).not.toHaveBeenCalled();
+  });
+});
 function abortedResponse(signal: AbortSignal | null | undefined): Promise<Response> {
   return new Promise((_resolve, reject) => {
     signal?.addEventListener(

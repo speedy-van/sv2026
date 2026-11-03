@@ -90,6 +90,8 @@ export default function BookingDetailScreen(): React.ReactElement {
               <Button label="Try again" tone="secondary" onPress={refresh} />
             </Card>
           ) : null}
+          {!booking.deletedAt ? <Button label="Edit booking" onPress={() => { router.push(`/(app)/edit-booking?id=${encodeURIComponent(booking.id)}`); }} /> : null}
+          {!booking.deletedAt ? <Button label="Payments, cancellation and emails" tone="secondary" onPress={() => { router.push(`/(app)/booking-actions?id=${encodeURIComponent(booking.id)}`); }} /> : null}
           <Card padding="lg">
             <View style={styles.badges}>
               <Badge

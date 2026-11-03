@@ -22,6 +22,9 @@ export interface MatrixChannels {
 }
 
 export const NOTIFICATION_MATRIX: Record<string, MatrixChannels> = {
+  'booking.pending_payment': { adminNotification: true, adminPush: { category: 'PENDING_BOOKING', sound: 'default' } },
+  'booking.payment_requested': { adminNotification: true, customerEmail: 'payment-link' },
+  'booking.email_resent': { adminNotification: false },
   'booking.checkout_abandoned': { adminNotification: true },
   'booking.confirmed': {
     adminEmail: 'admin-new-booking',

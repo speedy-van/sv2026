@@ -86,6 +86,7 @@ import {
   type ServiceKey,
 } from './booking-store';
 import { serviceByKey, serviceOptions } from './content';
+import { publishBookingActivity } from './activity';
 
 const stripeKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? '';
 const stripePromise = stripeKey ? loadStripe(stripeKey) : null;
@@ -2051,6 +2052,12 @@ function BookingFlowInner(): ReactNode {
   const params = useSearchParams();
   const draft = useBookingDraft();
   const [step, setStep] = useBookingStep();
+  useEffect(() => {
+    publishBookingActivity({ service: draft.service,
+      stage: !draft.service ? 'SERVICE' : step === 'items' ? 'ITEMS' : step === 'prices' ? 'DATE' : step === 'pay' ? 'PAYMENT' : 'MOVE',
+    });
+  }, [draft.service, step]);
+  useEffect(() => () => { publishBookingActivity(null); }, []);
   const setNext = () => { setStep(nextStep(step)); };
   const previousStepRef = useRef(step);
   // A new step starts at the top, and keyboard and screen reader users land on its heading.

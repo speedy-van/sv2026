@@ -20,6 +20,7 @@ import { QueryRuntime } from '@/state/query-runtime';
 import { AdminNavigationPrefetch } from '@/data/admin-navigation-prefetch';
 import { useAppColorScheme, useAppColors } from '@/theme/theme';
 import { ChatSoundProvider } from '@/notifications/chat-sound-provider';
+import { useNotificationBadge } from '@/notifications/use-notification-badge';
 
 const sentryDsn =
   typeof process.env.EXPO_PUBLIC_SENTRY_DSN === 'string' ? process.env.EXPO_PUBLIC_SENTRY_DSN : '';
@@ -154,6 +155,7 @@ function RuntimeGates(props: { children: React.ReactNode }): React.ReactElement 
       <AdminNavigationPrefetch />
       <UpdateBanner />
       <OfflineBanner />
+      {Platform.OS !== 'web' ? <NotificationBadgeRuntime /> : null}
       {privateReady && pushError ? (
         <View style={{ padding: 16 }}>
           <Card>
@@ -197,6 +199,19 @@ function RuntimeGates(props: { children: React.ReactNode }): React.ReactElement 
         />
       ) : null}
     </>
+  );
+}
+
+function NotificationBadgeRuntime(): React.ReactElement | null {
+  const badge = useNotificationBadge();
+  if (!badge.error) return null;
+  return (
+    <View style={{ padding: 16 }}>
+      <Card>
+        <AppText accessibilityRole="alert" size="sm" tone="danger">{badge.error}</AppText>
+        <Button label="Retry notification count" tone="secondary" onPress={badge.retry} />
+      </Card>
+    </View>
   );
 }
 

@@ -845,6 +845,14 @@ Implemented the owner's option 3: one help launcher opens labelled Live chat, Wh
 
 Web lint/typecheck/build passed, alongside 26 isolated contact/chat/sound browser cases and two complete booking walkthroughs covering all five steps with ten clean Axe scans. Screenshots inspected at mobile/desktop widths; evidence is under `apps/web/.tmp/contact-help-*`. Full database acceptance remains blocked by Q11; no real contact message, booking, payment, commit or deployment occurred.
 
+## Build and deployment verification — 2026-11-03
+
+_Plan:_ Run the existing verification commands, resolve reproducible release regressions without weakening guards, build the current source, and verify the configured deployment target and release.
+
+- [x] Remove duplicate unexpected-error reporting from chat handlers, relying on the shared API reporter. The two live-chat failure cases now assert one capture with exact exception and request metadata; 162 tests in 13 focused mocked suites pass (D90).
+- [x] Complete the remaining 53 database-independent web suites (714 tests), admin Jest (452 tests in 38 suites), and driver Jest (32 tests in six suites). Combined with the focused run, all 876 web unit tests pass. Admin Jest emits Expo Go notification and React `act` warnings; no test assertions or guards were suppressed. Logs: `.tmp/release-unit-verification-20261103/`.
+- [ ] Complete full database integration verification after the isolated `DATABASE_URL_TEST` configuration is restored (Q11). No shared database was substituted.
+
 ## Google Ads destination typo — 2026-11-03
 
 Fixed the confirmed public 404 at `/services/house-removal` using an exact Vercel 301 redirect to `/services/house-removals`, mirrored in the local Next.js redirect registry. Only this routing rule was published; prior local UX changes remain unpublished. The staged rule and live browser/HEAD/GET checks preserve ad query parameters and reach a 200 service page with its booking form. Scoped lint, web types/build, four local and four public desktop/mobile cases passed. D88 records route/version IDs and evidence.
@@ -856,3 +864,117 @@ The owner saved the Google Ads login. Authenticated reading verified customer 30
 The owner subsequently confirmed manually correcting the main ad; the supplied screenshot showed it Under review. Completed the two remaining sitelink destination checks: Southside was already at `https://www.speedyvan.uk/removals/glasgow` and its persisted value was confirmed; West End was updated and a separate read-only run confirmed that same saved URL. Both assets show Pending / Under review. No approval, appeal, budget/schedule, billing or conversion change is claimed.
 
 The confirmed old .uk path `/areas/glasgow-west-end` also has a published 301 to the working Glasgow removals page, preserving query parameters. Scoped lint, web TypeScript/build and six local plus six public desktop/mobile cases passed. D89 records the route/version IDs, source ambiguity, fresh readbacks and evidence. Full database acceptance and unrelated conversion setup remain open under Q11/Q10.
+
+### Production release result — 2026-11-03 14:20 UTC
+
+- [x] Build the current project: root build passed; a fresh web build after the chat reporting fix generated all 317 pages on Next.js 16.4.4. Full workspace lint and TypeScript checks passed.
+- [x] Upload a SHA1-verified 710-file snapshot of `ba39e91` plus the chat reporting fix, excluding secret environment files, generated dependencies and build information. Preserve Node 24.x, the existing production environment and all three daily cron schedules.
+- [x] Stage and promote READY production deployment `dpl_9tw42STk7VXN4MtvBV7ZwhUvLvbM` (`https://speedy-van-mpiz1vptv-speedy-van.vercel.app`). The canonical `https://www.speedyvan.uk` readback resolves that deployment after promotion. Previous deployment: `dpl_85WBVumUfadGCU9Prepw8PGyrgu1`.
+- [x] Pass 14/14 staged and 14/14 public HTTP page checks; catalogue, anonymous chat session, protected admin/driver endpoints, robots and sitemap checks pass. Local browser checks pass 12/12; public browser checks pass 4/4 including all five booking steps at 390/1440px with ten zero-violation Axe scans per walkthrough run. API writes are intercepted; no real booking/payment/message was made. Public served code uses Stripe live publishable-key mode, without a test-payment banner.
+- [x] Confirm read-only that all nine schema migrations are already applied; no migration or database mutation was needed.
+- [ ] Restore isolated database integration acceptance (Q11). The full `npm run verify` command is not green; no test/database guard was weakened and no commit was made.
+- [ ] Resolve the existing outbox backlog separately. Staged and live health return HTTP 503 with `db: ok`, 78 PENDING events and oldest pending date 2026-10-13. Read-only aggregation also found two PROCESSING and seven FAILED events. The prior live deployment returned HTTP 500 on health before promotion. No notifications were sent, replayed, deleted or modified by this release.
+
+Bounded deployment observability returned zero runtime error/fatal records for 14:15:00–14:21:24 UTC, without excluded intervals. The request-error scan through 14:21:36 returned only the two health 503 probes. This is a successful build/deployment with the explicitly recorded health and integration limitations, not full operational acceptance. Existing dependency deprecation/audit and admin Jest warnings remain outside this release's narrow repair. Evidence: `.tmp/build-deploy-20261103/` and `.tmp/release-unit-verification-20261103/`.
+
+## Admin notification badge repair — local only, 2026-11-03
+
+The owner superseded the earlier build/deployment request with investigation only, then authorized repairing the admin notification problem without building or publishing. Preserve that restriction until new instructions.
+
+- [x] Confirm the stale badge and hidden older contact notifications through source inspection and read-only state. No live read flags or notification deliveries were changed.
+- [x] Add shared notification contracts, bounded account-scoped inbox paging, authoritative totals and matching Push badge counts.
+- [x] Add the admin inbox and native badge synchronization with foreground, offline, session and account-switch safeguards; connect booking/chat reads to refreshed counts.
+- [x] Complete the final regression run, including booking opening from the new inbox: all 484 admin tests in 41 suites pass, along with all 77 contracts tests. Focused mocked backend/Push/chat checks pass (85 tests), as does the separate inbox/auth/session regression run (78 tests; overlapping coverage, not an additional distinct-test total). Workspace lint and `tsc --noEmit` pass; admin lint/types pass again after the final changes. `git diff --check` passes.
+- [ ] Await the owner's next instructions. No build, bundle/export, deployment, OTA release, commit, database mutation or notification delivery belongs to this repair turn.
+
+D91 records the behavior. Full database integration remains blocked by Q11; no production database is substituted for the isolated test database. The existing release and unrelated chat error-reporting edits are preserved.
+
+Regression evidence includes real React Query hooks driving a mocked native badge through 3 → 2 → 0, fresh-response handling after resume, read failures, unread-first pagination after reads, booking/chat invalidation, delayed native writes across logout/re-login, and late booking acknowledgements after lock/account changes. The first complete admin run exposed a signed-out/locked native-listener regression; session gating fixed it and the final full run passes. Independent review also caught the queued-clear race and the new booking-open path, both now covered. Final test-only lint corrections retain the assertions and pass the 12 affected inbox cases. The existing Expo Go notification warning remains. No physical-device or live persistence verification is claimed. Local evidence: `.tmp/notification-admin-tests-final.log`, `.tmp/notification-contracts-tests.log`, `.tmp/notification-workspace-{lint,types}.log`, `.tmp/notification-admin-{lint,types}-final.log`, `.tmp/notification-inbox-final.log`.
+
+## Admin booking editing repair — local only, 2026-11-03
+
+The owner explicitly requested repairing booking editing after source inspection showed missing UI and canned successful responses in the admin mutation registry. The previous prohibition on builds and publishing remains in force. Preserve the earlier local notification and chat fixes.
+
+Local source implementation is complete for the requested editor:
+
+- Booking details now link to Edit booking, with contact/internal notes/van, move details and repricing, date/slot, and driver assignment sections. Each section saves independently, retains conflicting drafts, and requires explicit confirmation of financial previews.
+- Real services replace the scoped successful placeholders. Authenticated mutations validate contracts, check the booking version, use transactions, record audit entries and enqueue durable side effects. Other unimplemented booking mutations fail clearly without claiming a save.
+- Repricing reuses the saved pricing configuration, catalogue snapshots and server routing. Schedule changes use ordered capacity locks and London dates/cutoffs; unchanged or reduced reserved capacity remains editable even after a period closes. Manual agreed prices can use KEEP_PRICE and are protected from automatic repricing.
+- Assignment choices, offers, acceptance, refusal and withdrawal check current resources and offer expiry. Notification recipients are tied to the actual assignment, with stale delivery checks and scoped post-response dispatch.
+- Edit settlement separates an agreed total from an amount still owed/refundable. The forward-only `20261103160000_admin_edit_settlement` migration adds `ExtraCharge.includedInBookingTotal`; local Prisma generation succeeded, but no database migration was applied. The migration must precede a future code release. Customer cancellation/rescheduling and payment-link races are guarded while settlement is pending; late captured edit payments on cancelled/revoked changes are refunded against that payment.
+
+These are source-level results, not completed real persistence/device acceptance. Q11 still blocks database integration and concurrency acceptance; no local PostgreSQL/Docker executable was found for an isolated alternative. No build, bundle/export, dev server, deployment, OTA release, live mutation, payment, message, or commit was performed in this repair. Wait for the owner's next instructions after local verification.
+
+- [ ] Restore an isolated test database and verify real persistence/concurrency acceptance (Q11).
+- [ ] Apply the new migration and verify the installed admin/driver flow only in a separately authorized future release.
+
+Final local verification: 514 admin tests (43 suites), 1,052 web unit/mocked tests (78 suites), 104 contract tests (11 suites), 32 driver tests (6 suites), and 26 pricing tests (4 suites) pass: 1,728 distinct cases across these workspaces. Pricing coverage remains 100% for statements, branches, functions and lines. The seven database integration files were explicitly excluded from the web run because Q11 is unresolved. Workspace lint and TypeScript checks pass for all ten packages, Prisma schema validation passes, and `git diff --check` passes. The final test-only lint correction replaced an unsafe nested matcher with the exact cancellation write assertion; all 14 customer-settlement cases pass again. No broader rerun is needed for that assertion-only change. Existing admin React `act` and Expo Go warnings are recorded, without claiming physical-device validation.
+
+Evidence: `.tmp/booking-edit-admin-all.log`, `.tmp/booking-edit-web-all-mocked.log`, `.tmp/booking-edit-contracts-all.log`, `.tmp/booking-edit-driver-all.log`, `.tmp/booking-edit-pricing-all.log`, `.tmp/booking-edit-lint-all.log`, `.tmp/booking-edit-types-all.log`, `.tmp/booking-edit-prisma-validate.log`, and `.tmp/booking-edit-customer-settlement-final.log`. D92 records the behavior and future migration prerequisite. Implementation and bounded local verification are finished; real database/device acceptance remains explicitly open above.
+
+## Booking filter layout repair — local only, 2026-11-03
+
+The owner supplied an iPhone screenshot showing clipped/wrapped words in the seven booking filters. Preserve the no-build/no-publish instruction and all preceding local repairs.
+
+Plan: inspect the shared segment sizing; give booking filters content-based widths with whole-control wrapping; retain Dynamic Type, full accessible labels and 48-point touch targets; preserve filter/search/deleted-view behavior; run existing relevant admin tests and static checks; document the limit of local layout verification without a device build.
+
+Local implementation is finished: booking filters opt into natural content widths rather than a fixed 90-point basis. Labels stay centred and bounded by the available width; controls wrap as whole items without shrinking the font or truncating names. Other segmented controls retain their default layout. D93 records the decision.
+
+Verification passed: 63 existing tests in the operations, appearance, auth, booking editor and keyboard-navigation suites; admin ESLint and TypeScript checks; final scoped lint after adding the text width bound; and `git diff --check`. A browser layout proxy extracted the current React Native style literals and used the installed Manrope fonts: all 15 width/font-scale combinations passed (320/375/390/430/768 pixels × 100%/150%/200%). Every control and label remained within bounds, Confirmed stayed on one line, and all touch targets measured at least 48×48. The 390-pixel/150% preview was visually inspected. This HTML/Flexbox proxy does not prove native iOS rendering or device acceptance.
+
+Evidence: `.tmp/booking-filter-tests.log`, `.tmp/booking-filter-lint.log`, `.tmp/booking-filter-lint-final.log`, `.tmp/booking-filter-types.log`, and `.tmp/booking-filter-layout/{layout-results.json,preview-390-font150.png,verify-layout.cjs}`. No build, bundle, development server, package installation, deployment, live data change or commit was performed. The phone's installed version is unchanged.
+
+## Admin lead visibility and missing operations — local only, 2026-11-03
+
+The owner said to begin implementing the gaps identified in the preceding audit. Preserve the no-build/no-publish instruction, all previous local repairs and Q11's isolated database requirement.
+
+Plan:
+- Add consent-gated anonymous booking-stage activity with short retention and server-controlled linkage to actual quotes/bookings.
+- Expose real live activity, pending checkouts and abandoned bookings in the admin app with filters, paging and contact actions only for real booking records.
+- Add optional per-device pending-payment Push alerts, a real notification settings/status screen and a test notification action; do not send test notifications during implementation.
+- Prepare authenticated recurring operational maintenance and document the existing Hobby scheduling constraint without activating or buying a service.
+- Implement phone booking, cancellation/refund/offline-payment tools with actual pricing, transactional accounting, concurrency protection and auditable side effects.
+- Implement manual quote handling and real reports, and replace the relevant placeholder route responses.
+- Integrate native screens with strict shared contracts, session/offline/confirmation safeguards and relevant local regression coverage.
+- Validate source and isolated mocked flows; record remaining live/device/migration/hosting acceptance without claiming a release.
+
+Implemented locally (D94):
+- [x] Consent-based early booking activity, server-owned linkage, privacy/cookie copy, withdrawal retries and 24-hour visible activity window.
+- [x] Leads screens with activity stages, Pending payment and actual Abandoned checkouts, plus manual quote navigation.
+- [x] Per-device pending alert opt-in, device/receipt status and targeted test Push UI; stale pending alerts are suppressed at expansion and delivery.
+- [x] Protected bounded operations scheduler with a disabled-by-default GitHub workflow; fixed reminder round accounting, starvation and stale delivery, and payment/expiry races.
+- [x] Phone booking with real pricing and payment links/offline OWNER payment; cancellation preview, Stripe refund, extra charge, resend and offline balance recording with transactional guards.
+- [x] Manual quote list/detail/price/decline, real reports and CSV download/share; new routes replace their former placeholders.
+- [x] Late payment and delayed email/refund completion safeguards, including cancellation followed by deletion, current contact/version checks and notifyCustomer propagation.
+- [x] Record final consolidated local validation after the last native-dialog/session regression.
+
+Release acceptance remains outside this local-only task: apply all three new forward migrations, use an isolated DATABASE_URL_TEST for real SQL/transaction tests (Q11), verify native screens/Face ID/notification permission and actual Push on iPhone, then separately authorize build/deploy and scheduler activation. No installed application or live environment changed.
+
+Final bounded validation: 1,234 web unit/mocked cases in 92 suites, 535 admin cases in 46 suites, 120 contract cases in 12 suites, 32 driver cases in 6 suites, and 26 pricing cases in 4 suites pass: 1,947 distinct cases across these five workspaces. The seven real-database integration files remain excluded because Q11 is unresolved. Pricing coverage is 100%. TypeScript and lint pass for all ten workspaces, Prisma schema validation passes, and git diff --check passes. The final source-only return-type annotations were verified by the final workspace type/lint checks; they do not change tested runtime behavior. No full verify/build was run because the owner expressly prohibited builds.
+
+The final UI regressions simulate inactive/active transitions during Face ID and notification permission prompts, preserving identity/role/API/lock checks and bounded foreground resumption. The existing booking editor also preserves the preview version when returning from device confirmation. Mocked success is not physical-device acceptance. Existing React act/Expo test-environment warnings are not evidence of provider delivery or native layout acceptance.
+
+Evidence: `.tmp/admin-features-web-final.log`, `.tmp/admin-features-admin-final.log`, `.tmp/admin-features-contracts.log`, `.tmp/admin-features-driver.log`, `.tmp/admin-features-pricing.log`, `.tmp/admin-features-final-focus.log`, `.tmp/admin-features-types-all.log`, and `.tmp/admin-features-lint-all.log`. The local implementation and bounded validation are complete. No build, development server, deployment, database migration application, external notification or payment, scheduler activation, or commit was performed.
+
+### Admin features production release (2026-11-03)
+
+The owner explicitly authorized building, deploying and applying the database updates, superseding the earlier local-only restriction.
+
+- [x] Complete the production build for all ten workspaces (`.tmp/admin-release-build-20261103.log`).
+- [x] Verify the existing Vercel project/team and production environment's Neon host without disclosing credentials (`.tmp/admin-release-20261103/remote-env-verified.json`).
+- [x] Preserve a SHA1-verified 801-file release snapshot, excluding private files, dependencies and generated outputs (`.tmp/admin-release-20261103/source-manifest.json`).
+- [x] Apply the three additive migrations to a separate Neon test branch; production remains unchanged at this checkpoint.
+- [x] Finish real database integration/concurrency verification and apply only the three forward migrations to production (`db-readback.json`: 9 to 12 finished migrations at 17:11:08Z; no rollback, seed, db push or historical migration edit).
+- [x] Verify the corrected staged production backend and promote that exact deployment to the public domains (`dpl_75j3A9LiFUeLGGBt5woL9nnmVEWA`, canonical readback 17:23:09Z).
+- [x] Publish and independently verify compatible iOS OTA bundles for runtimes 1.0.0 and 1.0.1 after backend/schema readiness (production channel readback and exact CDN bytes, 15/15 checks and all 38 assets for each runtime).
+- [x] Read back the live features and revoke the dedicated verification session (17 feature/auth checks pass on both the corrected stage and the canonical domain; the temporary credential file is removed).
+
+The separate operations scheduler remains disabled. This release does not send test messages, replay historical outbox work, change the hosting plan or activate a public App Store release. Before release, `/api/v1/health` already returned 503 with `db: ok` and 78 historical pending outbox events; the unchanged historical backlog is recorded rather than drained as part of deployment validation.
+
+Full verification now passes: `npm run verify` completed lint/typecheck/tests/build for all ten workspaces, including 2,019 tests (web 1,264 in 99 suites, admin 535 in 46 suites). The five additional real-SQL feature checks pass. The strict admin parser's compatibility correction for the existing unused `services.rubbish` key separately passed 44 targeted cases, web typecheck and scoped lint; supported prices remain unchanged. The first staged deployment was not promoted because the actual create-context check exposed that 409. The corrected release uses a fresh audited 801-file source snapshot in `.tmp/admin-release-20261103-final/`.
+
+The corrected cloud build is READY, all 14 staged public pages pass, and canonical home/booking, apex redirect and the existing singular service redirect pass. Deployment-scoped runtime error/fatal logs return zero records and no excluded intervals for 17:20:47–17:24:04 UTC; this is a bounded observation. Production GET verification covers notification settings, active/recent lead activity, pending/abandoned bookings, booking detail/edit/actions contexts, phone-booking setup, manual quotes and reports/CSV. Both technical verification sessions were revoked; no phone session was reused, no customer fixture was inserted, and no business mutation or test message was sent on production. The test branch remains isolated at 0.25CU with 300-second autosuspend. Q11's missing-test-database blocker is resolved for this release.
+
+Evidence: `.tmp/admin-release-20261103/{db-readback.json,db-deploy.log,db-isolation-report.json}`, `.tmp/admin-release-20261103-final/{source-manifest.json,deploy.log,production-readback.json,promote.log,stage-http-report.json,public-checks.json,runtime-errors.jsonl}`, `.tmp/admin-tools-release-20261103/{read-only-smoke-stage-final.json,read-only-smoke-production.json}`, and `.tmp/admin-features-verify-isolated.log`. Temporary downloaded production environment credentials were removed after verification. Physical iPhone update activation, Face ID and actual external notification reception remain device acceptance, and the five-minute operations scheduler remains disabled.
+
+iOS delivery completed at 17:27:17Z. Runtime 1.0.1/build55 receives group `513f46bf-514e-4cc5-b555-0fb1d3ce7afb` / update `01a1a271-3391-7aa5-b185-855512b2ec3d`; runtime 1.0.0/build54 receives group `8f5f273d-6c9d-442c-9171-98fb64bac78e` / update `01a1a272-a718-763b-a6ba-a8c1b49abfcf`. Both published Hermes bytecode files match the validated immutable exports, including the root route and new admin features, and point to the production API. Delivery evidence is `C:/speedy van/admin-release-20261103/release-complete.json` and the `published-1.0.1/report.json` / `published-1.0.0/report.json` files beside it. To activate, open SV Admin online, wait for Update ready, then select Restart to update; a later complete close/reopen can load the downloaded update. No physical activation or actual Push reception is claimed.

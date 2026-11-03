@@ -1,12 +1,17 @@
 import { BookingCreateResponseSchema } from '@sv/contracts';
 import { prisma, type Prisma } from '@sv/db';
 import { randomUUID } from 'node:crypto';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { POST as postBooking } from '../src/app/api/v1/bookings/route';
 import { POST as postStripeWebhook } from '../src/app/api/webhooks/stripe/route';
 import { bookingIcs } from '../src/server/ics';
 import { processOutboxEventNow } from '../src/server/outbox/processor';
 import { createQuote, type QuoteRequest } from '../src/server/services/quote';
+
+// Route integration runs outside Next's request context. Capture the scheduled
+// callback; stripe-notification-dispatch.test.ts tests its scoped dispatch.
+const scheduled = vi.hoisted(() => ({ after: vi.fn<(callback: () => Promise<void>) => void>() }));
+vi.mock('next/server', () => ({ after: scheduled.after }));
 
 const createdQuoteIds: string[] = [];
 const createdBookingIds: string[] = [];
@@ -16,6 +21,8 @@ const createdStripeEvents: string[] = [];
 const testStartedAt = new Date();
 const originalStripeSecretKey = process.env.STRIPE_SECRET_KEY;
 const originalStripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+const originalOutboxProcessFrom = process.env.OUTBOX_PROCESS_FROM;
+let adminUserId = '';
 
 const pickupAccess: QuoteRequest['pickupAccess'] = {
   carryMetres: 10,
@@ -159,7 +166,8 @@ beforeAll(async () => {
   process.env.MAPBOX_MODE = 'mock';
   process.env.STRIPE_SECRET_KEY = '';
   process.env.STRIPE_WEBHOOK_SECRET = '';
-  await prisma.user.upsert({
+  process.env.OUTBOX_PROCESS_FROM = testStartedAt.toISOString();
+  const admin = await prisma.user.upsert({
     create: {
       email: 'phase7-admin@example.test',
       name: 'Phase 7 Admin',
@@ -169,11 +177,16 @@ beforeAll(async () => {
     update: { status: 'ACTIVE' },
     where: { email: 'phase7-admin@example.test' },
   });
+  adminUserId = admin.id;
 });
+
+beforeEach(() => { scheduled.after.mockClear(); });
 
 afterAll(async () => {
   process.env.STRIPE_SECRET_KEY = originalStripeSecretKey;
   process.env.STRIPE_WEBHOOK_SECRET = originalStripeWebhookSecret;
+  if (originalOutboxProcessFrom === undefined) delete process.env.OUTBOX_PROCESS_FROM;
+  else process.env.OUTBOX_PROCESS_FROM = originalOutboxProcessFrom;
   await prisma.outboxEvent.deleteMany({
     where: {
       OR: [
@@ -237,8 +250,10 @@ describe('Phase 7 booking and payments', () => {
       select: { amountPence: true, bookingId: true, id: true, stripePaymentIntentId: true },
     });
     const event = stripeSucceededEvent('evt_phase7_replay', payment);
+    const scheduledBeforeWebhook = scheduled.after.mock.calls.length;
     expect((await sendStripeEvent(event)).status).toBe(200);
     expect((await sendStripeEvent(event)).status).toBe(200);
+    expect(scheduled.after).toHaveBeenCalledTimes(scheduledBeforeWebhook + 2);
     const booking = await prisma.booking.findUniqueOrThrow({ where: { id: created.booking.id }, select: { status: true } });
     expect(booking.status).toBe('CONFIRMED');
     const confirmedEvents = await prisma.outboxEvent.count({
@@ -302,8 +317,10 @@ describe('Phase 7 booking and payments', () => {
       where: { bookingId: created.booking.id, kind: 'BOOKING' },
       select: { amountPence: true, bookingId: true, id: true, stripePaymentIntentId: true },
     });
+    const scheduledBeforeWebhook = scheduled.after.mock.calls.length;
     const response = await sendStripeEvent(stripeSucceededEvent('evt_phase7_late_refund', payment));
     expect(response.status).toBe(200);
+    expect(scheduled.after).toHaveBeenCalledTimes(scheduledBeforeWebhook + 1);
     const [booking, refund, refundOutbox] = await Promise.all([
       prisma.booking.findUniqueOrThrow({ where: { id: created.booking.id }, select: { status: true } }),
       prisma.refund.findFirst({ where: { payment: { bookingId: created.booking.id } }, select: { amountPence: true, status: true } }),
@@ -320,9 +337,15 @@ describe('Phase 7 booking and payments', () => {
       email: 'phase7-matrix@example.test',
       now: new Date('2031-03-01T00:00:00.000Z'),
     });
+    const payment = await prisma.payment.findFirstOrThrow({
+      where: { bookingId: created.booking.id },
+      select: { amountPence: true, bookingId: true, id: true, stripePaymentIntentId: true },
+    });
+    expect((await sendStripeEvent(stripeSucceededEvent('evt_phase7_matrix', payment))).status).toBe(200);
+    await expect(prisma.booking.findUniqueOrThrow({ where: { id: created.booking.id }, select: { status: true } }))
+      .resolves.toEqual({ status: 'CONFIRMED' });
     const event = await prisma.outboxEvent.create({
       data: {
-        createdAt: new Date('2000-01-01T00:00:00.000Z'),
         dedupeKey: `phase7-matrix:${created.booking.id}`,
         payload: json({ bookingId: created.booking.id }),
         type: 'booking.confirmed',
@@ -333,9 +356,14 @@ describe('Phase 7 booking and payments', () => {
     expect(result).toEqual({ done: 1, failed: 0 });
     const channelJobs = await prisma.outboxEvent.findMany({
       where: { dedupeKey: { startsWith: `${event.id}:` } },
-      select: { type: true },
+      select: { type: true, payload: true },
     });
-    expect(channelJobs.map((job) => job.type).sort()).toEqual(['email.send', 'email.send', 'notification.create', 'push.send']);
+    // An isolated production branch may already contain other staff accounts.
+    // Check the exact channels for the fixture recipient and both email jobs.
+    const fixtureJobs = channelJobs.filter((job) => job.type === 'email.send'
+      || (job.payload !== null && typeof job.payload === 'object' && !Array.isArray(job.payload)
+        && job.payload.userId === adminUserId));
+    expect(fixtureJobs.map((job) => job.type).sort()).toEqual(['email.send', 'email.send', 'notification.create', 'push.send']);
   });
 });
 

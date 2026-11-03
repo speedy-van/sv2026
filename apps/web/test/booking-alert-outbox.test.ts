@@ -21,6 +21,7 @@ vi.mock('@sv/db', () => ({
 }));
 vi.mock('../src/server/settings', () => ({ getSetting: mocks.settings }));
 vi.mock('../src/server/auth/customer-links', () => ({
+  contactEmailHash: (email: string) => `hash:${email}`,
   manageLinkForBooking: vi.fn(() => 'private-manage-token'),
   bookingPurposeLink: vi.fn(() => 'private-track-token'),
 }));
@@ -52,6 +53,7 @@ beforeEach(() => {
   mocks.users.mockResolvedValue([{ id: 'admin-unit', email: 'admin@example.test', name: 'Admin' }]);
   mocks.booking.mockResolvedValue({
     id: 'booking-unit',
+    status: 'CONFIRMED', deletedAt: null,
     reference: 'SV-UNIT',
     contactEmail: 'customer@example.test',
     moveDate: new Date('2031-03-02T00:00:00.000Z'),

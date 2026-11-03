@@ -1,5 +1,8 @@
 import 'server-only';
 
+import { acceptAdminBookingOffer, declineAdminBookingOffer } from '../admin/booking-dispatch';
+import { scheduleDriverBookingEdit } from '../admin/booking-edit-dispatch';
+
 import {
   AppError,
   DriverAvailabilitySchema,
@@ -139,7 +142,10 @@ async function bookingForDriver(bookingId: string, driverId: string): Promise<{
 async function canViewJob(bookingId: string, driverId: string): Promise<void> {
   const [assigned, offer] = await Promise.all([
     prisma.booking.count({ where: { id: bookingId, driverId } }),
-    prisma.assignment.count({ where: { bookingId, driverId, status: { in: ['OFFERED', 'ACCEPTED'] } } }),
+    prisma.assignment.count({ where: { bookingId, driverId, OR: [
+      { status: 'ACCEPTED' },
+      { status: 'OFFERED', OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] },
+    ] } }),
   ]);
   if (assigned + offer === 0) throw new AppError('NOT_FOUND', 'Job not found.');
 }
@@ -255,25 +261,15 @@ async function getJob(driverId: string, bookingId: string): Promise<unknown> {
 }
 
 async function acceptOffer(driverId: string, bookingId: string): Promise<unknown> {
-  const assignment = await prisma.assignment.findFirst({ where: { bookingId, driverId, status: 'OFFERED' } });
-  if (!assignment) throw new AppError('NOT_FOUND', 'Offer not found.');
-  const accepted = await prisma.assignment.count({ where: { bookingId, status: 'ACCEPTED', NOT: { driverId } } });
-  if (accepted > 0) throw new AppError('OFFER_TAKEN', 'Another driver took this job.');
-  await prisma.$transaction(async (tx) => {
-    await tx.assignment.updateMany({ data: { status: 'WITHDRAWN' }, where: { bookingId, status: 'OFFERED', NOT: { id: assignment.id } } });
-    await tx.assignment.update({ data: { respondedAt: new Date(), status: 'ACCEPTED' }, where: { id: assignment.id } });
-    await tx.booking.update({ data: { dispatchStatus: 'ACCEPTED', driverId }, where: { id: bookingId } });
-  });
-  return { ok: true };
+  const result = await acceptAdminBookingOffer(driverId, bookingId);
+  scheduleDriverBookingEdit(result.id, result.version);
+  return result;
 }
 
 async function declineOffer(driverId: string, bookingId: string, input: z.infer<typeof DriverOfferDecisionSchema>): Promise<unknown> {
-  const result = await prisma.assignment.updateMany({
-    data: { declineReason: input.reason ?? null, respondedAt: new Date(), status: 'DECLINED' },
-    where: { bookingId, driverId, status: 'OFFERED' },
-  });
-  if (result.count === 0) throw new AppError('NOT_FOUND', 'Offer not found.');
-  return { ok: true };
+  const result = await declineAdminBookingOffer(driverId, bookingId, input.reason);
+  scheduleDriverBookingEdit(result.id, result.version);
+  return result;
 }
 
 async function applyStageEvent(driverId: string, event: z.infer<typeof DriverSyncRequestSchema>['events'][number] & { type: 'STAGE' }): Promise<'APPLIED' | 'DUPLICATE'> {

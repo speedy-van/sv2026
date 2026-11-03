@@ -435,20 +435,25 @@ export function SearchField({
 }
 
 export function SegmentedControl<Value extends string>({
+  disabled = false,
   label,
   onChange,
   options,
+  sizing = 'equal',
   value,
 }: {
+  disabled?: boolean;
   label: string;
   onChange: (value: Value) => void;
   options: readonly { disabled?: boolean; label: string; value: Value }[];
+  sizing?: 'equal' | 'content';
   value: Value;
 }): React.ReactElement {
   const colors = useAppColors();
   const [focused, setFocused] = useState<Value | null>(null);
   const targets = useRef(new Map<Value, View>());
   function handleKey(event: React.KeyboardEvent<HTMLElement>): void {
+    if (disabled) return;
     if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
     const enabled = options.filter((option) => !option.disabled);
     if (enabled.length === 0) return;
@@ -477,9 +482,9 @@ export function SegmentedControl<Value extends string>({
           <Pressable
             accessibilityLabel={option.label}
             accessibilityRole="tab"
-            accessibilityState={{ disabled: Boolean(option.disabled), selected }}
+            accessibilityState={{ disabled: disabled || Boolean(option.disabled), selected }}
             aria-selected={selected}
-            disabled={option.disabled}
+            disabled={disabled || option.disabled}
             key={option.value}
             onBlur={() => {
               setFocused(null);
@@ -497,15 +502,16 @@ export function SegmentedControl<Value extends string>({
             {...(Platform.OS === 'web' ? { onKeyDown: handleKey, tabIndex: selected ? 0 : -1 } : {})}
             style={({ pressed }) => [
               styles.segment,
+              sizing === 'content' && styles.contentSegment,
               {
                 backgroundColor: selected ? colors.surfaceElevated : colors.border,
-                opacity: option.disabled ? 0.5 : pressed ? 0.7 : 1,
+                opacity: disabled || option.disabled ? 0.5 : pressed ? 0.7 : 1,
               },
               selected && styles.selectedSegment,
               focused === option.value && focusStyle(colors.focus),
             ]}
           >
-            <AppText size="sm" tone={selected ? 'default' : 'muted'} weight={selected ? 'bold' : 'regular'}>
+            <AppText size="sm" style={sizing === 'content' ? styles.contentSegmentText : undefined} tone={selected ? 'default' : 'muted'} weight={selected ? 'bold' : 'regular'}>
               {option.label}
             </AppText>
           </Pressable>
@@ -656,6 +662,14 @@ const styles = StyleSheet.create({
     paddingVertical: 9,
   },
   segments: { borderRadius: 14, flexDirection: 'row', flexWrap: 'wrap', gap: 4, padding: 4 },
+  contentSegment: {
+    flexBasis: 'auto',
+    flexGrow: 0,
+    flexShrink: 0,
+    maxWidth: '100%',
+    minWidth: appLayout.minTouchTarget,
+  },
+  contentSegmentText: { maxWidth: '100%', textAlign: 'center' },
   selectedSegment: {
     elevation: 1,
     shadowOffset: { height: 1, width: 0 },

@@ -13,7 +13,7 @@ import { priceForSlot, type PricingConfig, type PricingInput } from '@sv/pricing
 import { createHash, randomInt } from 'node:crypto';
 import type { z } from 'zod';
 import { legalCopy } from '@/content/legal';
-import { createOrRetrievePaymentIntent } from '../integrations/stripe';
+import { cancelPaymentIntentForCleanup, createOrRetrievePaymentIntent } from '../integrations/stripe';
 import { dbDateLabel, londonDateTimeToUtc, slotLabel } from '../london-time';
 import { getOperationsSettings, getSetting } from '../settings';
 import { bookingPurposeLink, contactEmailHash, manageLinkForBooking, signCustomerLink, verifyBookingLink, verifyCustomerLink } from '../auth/customer-links';
@@ -233,6 +233,7 @@ async function rescheduleAllowed(booking: { jobStage: string; moveDate: Date; sl
 
 export async function previewReschedule(token: string, input: { date: string; slot: SlotValue }, now = new Date()): Promise<{ currentTotalPence: number; differencePence: number; newTotalPence: number }> {
   const bookingId = await bookingIdFromManageToken(token);
+  await assertNoPendingAdminSettlement(prisma, bookingId);
   const booking = await prisma.booking.findUniqueOrThrow({
     where: { id: bookingId },
     select: { jobStage: true, moveDate: true, pricingInput: true, slot: true, status: true, totalPence: true },
@@ -260,6 +261,7 @@ export async function applyReschedule(
   const moveDate = dateOnly(input.date);
   if (preview.differencePence <= 0) {
     await prisma.$transaction(async (tx) => {
+      await assertNoPendingAdminSettlement(tx, bookingId);
       const booking = await tx.booking.findUniqueOrThrow({
         where: { id: bookingId },
         select: { blocksSlots: true, capacityUnits: true, moveDate: true, slot: true },
@@ -287,11 +289,12 @@ export async function applyReschedule(
         });
       }
       await enqueueOutbox(tx, 'booking.rescheduled', json({ bookingId }), `booking.rescheduled:${bookingId}:${input.idempotencyKey}`);
-    });
+    }, { isolationLevel: 'Serializable' });
     return { result: 'DONE' };
   }
 
   const payment = await prisma.$transaction(async (tx) => {
+    await assertNoPendingAdminSettlement(tx, bookingId);
     const booking = await tx.booking.findUniqueOrThrow({
       where: { id: bookingId },
       select: { blocksSlots: true, capacityUnits: true, contactEmail: true, reference: true },
@@ -320,21 +323,37 @@ export async function applyReschedule(
       },
     });
     return { ...created, booking: { contactEmail: booking.contactEmail, reference: booking.reference } };
-  });
+  }, { isolationLevel: 'Serializable' });
   const intent = await createOrRetrievePaymentIntent(payment);
   await prisma.payment.update({ data: { stripePaymentIntentId: intent.id }, where: { id: payment.id } });
   return { clientSecret: intent.clientSecret, paymentId: payment.id, result: 'PAYMENT_REQUIRED' };
 }
 
-export async function previewCancel(token: string, now = new Date()): Promise<{ allowed: boolean; policySummary: string; refundPence: number }> {
-  const bookingId = await bookingIdFromManageToken(token);
-  const booking = await prisma.booking.findUniqueOrThrow({
+type SettlementReader = Pick<DbTx, 'extraCharge' | 'refund'>;
+const pendingSettlementMessage = 'A booking change payment or refund is still pending. Contact us to resolve it before changing or cancelling this booking.';
+
+async function hasPendingAdminSettlement(db: SettlementReader, bookingId: string): Promise<boolean> {
+  const charge = await db.extraCharge.findFirst({
+    where: { bookingId, includedInBookingTotal: true, status: { in: ['REQUESTED', 'AWAITING_PAYMENT'] } }, select: { id: true },
+  });
+  if (charge) return true;
+  const refund = await db.refund.findFirst({ where: { payment: { bookingId }, status: 'PENDING' }, select: { id: true } });
+  return Boolean(refund);
+}
+
+async function assertNoPendingAdminSettlement(db: SettlementReader, bookingId: string): Promise<void> {
+  if (await hasPendingAdminSettlement(db, bookingId)) throw new AppError('CONFLICT', pendingSettlementMessage);
+}
+
+async function cancellationPreview(db: SettlementReader & Pick<DbTx, 'booking'>, bookingId: string, now: Date): Promise<{ allowed: boolean; policySummary: string; refundPence: number }> {
+  const booking = await db.booking.findUniqueOrThrow({
     where: { id: bookingId },
     select: { jobStage: true, moveDate: true, paidPence: true, refundedPence: true, slot: true, status: true },
   });
   if (booking.status !== 'CONFIRMED' || booking.jobStage !== 'NOT_STARTED') {
     return { allowed: false, policySummary: 'Your move has started or is no longer confirmed. Call us for help.', refundPence: 0 };
   }
+  if (await hasPendingAdminSettlement(db, bookingId)) return { allowed: false, policySummary: pendingSettlementMessage, refundPence: 0 };
   const policy = await getSetting('cancellation');
   if (policy.freeCancellationHours === null || policy.noRefundHours === null || policy.lateCancellationRefundPercent === null) {
     return { allowed: false, policySummary: 'Online cancellation policy is not configured yet. Call us for help.', refundPence: 0 };
@@ -353,12 +372,21 @@ export async function previewCancel(token: string, now = new Date()): Promise<{ 
   };
 }
 
+export async function previewCancel(token: string, now = new Date()): Promise<{ allowed: boolean; policySummary: string; refundPence: number }> {
+  return cancellationPreview(prisma, await bookingIdFromManageToken(token), now);
+}
+
 export async function applyCancel(token: string, input: { expectedRefundPence: number; reason?: string }, now = new Date()): Promise<{ refundPence: number }> {
   const bookingId = await bookingIdFromManageToken(token);
   const preview = await previewCancel(token, now);
   if (!preview.allowed) throw new AppError('CONFLICT', preview.policySummary);
   if (preview.refundPence !== input.expectedRefundPence) throw new AppError('PRICE_CHANGED', 'The refund amount changed. Please review it.', { refundPence: preview.refundPence });
   await prisma.$transaction(async (tx) => {
+    // Recheck inside the transaction so a new admin edit/payment cannot race
+    // the customer's earlier cancellation preview.
+    const current = await cancellationPreview(tx, bookingId, now);
+    if (!current.allowed) throw new AppError('CONFLICT', current.policySummary);
+    if (current.refundPence !== input.expectedRefundPence) throw new AppError('PRICE_CHANGED', 'The refund amount changed. Please review it.', { refundPence: current.refundPence });
     await tx.booking.update({
       data: {
         cancelledAt: now,
@@ -374,7 +402,7 @@ export async function applyCancel(token: string, input: { expectedRefundPence: n
       notifyCustomer: false,
     });
     await enqueueOutbox(tx, 'booking.cancelled', json({ bookingId, refundPence: preview.refundPence }), `booking.cancelled:${bookingId}`);
-  });
+  }, { isolationLevel: 'Serializable' });
   return { refundPence: preview.refundPence };
 }
 
@@ -474,7 +502,7 @@ export async function payRequestView(token: string, now = new Date()): Promise<R
     return {
       amountPence: extra.amountPence,
       description: extra.description,
-      expired: false,
+      expired: extra.status !== 'PAID' && (extra.status !== 'AWAITING_PAYMENT' || extra.booking.status === 'CANCELLED' || extra.booking.status === 'EXPIRED' || Boolean(extra.booking.deletedAt)),
       kind: 'EXTRA_CHARGE',
       paid: extra.status === 'PAID',
       reference: extra.booking.reference,
@@ -487,7 +515,7 @@ export async function payRequestView(token: string, now = new Date()): Promise<R
   return {
     amountPence: booking.totalPence,
     description: 'Phone booking payment',
-    expired: booking.holdExpiresAt ? booking.holdExpiresAt.getTime() <= now.getTime() : false,
+    expired: booking.status !== 'PENDING_PAYMENT' || Boolean(booking.deletedAt) || !booking.holdExpiresAt || booking.holdExpiresAt.getTime() <= now.getTime(),
     kind: 'ADMIN_BOOKING',
     paid: booking.status === 'CONFIRMED' || booking.paidPence >= booking.totalPence,
     reference: booking.reference,
@@ -506,8 +534,16 @@ async function intentForPayment(payment: {
   stripePaymentIntentId: string | null;
 }): Promise<{ clientSecret: string; paymentId: string }> {
   const intent = await createOrRetrievePaymentIntent(payment);
-  if (payment.stripePaymentIntentId !== intent.id) {
-    await prisma.payment.update({ data: { stripePaymentIntentId: intent.id }, where: { id: payment.id } });
+  // The provider call sits outside our database transaction. A cancellation or
+  // offline settlement may have won while Stripe was creating the intent.
+  const saved = await prisma.payment.updateMany({
+    where: { id: payment.id, status: { in: ['REQUIRES_PAYMENT','FAILED'] }, amountPence: payment.amountPence,
+      booking: { deletedAt: null, contactEmail: payment.booking.contactEmail, status: { in: payment.kind === 'EXTRA_CHARGE' ? ['CONFIRMED','IN_PROGRESS','COMPLETED'] : ['PENDING_PAYMENT'] } } },
+    data: { stripePaymentIntentId: intent.id },
+  });
+  if (saved.count !== 1) {
+    await cancelPaymentIntentForCleanup(intent.id, { bookingId: payment.bookingId, paymentId: payment.id });
+    throw new AppError('CONFLICT', 'This payment is no longer available. Refresh the booking.');
   }
   return { clientSecret: intent.clientSecret, paymentId: payment.id };
 }
@@ -520,42 +556,72 @@ export async function startPayRequest(token: string, now = new Date()): Promise<
   });
   if (manualQuote) {
     if (contactEmailHash(manualQuote.contactEmail) !== payload.emailHash) throw new AppError('UNAUTHORIZED', 'Invalid payment link.');
-    if (manualQuote.status === 'ACCEPTED') throw new AppError('CONFLICT', 'This payment has already been made.');
+    if (manualQuote.status !== 'PRICED') throw new AppError('CONFLICT', 'This quote is no longer available for payment.');
     if (!manualQuote.pricePence || !manualQuote.preferredDate || !manualQuote.preferredSlot || !manualQuote.validUntil || manualQuote.validUntil <= now) {
       throw new AppError('CONFLICT', 'This payment link has expired.');
     }
-    const result = await prisma.$transaction(async (tx) => createManualQuoteBooking(tx, manualQuote, now));
+    const result = await prisma.$transaction(async (tx) => {
+      const current = await tx.manualQuote.findUnique({ where: { id: manualQuote.id }, include: { quote: true } });
+      if (!current || contactEmailHash(current.contactEmail) !== payload.emailHash) throw new AppError('UNAUTHORIZED', 'Invalid payment link.');
+      if (current.updatedAt.getTime() !== manualQuote.updatedAt.getTime()) throw new AppError('CONFLICT', 'This quote changed. Refresh the payment page.');
+      await assertManualQuotePayable(current, now);
+      return createManualQuoteBooking(tx, current, now);
+    }, { isolationLevel: 'Serializable' });
     const intent = await intentForPayment(result.payment);
     return { amountPence: result.payment.amountPence, ...intent };
   }
   const extra = await prisma.extraCharge.findUnique({ where: { id: payload.subject }, include: { booking: true, payment: true } });
   if (extra) {
     if (contactEmailHash(extra.booking.contactEmail) !== payload.emailHash) throw new AppError('UNAUTHORIZED', 'Invalid payment link.');
-    if (extra.status === 'PAID') throw new AppError('CONFLICT', 'This payment has already been made.');
-    const payment = extra.payment ?? await prisma.payment.create({
-      data: { amountPence: extra.amountPence, bookingId: extra.bookingId, extraCharge: { connect: { id: extra.id } }, kind: 'EXTRA_CHARGE' },
-      select: { amountPence: true, bookingId: true, currency: true, id: true, kind: true, stripePaymentIntentId: true },
-    });
-    const intent = await intentForPayment({ ...payment, booking: { contactEmail: extra.booking.contactEmail, reference: extra.booking.reference } });
+    const payment = await prisma.$transaction(async (tx) => {
+      const current = await tx.extraCharge.findUnique({ where: { id: extra.id }, include: { booking: true, payment: true } });
+      if (!current || contactEmailHash(current.booking.contactEmail) !== payload.emailHash) throw new AppError('UNAUTHORIZED', 'Invalid payment link.');
+      if (current.status === 'PAID') throw new AppError('CONFLICT', 'This payment has already been made.');
+      if (current.status !== 'AWAITING_PAYMENT' || current.booking.status === 'CANCELLED' || current.booking.status === 'EXPIRED' || current.booking.deletedAt) {
+        throw new AppError('CONFLICT', 'This extra-charge payment is no longer available. Contact us for help.');
+      }
+      // A serializable read/create prevents two payment pages from replacing
+      // this charge's payment relation and leaving a second payable intent.
+      const row = current.payment ?? await tx.payment.create({
+        data: { amountPence: current.amountPence, bookingId: current.bookingId, extraCharge: { connect: { id: current.id } }, kind: 'EXTRA_CHARGE' },
+        select: { amountPence: true, bookingId: true, currency: true, id: true, kind: true, stripePaymentIntentId: true },
+      });
+      return { ...row, booking: { contactEmail: current.booking.contactEmail, reference: current.booking.reference } };
+    }, { isolationLevel: 'Serializable' });
+    const intent = await intentForPayment(payment);
     return { amountPence: payment.amountPence, ...intent };
   }
-  const booking = await prisma.booking.findUnique({ where: { id: payload.subject }, include: { payments: true } });
-  if (!booking || contactEmailHash(booking.contactEmail) !== payload.emailHash) throw new AppError('UNAUTHORIZED', 'Invalid payment link.');
-  if (booking.status !== 'PENDING_PAYMENT') throw new AppError('CONFLICT', 'This payment has already been made.');
-  const existing = booking.payments.find((payment) => payment.kind === 'ADMIN_BOOKING') ?? await prisma.payment.create({
-    data: { amountPence: booking.totalPence, bookingId: booking.id, kind: 'ADMIN_BOOKING' },
-    select: { amountPence: true, bookingId: true, currency: true, id: true, kind: true, stripePaymentIntentId: true },
-  });
-  const intent = await intentForPayment({ ...existing, booking: { contactEmail: booking.contactEmail, reference: booking.reference } });
+  const existing = await prisma.$transaction(async (tx) => {
+    const booking = await tx.booking.findUnique({ where: { id: payload.subject }, include: { payments: true } });
+    if (!booking || contactEmailHash(booking.contactEmail) !== payload.emailHash) throw new AppError('UNAUTHORIZED', 'Invalid payment link.');
+    if (booking.status !== 'PENDING_PAYMENT' || booking.deletedAt || !booking.holdExpiresAt || booking.holdExpiresAt <= now) throw new AppError('CONFLICT', 'This payment link has expired or has already been paid.');
+    const initialPayments = booking.payments.filter((payment) => payment.kind === 'ADMIN_BOOKING' || payment.kind === 'BOOKING' || payment.kind === 'MANUAL_QUOTE');
+    if (initialPayments.some((payment) => payment.status === 'PROCESSING' || payment.status === 'SUCCEEDED')) throw new AppError('CONFLICT', 'This payment is being reconciled. Refresh the booking shortly.');
+    const row = initialPayments.find((payment) => payment.status === 'REQUIRES_PAYMENT' || payment.status === 'FAILED') ?? await tx.payment.create({
+      data: { amountPence: booking.totalPence, bookingId: booking.id, kind: 'ADMIN_BOOKING' },
+      select: { amountPence: true, bookingId: true, currency: true, id: true, kind: true, stripePaymentIntentId: true },
+    });
+    return { ...row, booking: { contactEmail: booking.contactEmail, reference: booking.reference } };
+  }, { isolationLevel: 'Serializable' });
+  const intent = await intentForPayment(existing);
   return { amountPence: existing.amountPence, ...intent };
 }
 
 type ManualQuoteWithQuote = Prisma.ManualQuoteGetPayload<{ include: { quote: true } }>;
 
+async function assertManualQuotePayable(manual: ManualQuoteWithQuote, now: Date): Promise<void> {
+  if (manual.status !== 'PRICED' || !manual.preferredDate || !manual.preferredSlot || !manual.pricePence || !manual.validUntil || manual.validUntil <= now) throw new AppError('CONFLICT', 'This quote is no longer available for payment.');
+  const operations = await getOperationsSettings();
+  const date = fromDbDate(manual.preferredDate);
+  const cutoff = londonDateTimeToUtc(date, operations.slotWindows[manual.preferredSlot].start).getTime() - operations.minLeadMinutes * 60_000;
+  if (operations.bookingPaused || date < londonToday(now) || now.getTime() >= cutoff || (manual.quote.service === 'same-day' && date !== londonToday(now))) throw new AppError('CONFLICT', 'This move date is no longer available. Ask us for a new quote.');
+}
+
 async function createManualQuoteBooking(tx: DbTx, manualQuote: ManualQuoteWithQuote, now: Date) {
   if (manualQuote.bookingId) {
     const booking = await tx.booking.findUniqueOrThrow({ where: { id: manualQuote.bookingId }, include: { payments: true } });
-    const payment = booking.payments.find((candidate) => candidate.kind === 'MANUAL_QUOTE') ?? await tx.payment.create({
+    if (booking.status !== 'PENDING_PAYMENT' || booking.deletedAt || !booking.holdExpiresAt || booking.holdExpiresAt <= now) throw new AppError('CONFLICT', 'This booking payment is no longer available. Contact us for a new quote.');
+    const payment = booking.payments.find((candidate) => candidate.kind === 'MANUAL_QUOTE' && (candidate.status === 'REQUIRES_PAYMENT' || candidate.status === 'FAILED')) ?? await tx.payment.create({
       data: { amountPence: manualQuote.pricePence ?? 0, bookingId: booking.id, kind: 'MANUAL_QUOTE' },
       select: { amountPence: true, bookingId: true, currency: true, id: true, kind: true, stripePaymentIntentId: true },
     });

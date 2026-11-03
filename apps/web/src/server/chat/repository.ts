@@ -50,6 +50,18 @@ export async function adminChatUnreadCounts(conversationIds: string[], db: Pick<
   return new Map(counts.map((row) => [row.conversationId, row.unreadCount]));
 }
 
+export async function adminChatUnreadSummary(
+  now = new Date(),
+  db: Pick<DbTx, '$queryRaw'> = prisma,
+): Promise<{ unreadCount: number; latestCustomerSequence: string | null }> {
+  const rows = await db.$queryRaw<{ count: bigint; latestCustomerSequence: string | null }[]>`
+    SELECT COUNT(*) FILTER (WHERE m."sequence" > c."adminReadSequence")::bigint AS "count",
+      MAX(m."sequence")::text AS "latestCustomerSequence" FROM "ChatMessage" AS m
+    JOIN "ChatConversation" AS c ON c."id" = m."conversationId"
+    WHERE m."sender" = 'CUSTOMER' AND c."expiresAt" > ${now}`;
+  return { unreadCount: Number(rows[0]?.count ?? 0n), latestCustomerSequence: rows[0]?.latestCustomerSequence ?? null };
+}
+
 export async function findCustomerConversation(tokenHash: string, now: Date, db: ChatDb = prisma): Promise<ConversationRecord | null> {
   const conversation = await db.chatConversation.findUnique({ where: { customerTokenHash: tokenHash }, select: conversationSelect });
   return conversation && conversation.expiresAt > now ? conversation : null;

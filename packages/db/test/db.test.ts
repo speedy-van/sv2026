@@ -75,6 +75,11 @@ async function tryCreateBooking(index: number, customerId: string, versionId: st
       select: { id: true },
     });
     return booking.id;
+  }, {
+    // Ten transactions wait for the same advisory lock on a remote database.
+    // Allow their network round trips without changing the production timeout.
+    timeout: 20_000,
+    maxWait: 10_000,
   });
 }
 

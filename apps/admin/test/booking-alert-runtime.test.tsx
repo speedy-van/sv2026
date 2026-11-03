@@ -305,6 +305,7 @@ it('keeps native banners and sound for other events and while locked, avoiding d
 });
 
 it('waits for sign-in and Face ID before a cold-start tap opens and acknowledges a booking exactly once', async () => {
+  const invalidate = jest.spyOn(QueryClient.prototype, 'invalidateQueries');
   mockStatus = 'restoring';
   mockLocked = true;
   jest.mocked(Notifications.getLastNotificationResponse).mockReturnValue(response());
@@ -327,6 +328,8 @@ it('waits for sign-in and Face ID before a cold-start tap opens and acknowledges
   expect(router.push).toHaveBeenCalledTimes(1);
   expect(mockRequest.mock.calls.filter(([path]) => path.endsWith('/read'))).toHaveLength(1);
   expect(Notifications.clearLastNotificationResponse).toHaveBeenCalledTimes(1);
+  expect(invalidate).toHaveBeenCalledWith({ queryKey: ['admin', 'admin-one', 'notifications'] });
+  expect(invalidate).toHaveBeenCalledWith({ queryKey: ['admin', 'admin-one', 'notification-inbox'] });
 });
 
 it('does not open a booking for the notification Dismiss action', async () => {

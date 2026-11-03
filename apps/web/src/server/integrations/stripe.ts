@@ -18,6 +18,7 @@ export interface PaymentIntentTarget {
 }
 
 export interface RefundTarget {
+  notifyCustomer?: boolean;
   amountPence: number;
   bookingId: string;
   id: string;
@@ -185,7 +186,7 @@ export async function createStripeRefund(refund: RefundTarget): Promise<{ id: st
     const created = await stripe.refunds.create(
       {
         amount: refund.amountPence,
-        metadata: { bookingId: refund.bookingId, refundId: refund.id },
+        metadata: { bookingId: refund.bookingId, refundId: refund.id, notifyCustomer: String(refund.notifyCustomer ?? true) },
         payment_intent: paymentIntent,
         reason: 'requested_by_customer',
       },

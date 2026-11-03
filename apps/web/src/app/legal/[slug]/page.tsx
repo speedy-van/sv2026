@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import type { ReactNode } from 'react';
 import type { PublicSettings } from '@sv/contracts';
 import { NoPrefetchLink as Link } from '@/components/navigation/no-prefetch-link';
-import { cookieInventory, liveChatPrivacyNotice } from '@/content/cookies';
+import { bookingActivityPrivacyNotice, cookieInventory, liveChatPrivacyNotice } from '@/content/cookies';
 import { cancellationRules, legalCopy, legalDraftIntroduction, privacyControllerDescription } from '@/content/legal';
 import { isLegalSlug, legalPages, type LegalSlug } from '@/content/marketing';
 import { showDraftLegalBanner } from '@/server/marketing';
@@ -82,6 +82,8 @@ function PrivacyContent({ company }: { company: PublicSettings['company'] }): Re
       <p>Processors include Vercel, Neon, Stripe, Mapbox, Resend, Expo, Apple push services, Sentry, Upstash and Google services when consented.</p>
       <h2>{liveChatPrivacyNotice.heading}</h2>
       <p>{liveChatPrivacyNotice.body}</p>
+      <h2>{bookingActivityPrivacyNotice.heading}</h2>
+      <p>{bookingActivityPrivacyNotice.body}</p>
       <h2>Rights and retention</h2>
       <p>{legalCopy.retentionBody}</p>
       <Link className="text-link" href="/contact">{legalCopy.contactLabel}</Link>

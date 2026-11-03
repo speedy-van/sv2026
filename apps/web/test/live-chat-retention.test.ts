@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mocks = vi.hoisted(() => ({ findMany: vi.fn(), deleteMany: vi.fn(), authOtp: vi.fn(), pushTicket: vi.fn() }));
+const mocks = vi.hoisted(() => ({ findMany: vi.fn(), deleteMany: vi.fn(), authOtp: vi.fn(), pushTicket: vi.fn(), activity: vi.fn() }));
 vi.mock('@sv/db', () => ({ enqueueOutbox: vi.fn(), prisma: {
   chatConversation: { findMany: mocks.findMany, deleteMany: mocks.deleteMany }, authOtp: { deleteMany: mocks.authOtp }, pushTicket: { deleteMany: mocks.pushTicket },
+  bookingActivity: { deleteMany: mocks.activity },
 } }));
 import { pruneExpiredChatConversations } from '../src/server/chat/retention';
 import { runDataRetention } from '../src/server/cron-jobs';
@@ -13,6 +14,7 @@ beforeEach(() => {
   mocks.deleteMany.mockResolvedValue({ count: 2 });
   mocks.authOtp.mockResolvedValue({ count: 0 });
   mocks.pushTicket.mockResolvedValue({ count: 0 });
+  mocks.activity.mockResolvedValue({ count: 0 });
 });
 
 describe('owner-approved bounded chat retention', () => {
@@ -34,6 +36,7 @@ describe('owner-approved bounded chat retention', () => {
   it('uses the existing data-retention job and returns the chat cleanup count', async () => {
     const now = new Date('2026-10-15T12:00:00.000Z');
     expect(await runDataRetention(now)).toEqual({ authOtpDeleted: 0, oldPushTicketsDeleted: 0, chatsDeleted: 2 });
+    expect(mocks.activity).toHaveBeenCalledExactlyOnceWith({ where: { lastSeenAt: { lt: new Date('2026-10-14T12:00:00.000Z') } } });
     expect(mocks.deleteMany).toHaveBeenCalledExactlyOnceWith({ where: { id: { in: ['expired_thread_1', 'expired_thread_2'] }, expiresAt: { lte: now } } });
   });
 });

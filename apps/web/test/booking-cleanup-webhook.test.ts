@@ -6,7 +6,7 @@ const mocks = vi.hoisted(() => ({
   paymentFindFirst: vi.fn(), paymentFindUnique: vi.fn(), paymentUpdate: vi.fn(), paymentUpdateMany: vi.fn(),
   bookingUpdate: vi.fn(), bookingUpdateMany: vi.fn(), stripeEventFindUnique: vi.fn(), stripeEventCreate: vi.fn(),
   stripeEventUpdate: vi.fn(), transaction: vi.fn(), capacity: vi.fn(), enqueue: vi.fn(), refund: vi.fn(), recompute: vi.fn(),
-  extraChargeUpdate: vi.fn(), slotHoldFindUnique: vi.fn(), slotHoldDelete: vi.fn(), assignmentUpdateMany: vi.fn(),
+  extraChargeUpdate: vi.fn(), slotHoldFindUnique: vi.fn(), slotHoldDelete: vi.fn(), assignmentUpdateMany: vi.fn(), audit: vi.fn(),
 }));
 vi.mock('@sv/db', () => ({
   assertSlotCapacity: mocks.capacity, enqueueOutbox: mocks.enqueue,
@@ -24,6 +24,7 @@ type BookingState = {
   id: string; status: 'PENDING_PAYMENT' | 'CONFIRMED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'EXPIRED';
   deletedAt: Date | null; holdExpiresAt: Date | null; blocksSlots: number; capacityUnits: number;
   moveDate: Date; quoteId: string | null; slot: 'MORNING'; version: number; totalPence: number;
+  cancelledBy?: 'ADMIN'; paidPence?: number; refundedPence?: number;
 };
 let booking: BookingState;
 let paymentStatus: 'REQUIRES_PAYMENT' | 'PROCESSING' | 'SUCCEEDED' | 'CANCELED';
@@ -32,8 +33,9 @@ let extraChargeStatus: 'AWAITING_PAYMENT' | 'PAID';
 const tx = {
   payment: { findUnique: mocks.paymentFindUnique, update: mocks.paymentUpdate, updateMany: mocks.paymentUpdateMany },
   booking: { update: mocks.bookingUpdate, updateMany: mocks.bookingUpdateMany },
-  extraCharge: { update: mocks.extraChargeUpdate }, slotHold: { findUnique: mocks.slotHoldFindUnique, delete: mocks.slotHoldDelete },
+  extraCharge: { updateMany: mocks.extraChargeUpdate }, slotHold: { findUnique: mocks.slotHoldFindUnique, delete: mocks.slotHoldDelete },
   assignment: { updateMany: mocks.assignmentUpdateMany },
+  auditLog: { findFirst: mocks.audit },
 };
 
 function event(type: 'payment_intent.succeeded' | 'payment_intent.processing' | 'payment_intent.payment_failed' | 'payment_intent.canceled'): Stripe.Event {
@@ -81,12 +83,42 @@ beforeEach(() => {
     return Promise.resolve({ count: 1 });
   });
   mocks.stripeEventFindUnique.mockResolvedValue(null);
-  mocks.extraChargeUpdate.mockImplementation(() => { extraChargeStatus = 'PAID'; return Promise.resolve({ id: 'extra-unit' }); });
+  mocks.audit.mockResolvedValue(null);
+  mocks.extraChargeUpdate.mockImplementation(() => { extraChargeStatus = 'PAID'; return Promise.resolve({ count: 1 }); });
   mocks.slotHoldFindUnique.mockResolvedValue(null);
   mocks.transaction.mockImplementation((operation: (client: typeof tx) => Promise<unknown>) => operation(tx));
 });
 
 describe('payment events cannot silently hide active money or resurrect removed history', () => {
+  it('refunds the exact captured payment after explicit admin cancellation without restoring the booking', async () => {
+    booking = { ...booking, deletedAt: null, cancelledBy: 'ADMIN', paidPence: 0, refundedPence: 0 };
+    await handleStripeEvent(event('payment_intent.succeeded'), now);
+    expect(booking.status).toBe('CANCELLED'); expect(mocks.bookingUpdate).not.toHaveBeenCalled(); expect(mocks.capacity).not.toHaveBeenCalled();
+    expect(mocks.refund).toHaveBeenCalledWith(tx, 'booking-unit', 10000, expect.any(String), expect.objectContaining({ paymentId: 'payment-unit', dedupePrefix: 'admin-late-payment-refund' }));
+  });
+  it('returns a late card capture after full offline settlement without confirming twice', async () => {
+    booking = { ...booking, status: 'CONFIRMED', deletedAt: null, paidPence: 20000, refundedPence: 0 };
+    await handleStripeEvent(event('payment_intent.succeeded'), now);
+    expect(mocks.bookingUpdate).not.toHaveBeenCalled(); expect(mocks.capacity).not.toHaveBeenCalled();
+    expect(mocks.refund).toHaveBeenCalledWith(tx, 'booking-unit', 10000, expect.any(String), expect.objectContaining({ paymentId: 'payment-unit' }));
+  });
+  it('keeps an admin-cancelled then removed booking cancelled when its card capture arrives late', async () => {
+    booking = { ...booking, cancelledBy: 'ADMIN', paidPence: 0, refundedPence: 0 };
+    mocks.audit.mockResolvedValue({ id: 'admin-cancellation-audit' });
+    await handleStripeEvent(event('payment_intent.succeeded'), now);
+    expect(mocks.audit).toHaveBeenCalledWith({ where: { action: 'admin.bookings.cancel', entityType: 'booking', entityId: 'booking-unit' }, select: { id: true } });
+    expect(booking).toMatchObject({ status: 'CANCELLED', deletedAt: null, version: 5 });
+    expect(mocks.capacity).not.toHaveBeenCalled(); expect(mocks.bookingUpdate).not.toHaveBeenCalled();
+    expect(mocks.refund).toHaveBeenCalledWith(tx, 'booking-unit', 10000, expect.any(String), expect.objectContaining({ paymentId: 'payment-unit', dedupePrefix: 'admin-late-payment-refund' }));
+    expect(mocks.enqueue).not.toHaveBeenCalled();
+  });
+  it('preserves late-payment recovery for an unpaid draft removed without an actual cancellation action', async () => {
+    booking = { ...booking, cancelledBy: 'ADMIN', paidPence: 0, refundedPence: 0 };
+    await handleStripeEvent(event('payment_intent.succeeded'), now);
+    expect(mocks.audit).toHaveBeenCalledOnce(); expect(mocks.capacity).toHaveBeenCalledOnce();
+    expect(booking).toMatchObject({ status: 'CONFIRMED', deletedAt: null });
+    expect(mocks.refund).not.toHaveBeenCalled();
+  });
   it('atomically reconciles a genuine late initial payment and clears the removal marker', async () => {
     expect(await handleStripeEvent(event('payment_intent.succeeded'), now)).toBe('processed');
     expect(booking).toMatchObject({ status: 'CONFIRMED', deletedAt: null, holdExpiresAt: null });
@@ -103,7 +135,7 @@ describe('payment events cannot silently hide active money or resurrect removed 
     await handleStripeEvent(event('payment_intent.succeeded'), now);
     expect(booking).toMatchObject({ status: 'EXPIRED', deletedAt: null });
     expect(paymentStatus).toBe('SUCCEEDED');
-    expect(mocks.refund).toHaveBeenCalledWith(tx, 'booking-unit', 10000, 'Paid after the booking hold expired.', { dedupePrefix: 'late-payment-refund', notifyCustomer: false });
+    expect(mocks.refund).toHaveBeenCalledWith(tx, 'booking-unit', 10000, 'Paid after the booking hold expired.', { dedupePrefix: 'late-payment-refund', notifyCustomer: false, paymentId: 'payment-unit' });
   });
 
   it.each(['COMPLETED', 'CANCELLED', 'EXPIRED'] as const)('does not resurrect already-paid removed %s history on another success event', async (status) => {

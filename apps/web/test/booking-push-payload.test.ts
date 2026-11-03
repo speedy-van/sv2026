@@ -13,10 +13,12 @@ const mocks = vi.hoisted(() => ({
   deviceCount: vi.fn(),
   environment: vi.fn(),
   chatEligible: vi.fn(),
+  chatSummary: vi.fn(),
 }));
 vi.mock('@sv/db', () => ({
   enqueueOutbox: vi.fn(),
   prisma: {
+    $queryRaw: mocks.chatSummary,
     pushDevice: { findMany: mocks.devices, update: mocks.updateDevice, count: mocks.deviceCount },
     notification: { count: mocks.count },
     pushTicket: { create: mocks.ticket, findMany: mocks.previousTickets },
@@ -50,6 +52,7 @@ beforeEach(() => {
     { id: 'device-unit', userId: 'admin-unit', app: 'ADMIN', expoPushToken: 'ExpoPushToken[unit]' },
   ]);
   mocks.count.mockResolvedValue(3);
+  mocks.chatSummary.mockResolvedValue([{ count: 0n, latestCustomerSequence: null }]);
   mocks.send.mockResolvedValue([{ status: 'ok', id: 'ticket-unit' }]);
   mocks.booking.mockResolvedValue({ id: 'booking-unit' });
   mocks.previousTickets.mockResolvedValue([]);
@@ -60,6 +63,26 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllEnvs());
 
 describe('native booking push payload with isolated Expo and database mocks', () => {
+  it('targets the selected device without crossing the current admin account', async () => {
+    await sendPushOutbox({ app: 'ADMIN', userId: 'admin-unit', deviceId: 'my-phone', category: 'NEW_BOOKING', title: 'Test', body: 'Test', sound: 'new-job.wav', data: { eventType: 'admin.test_push' } }, 'test-phone');
+    expect(mocks.devices).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ id: 'my-phone', userId: 'admin-unit', app: 'ADMIN', enabled: true }) as unknown }));
+  });
+  it('sends optional pending alerts only to opted-in devices with a normal sound', async () => {
+    await sendPushOutbox({ app: 'ADMIN', userId: 'admin-unit', category: 'PENDING_BOOKING', title: 'Awaiting payment', body: 'Not confirmed', sound: 'default', data: { bookingId: 'pending-one' } }, 'pending-one');
+    expect(mocks.devices).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ pendingBookingAlerts: true }) as unknown }));
+    expect(mocks.send).toHaveBeenCalledWith([expect.objectContaining({ sound: 'default', interruptionLevel: 'active' })]);
+    expect(mocks.booking).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ status: 'PENDING_PAYMENT', holdExpiresAt: { gt: expect.any(Date) as Date } }) as unknown }));
+  });
+  it('drops a stale pending alert after payment or hold expiry', async () => {
+    mocks.booking.mockResolvedValue(null);
+    expect(await sendPushOutbox({ app: 'ADMIN', userId: 'admin-unit', category: 'PENDING_BOOKING', title: 'Awaiting payment', body: 'Not confirmed', sound: 'default', data: { bookingId: 'pending-one' } }, 'pending-one')).toEqual({ devices: 0, tickets: 0 });
+    expect(mocks.devices).not.toHaveBeenCalled(); expect(mocks.send).not.toHaveBeenCalled();
+  });
+  it('does not warn that notifications are broken when pending alerts are opted out', async () => {
+    mocks.devices.mockResolvedValue([]);
+    await sendPushOutbox({ app: 'ADMIN', userId: 'admin-unit', category: 'PENDING_BOOKING', title: 'Awaiting payment', body: 'Not confirmed', sound: 'default', data: { bookingId: 'pending-one' } }, 'pending-one');
+    expect(mocks.user).not.toHaveBeenCalled(); expect(mocks.send).not.toHaveBeenCalled();
+  });
   it('sends the bundled custom sound with time-sensitive priority and badge while checking current admin status', async () => {
     expect(
       await sendPushOutbox(
@@ -110,6 +133,20 @@ describe('native booking push payload with isolated Expo and database mocks', ()
       },
     });
   });
+  it('uses the shared unread notification plus chat total in native admin pushes', async () => {
+    mocks.chatSummary.mockResolvedValue([{ count: 2n, latestCustomerSequence: '100' }]);
+    await sendPushOutbox({ app: 'ADMIN', userId: 'admin-unit', title: 'Alert', body: 'Open the app', category: 'CHANGE', sound: 'default' }, 'badge-unit');
+    expect(mocks.send).toHaveBeenCalledWith([expect.objectContaining({ badge: 5 })]);
+    expect(mocks.count).toHaveBeenCalledWith({ where: { userId: 'admin-unit', readAt: null } });
+  });
+
+  it('keeps a driver badge independent of the team chat total', async () => {
+    mocks.devices.mockResolvedValue([{ id: 'driver-unit', userId: 'driver-one', app: 'DRIVER', expoPushToken: 'ExpoPushToken[driver]' }]);
+    await sendPushOutbox({ app: 'DRIVER', userId: 'driver-one', title: 'Alert', body: 'Open the app', category: 'JOB_OFFER', sound: 'job-offer.wav' }, 'driver-badge-unit');
+    expect(mocks.send).toHaveBeenCalledWith([expect.objectContaining({ badge: 3 })]);
+    expect(mocks.chatSummary).not.toHaveBeenCalled();
+  });
+
   it('does not send when no active authorised recipient device remains', async () => {
     mocks.devices.mockResolvedValue([]);
     mocks.user.mockResolvedValue({ id: 'admin-unit', status: 'DISABLED', role: 'ADMIN' });

@@ -32,12 +32,12 @@ export async function requestRefund(
   bookingId: string,
   amountPence: number,
   reason: string,
-  options: { dedupePrefix?: string; notifyCustomer?: boolean } = {},
+  options: { dedupePrefix?: string; notifyCustomer?: boolean; paymentId?: string } = {},
 ): Promise<void> {
   if (amountPence <= 0) return;
   const payments = await tx.payment.findMany({
     orderBy: { createdAt: 'desc' },
-    where: { bookingId, method: 'STRIPE', status: 'SUCCEEDED' },
+    where: { bookingId, method: 'STRIPE', status: 'SUCCEEDED', ...(options.paymentId ? { id: options.paymentId } : {}) },
     select: {
       amountPence: true,
       id: true,
@@ -77,7 +77,7 @@ export async function requestRefund(
   }
 }
 
-export async function runRefundOutbox(tx: DbTx, refundId: string): Promise<void> {
+export async function runRefundOutbox(tx: DbTx, refundId: string, options: { notifyCustomer?: boolean } = {}): Promise<void> {
   const refund = await tx.refund.findUnique({
     where: { id: refundId },
     select: {
@@ -94,6 +94,7 @@ export async function runRefundOutbox(tx: DbTx, refundId: string): Promise<void>
     amountPence: refund.amountPence,
     bookingId: refund.payment.bookingId,
     id: refund.id,
+    notifyCustomer: options.notifyCustomer ?? true,
     payment: { stripePaymentIntentId: refund.payment.stripePaymentIntentId },
   });
   await tx.refund.update({
@@ -105,7 +106,7 @@ export async function runRefundOutbox(tx: DbTx, refundId: string): Promise<void>
     await enqueueOutbox(
       tx,
       'payment.refund.created',
-      json({ bookingId: refund.payment.bookingId, refundId: refund.id }),
+      json({ bookingId: refund.payment.bookingId, refundId: refund.id, notifyCustomer: options.notifyCustomer ?? true }),
       `payment.refund.created:${refund.id}`,
     );
   }

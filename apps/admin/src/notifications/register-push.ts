@@ -44,6 +44,7 @@ async function upsertToken(api: SpeedyVanApiClient, expoPushToken: string): Prom
 export async function registerPushDevice(
   api: SpeedyVanApiClient,
   onError?: (error: unknown) => void,
+  isSessionActive: () => boolean = () => true,
 ): Promise<() => void> {
   if (Platform.OS !== 'ios' && Platform.OS !== 'android') return () => undefined;
   const permission = await bounded(Notifications.getPermissionsAsync());
@@ -67,7 +68,7 @@ export async function registerPushDevice(
         ...(devicePushToken ? { devicePushToken } : {}),
       }),
     );
-    if (!active || current !== registration) return;
+    if (!active || current !== registration || !isSessionActive()) return;
     const expoPushToken = z
       .string()
       .regex(/^(ExponentPushToken|ExpoPushToken)\[[^\]]+\]$/u)

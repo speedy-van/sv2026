@@ -11,7 +11,7 @@ import {
   toDbDate,
 } from '@sv/contracts';
 import type { BookingCreateSchema, CouponCheckSchema } from '@sv/contracts';
-import { assertSlotCapacity, Prisma, prisma, type DbTx, type Slot } from '@sv/db';
+import { assertSlotCapacity, enqueueOutbox, Prisma, prisma, type DbTx, type Slot } from '@sv/db';
 import {
   computeQuote,
   priceForSlot,
@@ -45,7 +45,7 @@ function dateOnly(date: string): Date {
   return new Date(`${toDbDate(date)}T00:00:00.000Z`);
 }
 
-async function uniqueReference(tx: DbTx): Promise<string> {
+export async function uniqueReference(tx: DbTx): Promise<string> {
   for (let attempt = 0; attempt < 10; attempt += 1) {
     let code = '';
     for (let i = 0; i < 6; i += 1) code += CROCKFORD.charAt(randomInt(CROCKFORD.length));
@@ -68,7 +68,7 @@ interface PricedSlot {
   totalPence: number;
 }
 
-async function priceSlot(quote: {
+export async function priceSlot(quote: {
   calendar: Prisma.JsonValue;
   expiresAt: Date;
   input: Prisma.JsonValue;
@@ -109,7 +109,7 @@ function postcode(value: unknown): string {
   return AddressSchema.parse(value).postcode;
 }
 
-async function assertChosenSlotAvailable(params: {
+export async function assertChosenSlotAvailable(params: {
   blocksSlots: number;
   calendar: CalendarDay[];
   capacityUnits: number;
@@ -380,6 +380,7 @@ export async function createBookingFromQuote(input: BookingCreateInput, now = ne
       },
       select: { amountPence: true, bookingId: true, currency: true, id: true, kind: true, stripePaymentIntentId: true },
     });
+    await enqueueOutbox(tx, 'booking.pending_payment', json({ bookingId: booking.id }), `booking.pending_payment:${booking.id}`);
     return { ...booking, payments: [payment] };
   });
 

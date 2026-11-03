@@ -58,6 +58,11 @@ async function confirmBookingPayment(paymentId: string, now: Date, stripeData: {
         booking: {
           select: {
             blocksSlots: true,
+            cancelledBy: true,
+            deletedAt: true,
+            paidPence: true,
+            refundedPence: true,
+            totalPence: true,
             capacityUnits: true,
             holdExpiresAt: true,
             id: true,
@@ -81,6 +86,23 @@ async function confirmBookingPayment(paymentId: string, now: Date, stripeData: {
       return;
     }
 
+    const cancelledByAdmin = payment.booking.status === 'CANCELLED' && payment.booking.cancelledBy === 'ADMIN';
+    // Removing an unpaid draft also records ADMIN cancellation. A real
+    // cancellation remains final even if staff subsequently hide the booking.
+    const cancellationAudit = cancelledByAdmin && payment.booking.deletedAt
+      ? await tx.auditLog.findFirst({ where: { action: 'admin.bookings.cancel', entityType: 'booking', entityId: payment.bookingId }, select: { id: true } })
+      : null;
+    const deliberatelyCancelled = cancelledByAdmin && (payment.booking.deletedAt === null || cancellationAudit !== null);
+    const alreadySettled = payment.booking.paidPence - payment.booking.refundedPence >= payment.booking.totalPence;
+    if (deliberatelyCancelled || alreadySettled) {
+      await tx.payment.update({ data: { ...stripeData, status: 'SUCCEEDED' }, where: { id: payment.id } });
+      if (payment.booking.deletedAt) await tx.booking.updateMany({ where: { id: payment.bookingId, deletedAt: { not: null } }, data: { deletedAt: null, version: { increment: 1 } } });
+      await recomputeBookingMoney(tx, payment.bookingId);
+      await requestRefund(tx, payment.bookingId, payment.amountPence, deliberatelyCancelled ? 'Card payment completed after administrative cancellation.' : 'Card payment completed after the booking was already settled.', {
+        paymentId: payment.id, dedupePrefix: 'admin-late-payment-refund', notifyCustomer: true,
+      });
+      return;
+    }
     const holdExpired = !payment.booking.holdExpiresAt || payment.booking.holdExpiresAt.getTime() <= now.getTime() || payment.booking.status === 'EXPIRED';
     if (holdExpired) {
       try {
@@ -102,6 +124,7 @@ async function confirmBookingPayment(paymentId: string, now: Date, stripeData: {
         await requestRefund(tx, payment.bookingId, payment.amountPence, 'Paid after the booking hold expired.', {
           dedupePrefix: 'late-payment-refund',
           notifyCustomer: false,
+          paymentId: payment.id,
         });
         await enqueueOutbox(
           tx,
@@ -127,7 +150,7 @@ async function confirmBookingPayment(paymentId: string, now: Date, stripeData: {
       });
     }
     await enqueueOutbox(tx, 'booking.confirmed', json({ bookingId: payment.bookingId }), `booking.confirmed:${payment.bookingId}`);
-  });
+  }, { isolationLevel: 'Serializable' });
 }
 
 async function applyReschedulePayment(paymentId: string, now: Date): Promise<void> {
@@ -210,18 +233,35 @@ async function applyExtraChargePayment(paymentId: string): Promise<void> {
   await prisma.$transaction(async (tx) => {
     const payment = await tx.payment.findUnique({
       where: { id: paymentId },
-      select: { amountPence: true, bookingId: true, extraCharge: { select: { id: true, status: true } }, id: true },
+      select: { amountPence: true, bookingId: true, booking: { select: { status: true } }, extraCharge: { select: { id: true, status: true, includedInBookingTotal: true } }, id: true },
     });
     if (!payment) throw new AppError('NOT_FOUND', 'Payment not found.');
     if (payment.extraCharge?.status === 'PAID') {
       await recomputeBookingMoney(tx, payment.bookingId);
       return;
     }
-    if (payment.extraCharge) {
-      await tx.extraCharge.update({ data: { status: 'PAID' }, where: { id: payment.extraCharge.id } });
+    if (!payment.extraCharge) throw new AppError('CONFLICT', 'The extra-charge payment is missing its approved charge.');
+    // Different successful Stripe events can race for this same payment. Only
+    // the transaction that first marks its charge paid may apply the total.
+    const claimed = await tx.extraCharge.updateMany({
+      data: { status: 'PAID' }, where: { id: payment.extraCharge.id, status: { not: 'PAID' } },
+    });
+    if (claimed.count === 0) {
+      await recomputeBookingMoney(tx, payment.bookingId);
+      return;
+    }
+    if (payment.extraCharge.includedInBookingTotal && (payment.booking.status === 'CANCELLED' || payment.booking.status === 'EXPIRED' || payment.extraCharge.status !== 'AWAITING_PAYMENT')) {
+      await recomputeBookingMoney(tx, payment.bookingId);
+      await requestRefund(tx, payment.bookingId, payment.amountPence, 'Payment received after this booking change was cancelled.', {
+        dedupePrefix: `cancelled-admin-edit:${payment.id}`, paymentId: payment.id,
+      });
+      return;
     }
     await tx.booking.update({
-      data: { deletedAt: null, totalPence: { increment: payment.amountPence }, version: { increment: 1 } },
+      data: {
+        deletedAt: null, version: { increment: 1 },
+        ...(payment.extraCharge.includedInBookingTotal ? {} : { totalPence: { increment: payment.amountPence } }),
+      },
       where: { id: payment.bookingId },
     });
     await recomputeBookingMoney(tx, payment.bookingId);
@@ -307,8 +347,10 @@ async function handleRefundUpdated(refund: Stripe.Refund): Promise<void> {
       ? await tx.refund.findUnique({ where: { id: metadataRefundId }, select: { id: true, payment: { select: { bookingId: true } } } })
       : await tx.refund.findUnique({ where: { stripeRefundId: refund.id }, select: { id: true, payment: { select: { bookingId: true } } } });
     if (!row) return;
-    await tx.refund.update({ data: { status, stripeRefundId: refund.id }, where: { id: row.id } });
+    const updated = await tx.refund.updateMany({ data: { status, stripeRefundId: refund.id }, where: { id: row.id, ...(status !== 'SUCCEEDED' ? { status: { not: 'SUCCEEDED' } } : {}) } });
+    if (updated.count !== 1) return;
     await recomputeBookingMoney(tx, row.payment.bookingId);
+    if (status === 'SUCCEEDED') await enqueueOutbox(tx, 'payment.refund.created', json({ bookingId: row.payment.bookingId, refundId: row.id, notifyCustomer: refund.metadata?.notifyCustomer !== 'false' }), `payment.refund.created:${row.id}`);
   });
 }
 

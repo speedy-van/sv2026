@@ -62,12 +62,36 @@ describe('bounded payment-scoped post-response outbox dispatcher', () => {
     expect(mocks.refunds).toHaveBeenCalledWith({ where: { paymentId: 'payment-unit' }, select: { id: true }, take: 20 });
     expect(mocks.events).toHaveBeenNthCalledWith(1, {
       where: { type: 'payment.refund', dedupeKey: { in: [
-        'late-payment-refund:refund-unit', 'expired-reschedule-refund:refund-unit', 'taken-reschedule-refund:refund-unit',
+        'late-payment-refund:refund-unit', 'expired-reschedule-refund:refund-unit', 'taken-reschedule-refund:refund-unit', 'admin-late-payment-refund:refund-unit',
       ] } }, select: { id: true }, take: 20,
     });
     expect(mocks.batch.mock.calls.map((call: unknown[]) => call[2])).toEqual([
       { rootEventId: 'refund-root' }, { rootEventId: 'late-root' }, { rootEventId: 'refund-created-root' },
     ]);
+  });
+
+  it('drains a cancelled admin-edit refund only for the exact extra payment and its refund IDs', async () => {
+    mocks.payment.mockResolvedValue({ id: 'payment-edit', bookingId: 'booking-edit', kind: 'EXTRA_CHARGE' });
+    mocks.refunds.mockResolvedValue([{ id: 'refund-edit' }]);
+    mocks.events.mockResolvedValueOnce([{ id: 'cancelled-edit-refund-root' }]).mockResolvedValueOnce([{ id: 'refund-edit-completion' }]);
+    await dispatchPendingOutbox('pi_cancelled_edit');
+    expect(mocks.refunds).toHaveBeenCalledExactlyOnceWith({ where: { paymentId: 'payment-edit' }, select: { id: true }, take: 20 });
+    expect(mocks.events).toHaveBeenNthCalledWith(1, {
+      where: { type: 'payment.refund', dedupeKey: { in: [
+        'late-payment-refund:refund-edit', 'expired-reschedule-refund:refund-edit', 'taken-reschedule-refund:refund-edit', 'admin-late-payment-refund:refund-edit',
+        'cancelled-admin-edit:payment-edit:refund-edit',
+      ] } }, select: { id: true }, take: 20,
+    });
+    expect(mocks.batch.mock.calls.map((call: unknown[]) => call[2])).toEqual([
+      { rootEventId: 'cancelled-edit-refund-root' }, { rootEventId: 'refund-edit-completion' },
+    ]);
+    expect(mocks.events).toHaveBeenNthCalledWith(2, {
+      where: { OR: [
+        { dedupeKey: 'booking.extra_paid:payment-edit', type: 'booking.extra_paid' },
+        { dedupeKey: 'payment.after_expiry_refunded:payment-edit', type: 'payment.after_expiry_refunded' },
+        { dedupeKey: 'payment.refund.created:refund-edit', type: 'payment.refund.created' },
+      ] }, select: { id: true }, take: 25,
+    });
   });
 
   it('does not read or drain any queue for a missing or unpaid payment', async () => {
