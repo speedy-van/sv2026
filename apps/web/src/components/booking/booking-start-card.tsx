@@ -258,7 +258,8 @@ export function BookingStartCard({
       service: selectedService.service,
       variant: selectedService.variant,
     });
-    router.push('/book');
+    // A complete card already answers the move step, so the visitor carries straight on to access.
+    router.push(pickup && (dropoff || !selectedService.requiresDropoff) ? '/book?step=access' : '/book');
   }
 
   return (

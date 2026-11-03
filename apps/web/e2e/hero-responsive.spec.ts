@@ -193,8 +193,12 @@ test('@booking homepage collects addresses once and booking keeps them behind Ed
   await expect(card).toBeInViewport();
   await expect(card.locator('.address-selected')).toHaveCount(2);
   await card.getByRole('button', { name: 'See my prices', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Your move', exact: true })).toBeVisible();
+  // A complete card has already answered the move step, so booking opens on access.
+  await expect(page).toHaveURL(/\/book\?step=access$/);
+  await expect(page.getByRole('heading', { name: 'Access', exact: true })).toBeVisible();
   await expect(page.locator('.route-chip')).toContainText('Glasgow to Edinburgh');
+  await page.getByRole('button', { name: 'Step 1, completed: Move', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Your move', exact: true })).toBeVisible();
   await expect(page.locator('#booking-addresses')).toBeHidden();
   await expect(page.getByRole('combobox')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Continue to access', exact: true })).toBeEnabled();

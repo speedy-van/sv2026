@@ -4692,3 +4692,56 @@ svg {
     grid-column: 1 / -1;
   }
 }
+
+/* Booking flow wears the same quote-card finish as the ad landing pages, so tapping "See my prices" feels like one surface carrying on. */
+.booking-panel,
+.booking-aside {
+  border-color: rgb(201 210 224 / 0.72);
+  border-radius: 24px;
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.98), rgb(255 255 255 / 0.9)),
+    white;
+  box-shadow: 0 22px 60px -38px rgb(11 31 51 / 0.72), 0 1px 0 rgb(255 255 255 / 0.82) inset;
+}
+
+.booking-page .booking-next,
+.booking-page .booking-next-bar .button-primary {
+  background: linear-gradient(135deg, var(--sv-gorse-400), var(--sv-gorse-500));
+  box-shadow: 0 16px 28px -22px rgb(245 177 22 / 0.9);
+}
+
+.booking-page .booking-next:hover,
+.booking-page .booking-next-bar .button-primary:hover {
+  background: linear-gradient(135deg, var(--sv-gorse-300), var(--sv-gorse-400));
+}
+
+.booking-page .booking-next:disabled,
+.booking-page .booking-next-bar .button-primary:disabled {
+  box-shadow: none;
+}
+
+.booking-panel .address-input-wrap .text-input {
+  border-color: rgb(201 210 224 / 0.72);
+  border-radius: 16px;
+  background: rgb(255 255 255 / 0.94);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.95),
+    inset 0 -1px 0 rgb(11 31 51 / 0.12),
+    0 14px 28px -20px rgb(6 18 31 / 0.7);
+}
+
+.booking-panel .address-input-wrap svg {
+  z-index: 1;
+  color: var(--sv-ink-900);
+}
+
+.booking-panel .address-input-wrap .text-input::placeholder {
+  color: var(--sv-ink-700);
+}
+
+@media (min-width: 1024px) {
+  .booking-panel,
+  .booking-aside {
+    border-radius: var(--sv-radius-xl);
+  }
+}

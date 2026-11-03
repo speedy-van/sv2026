@@ -51,7 +51,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Suspense, useCallback, useEffect, useId, useRef, useState, type ReactNode } from 'react';
+import { Suspense, useCallback, useEffect, useId, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { useForm } from 'react-hook-form';
 import type { z } from 'zod';
 import { bookingNavigationCopy, bookingSteps as steps } from '../../content/booking-navigation';
@@ -259,18 +259,23 @@ function previousStep(step: BookingStep): BookingStep {
   return steps[Math.max(stepIndex(step) - 1, 0)]?.key ?? 'move';
 }
 
+// The persist API only exists in the browser, so it is read lazily rather than during server render.
+function subscribeDraftHydration(onChange: () => void): () => void {
+  return useBookingDraft.persist.onFinishHydration(onChange);
+}
+
+function draftHasHydrated(): boolean {
+  return useBookingDraft.persist.hasHydrated();
+}
+
 function useBookingStep(): [BookingStep, (step: BookingStep) => void] {
   const params = useSearchParams();
   const draft = useBookingDraft();
-  const [hydrated, setHydrated] = useState(false);
+  // Server render and first hydration see `false`; client navigations (e.g. from a landing quote card) read the store directly, so the requested step paints without a flash of step one.
+  const hydrated = useSyncExternalStore(subscribeDraftHydration, draftHasHydrated, () => false);
   const guard = firstIncompleteStep(draft);
   const step = selectedStep(params);
   const allowQuoteRestore = params.has('quote');
-  useEffect(() => {
-    const unsubscribe = useBookingDraft.persist.onFinishHydration(() => { setHydrated(true); });
-    if (useBookingDraft.persist.hasHydrated()) setHydrated(true);
-    return unsubscribe;
-  }, []);
   useEffect(() => {
     if (hydrated && !allowQuoteRestore && stepIndex(step) > stepIndex(guard)) {
       window.history.replaceState(null, '', `/book?step=${guard}`);
