@@ -6,10 +6,12 @@ import {
   BookingCreateResponseSchema,
   BookingStatusResponseSchema,
   CatalogueResponseSchema,
+  CouponCheckResponseSchema,
   ManualQuoteRequestResponseSchema,
   PostcodeLookupResponseSchema,
   QuoteDtoSchema,
   type BookingCreateSchema,
+  type CouponCheckSchema,
   type ManualQuoteRequestSchema,
   type QuoteRequestSchema,
 } from '@sv/contracts';
@@ -98,6 +100,18 @@ export async function createBooking(input: z.infer<typeof BookingCreateSchema>) 
   );
 }
 
+export async function checkCoupon(input: z.infer<typeof CouponCheckSchema>) {
+  return jsonFetch(
+    '/api/v1/coupons/check',
+    {
+      body: JSON.stringify(input),
+      headers: { 'content-type': 'application/json' },
+      method: 'POST',
+    },
+    (body) => CouponCheckResponseSchema.parse(body),
+  );
+}
+
 export async function requestManualQuote(publicId: string, input: z.infer<typeof ManualQuoteRequestSchema>) {
   return jsonFetch(
     `/api/v1/quotes/${encodeURIComponent(publicId)}/manual-request`,
@@ -113,7 +127,7 @@ export async function requestManualQuote(publicId: string, input: z.infer<typeof
 export async function getBookingStatus(token: string) {
   return jsonFetch(
     `/api/v1/bookings/status?token=${encodeURIComponent(token)}`,
-    { cache: 'no-store', headers: { accept: 'application/json' } },
+    { cache: 'no-store', headers: { accept: 'application/json' }, signal: AbortSignal.timeout(10_000) },
     (body) => BookingStatusResponseSchema.parse(body),
   );
 }

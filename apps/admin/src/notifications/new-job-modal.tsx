@@ -1,32 +1,85 @@
-import { formatGBP } from '@sv/contracts';
+import { SlotSchema, formatGBP } from '@sv/contracts';
+import * as Sentry from '@sentry/react-native';
 import * as Haptics from 'expo-haptics';
-import { useEffect, useState } from 'react';
-import { Modal, View } from 'react-native';
+import { useEffect } from 'react';
+import { Modal, Platform, ScrollView, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppText, Button, Card } from '@/components/primitives';
-import { addAlerts, dismissAlert, type NewJobAlert } from './new-job-queue';
+import { displayAdminDate, serviceLabel, slotLabel } from '@/data/operations';
+import { BookingAlertSound } from './booking-alert-sound';
+import type { NewJobAlert } from './new-job-queue';
 
-export function NewJobModal(props: { alerts: NewJobAlert[]; onOpen: (bookingId: string) => void }): React.ReactElement | null {
-  const [alerts, setAlerts] = useState<NewJobAlert[]>([]);
+export function NewJobModal(props: {
+  alerts: NewJobAlert[];
+  onDismiss: (notificationId: string) => void;
+  onOpen: (bookingId: string) => void;
+}): React.ReactElement | null {
+  const alert = props.alerts[0];
+  const alertId = alert?.notificationId;
+  const slot = SlotSchema.safeParse(alert?.slot);
+  const insets = useSafeAreaInsets();
   useEffect(() => {
-    setAlerts((current) => addAlerts(current, props.alerts));
-  }, [props.alerts]);
-  useEffect(() => {
-    if (alerts.length > 0) void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-  }, [alerts.length]);
-  const alert = alerts[0];
+    if (!alertId || Platform.OS === 'web') return;
+    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch((error: unknown) => {
+      Sentry.captureException(error, { tags: { feature: 'admin-booking-alert-haptics' } });
+    });
+  }, [alertId]);
   if (!alert) return null;
   return (
-    <Modal animationType="slide" transparent visible>
-      <View style={{ backgroundColor: 'rgba(11,31,51,0.7)', flex: 1, justifyContent: 'flex-end', padding: 16 }}>
-        <Card>
-          <AppText size="lg" weight="bold">{alerts.length > 1 ? `${String(alerts.length)} new bookings` : 'New booking'}</AppText>
-          <AppText weight="bold">{formatGBP(alert.pricePence)}</AppText>
-          <AppText>{alert.service} · {alert.slot}</AppText>
-          <AppText muted>{alert.route}</AppText>
-          <Button label="Assign driver" onPress={() => { props.onOpen(alert.bookingId); }} />
-          <Button label="View booking" onPress={() => { props.onOpen(alert.bookingId); }} tone="secondary" />
-          <Button label="Dismiss" onPress={() => { setAlerts((current) => dismissAlert(current, alert.notificationId)); }} tone="secondary" />
-        </Card>
+    <Modal
+      animationType="slide"
+      onRequestClose={() => {
+        props.onDismiss(alert.notificationId);
+      }}
+      transparent
+      visible
+    >
+      <View style={{ backgroundColor: 'rgba(11,31,51,0.7)', flex: 1 }}>
+        <ScrollView
+          contentContainerStyle={{
+            flexGrow: 1,
+            justifyContent: 'flex-end',
+            paddingHorizontal: 16,
+            paddingTop: Math.max(16, insets.top),
+            paddingBottom: Math.max(16, insets.bottom),
+          }}
+        >
+          <Card>
+            <BookingAlertSound alertId={alert.notificationId} />
+            <AppText size="lg" weight="bold">
+              {props.alerts.length > 1 ? `${String(props.alerts.length)} new bookings` : 'New booking'}
+            </AppText>
+            {alert.reference ? <AppText muted>{alert.reference}</AppText> : null}
+            {alert.pricePence !== undefined && alert.pricePence > 0 ? (
+              <AppText weight="bold">{formatGBP(alert.pricePence)}</AppText>
+            ) : null}
+            {alert.service || alert.slot ? (
+              <AppText>
+                {[
+                  alert.service ? serviceLabel(alert.service) : undefined,
+                  slot.success ? slotLabel(slot.data) : alert.slot,
+                ]
+                  .filter(Boolean)
+                  .join(' · ')}
+              </AppText>
+            ) : null}
+            {alert.moveDate ? <AppText>{displayAdminDate(alert.moveDate)}</AppText> : null}
+            {alert.route ? <AppText muted>{alert.route}</AppText> : null}
+            <Button
+              label="View booking"
+              onPress={() => {
+                props.onOpen(alert.bookingId);
+              }}
+            />
+            <Button
+              label="Dismiss"
+              onPress={() => {
+                props.onDismiss(alert.notificationId);
+              }}
+              tone="secondary"
+            />
+          </Card>
+        </ScrollView>
       </View>
     </Modal>
   );

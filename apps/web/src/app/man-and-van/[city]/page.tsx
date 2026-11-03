@@ -3,23 +3,29 @@ import { NoPrefetchLink as Link } from '@/components/navigation/no-prefetch-link
 import { notFound } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { BookingStartCard } from '@/components/booking/booking-start-card';
+import { LocalMovePlanning } from '@/components/marketing/local-move-planning';
 import { StructuredData } from '@/components/marketing/structured-data';
+import { areaCoverageCopy, cityPriceQuestion, localAreaDescription } from '@/content/area-coverage';
+import { localSearchTarget } from '@/content/keyword-targets';
+import { cityManAndVanCopy } from '@/content/location-copy';
 import {
   breadcrumbJsonLd,
   citySlugs,
   cityUrl,
-  examplePrice,
-  locationUrl,
+  isCitySlug,
   locationsBySlug,
   nearestLocations,
   regionLabels,
-  routeDistanceFor,
   serviceJsonLd,
 } from '@/content/locations';
-import { getPricingConfigForMarketing } from '@/server/marketing';
+import { serviceBySlug } from '@/content/services';
+import { getPublishedLocationContent } from '@/server/location-content';
+import { formatFromPrice, getLocationExamplePrice } from '@/server/marketing';
 import { getPublicSettings } from '@/server/settings';
+import { createPageMetadata } from '@/server/seo';
 
 export const revalidate = 86400;
+export const dynamicParams = false;
 
 export function generateStaticParams(): Array<{ city: string }> {
   return citySlugs.map((city) => ({ city }));
@@ -28,28 +34,51 @@ export function generateStaticParams(): Array<{ city: string }> {
 export async function generateMetadata({ params }: { params: Promise<{ city: string }> }): Promise<Metadata> {
   const { city } = await params;
   const location = locationsBySlug.get(city);
-  if (!location) return {};
-  return {
-    alternates: { canonical: cityUrl(location) },
-    description: `Book man and van in ${location.name} with fixed online prices for small moves, single items and student jobs.`,
-    title: `Man and van ${location.name}`,
-  };
+  if (!isCitySlug(city) || !location) notFound();
+  const copy = cityManAndVanCopy(location);
+  return createPageMetadata({
+    description: copy.description,
+    path: cityUrl(location),
+    settings: await getPublicSettings(),
+    title: copy.title,
+  });
 }
 
-export default async function CityManAndVanPage({ params }: { params: Promise<{ city: string }> }): Promise<ReactNode> {
+export default async function CityManAndVanPage({
+  params,
+}: {
+  params: Promise<{ city: string }>;
+}): Promise<ReactNode> {
   const { city } = await params;
   const location = locationsBySlug.get(city);
-  if (!location) notFound();
-  const [settings, config] = await Promise.all([getPublicSettings(), getPricingConfigForMarketing()]);
-  const distance = routeDistanceFor(location);
-  const fromPrice = examplePrice(config, 'man-and-van', Math.max(3, Math.min(distance.miles, 12)));
+  if (!isCitySlug(city) || !location) notFound();
+  const [settings, fromPrice, localContent] = await Promise.all([
+    getPublicSettings(),
+    getLocationExamplePrice(location, 'man-and-van'),
+    getPublishedLocationContent(city),
+  ]);
+  const service = serviceBySlug('man-and-van');
+  const copy = cityManAndVanCopy(location);
+  const faqs = [
+    cityPriceQuestion(location.name, formatFromPrice(fromPrice), fromPrice.label, fromPrice.pence !== null),
+    ...(service?.faqs.slice(1) ?? []),
+  ];
   const data = [
     serviceJsonLd(location, settings.web.canonicalOrigin, 'man-and-van'),
     breadcrumbJsonLd([
       { href: '/', name: 'Home' },
       { href: '/areas', name: 'Areas' },
-      { href: cityUrl(location), name: `Man and van ${location.name}` },
+      { href: cityUrl(location), name: copy.title },
     ]),
+    {
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: faqs.map((faq) => ({
+        '@type': 'Question',
+        acceptedAnswer: { '@type': 'Answer', text: faq.answer },
+        name: faq.question,
+      })),
+    },
   ];
 
   return (
@@ -63,9 +92,11 @@ export default async function CityManAndVanPage({ params }: { params: Promise<{ 
               <span>/</span>
               <Link href="/areas">Areas</Link>
             </nav>
-            <h1 className="page-title">Man and van {location.name}</h1>
-            <p className="lead">Book small moves, single-item transport and student moves in {location.name} with live fixed slot prices.</p>
-            <p className="price-line">From {fromPrice} <span>one-item example, ground floor</span></p>
+            <h1 className="page-title">{copy.title}</h1>
+            <p className="lead">{copy.lead}</p>
+            <p className="price-line">
+              {formatFromPrice(fromPrice)} {fromPrice.pence !== null ? <span>{fromPrice.label}</span> : null}
+            </p>
           </div>
           <BookingStartCard selected="Man and van" title={`Start a ${location.name} job`} />
         </div>
@@ -84,21 +115,50 @@ export default async function CityManAndVanPage({ params }: { params: Promise<{ 
           </div>
           <div className="table-card">
             <h2>Local area</h2>
-            <p>{location.name} sits in {regionLabels[location.region]}. Prices use your exact addresses, items and access details.</p>
-            <Link className="text-link" href={locationUrl(location)}>See removals in {location.name}</Link>
+            <p>{localAreaDescription(location)}</p>
+            <Link className="text-link" href={localSearchTarget('house-removals', location)}>
+              House removals in {location.name}
+            </Link>
           </div>
         </div>
       </section>
+
+      <LocalMovePlanning location={location} purpose="man-and-van" />
+
+      {localContent ? (
+        <section className="section">
+          <div className="container article-body">
+            <h2>{areaCoverageCopy.localNotes}</h2>
+            {localContent.localNotes.split(/\n\s*\n/).map((paragraph, index) => (
+              <p key={index}>{paragraph}</p>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <section className="section">
         <div className="container">
           <h2>Nearby man and van areas</h2>
           <div className="region-grid">
             {nearestLocations(location, 6).map((nearby) => (
-              <Link href={locationUrl(nearby)} key={nearby.slug}>
-                <strong>{nearby.name}</strong>
+              <Link href={localSearchTarget('man-and-van', nearby)} key={nearby.slug}>
+                <strong>{cityManAndVanCopy(nearby).title}</strong>
                 <span>{regionLabels[nearby.region]}</span>
               </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="section section-muted">
+        <div className="container">
+          <h2>Man and van questions in {location.name}</h2>
+          <div className="accordion-list">
+            {faqs.map((faq) => (
+              <details className="accordion-item" key={faq.question}>
+                <summary>{faq.question}</summary>
+                <p>{faq.answer}</p>
+              </details>
             ))}
           </div>
         </div>

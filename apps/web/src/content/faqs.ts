@@ -1,3 +1,5 @@
+import { legalCopy } from './legal';
+
 export interface FaqSeed {
   category: string;
   question: string;
@@ -98,7 +100,7 @@ export const FAQ_SEED: FaqSeed[] = [
   {
     category: 'ITEMS',
     question: "Is there anything you can't move?",
-    answer: 'Owner to write: hazardous materials, gas bottles, fuel, etc.',
+    answer: legalCopy.restrictedItemsPending,
     sortOrder: 150,
   },
   {

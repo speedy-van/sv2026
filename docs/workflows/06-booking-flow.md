@@ -37,9 +37,9 @@ State model: one zustand store (`useBookingDraft`) persisted to `sessionStorage`
 | Element | Spec |
 |---|---|
 | Title | "Get your fixed price" (heading.md) |
-| Service choice | Chips: Home move · Man and van · A few items · Student · Office · More… ("More" opens a sheet with all 10 services as `ChoiceCard`s with icon + one-line description). "A few items" = `furniture`. No default selection. |
-| From | `AddressField` (pickup). Label switches to "Collection address" for single-address services. |
-| To | `AddressField` (dropoff). Hidden for single-address services (rubbish). |
+| Service choice | Chips: Home move · Man and van · A few items · Student · Office · More… ("More" opens a sheet with all 9 services as `ChoiceCard`s with icon + one-line description). "A few items" = `furniture`. No default selection. |
+| From | `AddressField` (pickup). |
+| To | `AddressField` (dropoff). |
 | Action | Primary button "See my prices" (full width). |
 | Validation on submit | Missing service → inline "Choose what you're moving" and focus the chips. Missing address → inline error on that field. Both outside Scotland → inline "We move people to and from Scotland. One address needs to be in Scotland." (cross-border rule from settings). |
 | Reassurance line under card | "Fixed price before you pay. No call needed." (plain text, muted) |

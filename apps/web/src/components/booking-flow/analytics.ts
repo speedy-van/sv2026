@@ -1,5 +1,11 @@
 'use client';
 
+import { captureMessage } from '@sentry/nextjs';
+import { subscribeToConsentChanges } from '../consent/consent';
+import { sendGoogleEvent } from '../consent/google-tag';
+import { googleTagConfig } from '@/lib/google-tag-config';
+import { isStripeTestMode } from '@/lib/payment-mode';
+
 type BookingEvent =
   | 'add_payment_info'
   | 'address_selected'
@@ -7,82 +13,105 @@ type BookingEvent =
   | 'booking_start'
   | 'manual_quote_shown'
   | 'payment_failed'
-  | 'purchase'
   | 'quote_requested'
   | 'quote_shown'
   | 'slot_selected';
 
 type EventParams = Record<string, boolean | number | string | undefined>;
 
-declare global {
-  interface Window {
-    gtag?: (...args: unknown[]) => void;
-  }
-}
-
-const consentCookie = 'sv_consent';
-const ga4Id = process.env.NEXT_PUBLIC_GA4_ID ?? '';
-const googleAdsId = process.env.NEXT_PUBLIC_GADS_ID ?? '';
-const googleAdsPurchaseLabel = process.env.NEXT_PUBLIC_GADS_PURCHASE_LABEL ?? '';
-
-function consent(): { advertising: boolean; analytics: boolean } {
-  if (typeof document === 'undefined') return { advertising: false, analytics: false };
-  const raw = document.cookie
-    .split(';')
-    .map((cookie) => cookie.trim())
-    .find((cookie) => cookie.startsWith(`${consentCookie}=`))
-    ?.slice(consentCookie.length + 1);
-  if (!raw) return { advertising: false, analytics: false };
-  try {
-    const parsed = JSON.parse(decodeURIComponent(raw)) as { advertising?: unknown; analytics?: unknown };
-    return { advertising: parsed.advertising === true, analytics: parsed.analytics === true };
-  } catch {
-    return { advertising: false, analytics: false };
-  }
-}
-
-function gtag(...args: unknown[]): void {
-  if (typeof window === 'undefined' || !window.gtag) return;
-  window.gtag(...args);
-}
+const queuedEvents = new Set<string>();
 
 function definedParams(params: EventParams): EventParams {
   return Object.fromEntries(Object.entries(params).filter(([, value]) => value !== undefined));
 }
 
 export function trackBookingEvent(event: BookingEvent, params: EventParams = {}): void {
-  if (!ga4Id || !consent().analytics) return;
-  gtag('event', event, definedParams(params));
+  sendGoogleEvent('analytics', event, definedParams(params));
+}
+
+function onceQueued(key: string, send: () => boolean, persist = false): void {
+  if (queuedEvents.has(key)) return;
+  try {
+    if (persist && typeof sessionStorage !== 'undefined' && sessionStorage.getItem(key)) return;
+  } catch {
+    // Storage restrictions cannot block booking; retain in-memory + Google transaction deduplication.
+    captureMessage('Google event deduplication storage is unavailable.', 'warning');
+  }
+  if (!send()) return;
+  queuedEvents.add(key);
+  try {
+    if (persist && typeof sessionStorage !== 'undefined') sessionStorage.setItem(key, '1');
+  } catch {
+    captureMessage('Google event deduplication could not be persisted.', 'warning');
+  }
 }
 
 export function trackBookingStart(params: EventParams = {}): void {
-  if (typeof sessionStorage === 'undefined') return;
-  const key = 'sv_booking_start_tracked';
-  if (sessionStorage.getItem(key)) return;
-  sessionStorage.setItem(key, '1');
-  trackBookingEvent('booking_start', { page_type: 'booking', ...params });
+  const { analyticsId } = googleTagConfig();
+  if (!analyticsId) return;
+  onceQueued(
+    `sv_booking_start_${analyticsId}`,
+    () => sendGoogleEvent('analytics', 'booking_start', { page_type: 'booking', ...definedParams(params) }),
+    true,
+  );
 }
 
-export function trackPurchase(params: { reference: string; service?: string; totalPence: number }): void {
-  const key = `sv_purchase_tracked_${params.reference}`;
-  if (typeof sessionStorage !== 'undefined') {
-    if (sessionStorage.getItem(key)) return;
-    sessionStorage.setItem(key, '1');
-  }
+interface PurchaseParams {
+  reference: string;
+  service?: string;
+  status: string;
+  totalPence: number;
+}
+
+/** Checks this build's payment environment, not the mode of a historical booking. */
+function hasLivePaymentConfiguration(): boolean {
+  const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+  if (isStripeTestMode(publishableKey)) return false;
+  // An absent test prefix is not proof of live mode. Unknown configuration fails closed.
+  return /^pk_live_[A-Za-z0-9]+$/u.test(publishableKey ?? '');
+}
+
+export function trackPurchase(params: PurchaseParams): void {
+  if (
+    !hasLivePaymentConfiguration() ||
+    params.status !== 'CONFIRMED' ||
+    !/^[A-Za-z0-9-]{1,64}$/u.test(params.reference) ||
+    !Number.isSafeInteger(params.totalPence) ||
+    params.totalPence <= 0
+  )
+    return;
+  const { analyticsId, adsId, purchaseLabel } = googleTagConfig();
+  // Queue acceptance is not delivery. Keep purchase deduplication in page memory only;
+  // a reload retries with the same transaction_id for Google's destination-side deduplication.
   const value = params.totalPence / 100;
-  trackBookingEvent('purchase', {
+  const purchase = {
     currency: 'GBP',
-    item_id: params.service,
     transaction_id: params.reference,
     value,
-  });
-  if (!googleAdsId || !googleAdsPurchaseLabel || !consent().advertising) return;
-  gtag('event', 'conversion', {
-    currency: 'GBP',
-    send_to: `${googleAdsId}/${googleAdsPurchaseLabel}`,
-    transaction_id: params.reference,
-    value,
-  });
+    ...(params.service ? { items: [{ item_id: params.service, price: value, quantity: 1 }] } : {}),
+  };
+  if (analyticsId)
+    onceQueued(`sv_purchase_${analyticsId}_${params.reference}`, () =>
+      sendGoogleEvent('analytics', 'purchase', purchase),
+    );
+  if (adsId && purchaseLabel)
+    onceQueued(`sv_purchase_${adsId}_${purchaseLabel}_${params.reference}`, () =>
+      sendGoogleEvent('advertising', 'conversion', {
+        currency: 'GBP',
+        transaction_id: params.reference,
+        value,
+      }),
+    );
+}
+
+/** Retains only the currently mounted confirmed booking; never replays an old browsing history. */
+export function subscribeConfirmedPurchase(params: PurchaseParams): () => void {
+  if (params.status !== 'CONFIRMED' || !hasLivePaymentConfiguration()) return () => undefined;
+  const retry = (): void => {
+    trackPurchase(params);
+  };
+  retry();
+  return subscribeToConsentChanges(retry);
 }
 
 export function distanceBand(distanceMiles: number): string {

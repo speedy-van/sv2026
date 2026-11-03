@@ -2,13 +2,18 @@ import type { Metadata } from 'next';
 import { NoPrefetchLink as Link } from '@/components/navigation/no-prefetch-link';
 import type { ReactNode } from 'react';
 import { guideDrafts } from '@/content/marketing';
+import { createPageMetadata, getSeoSettings } from '@/server/seo';
 
-export const metadata: Metadata = {
-  alternates: { canonical: '/guides' },
-  description: 'Draft moving guides for owner review before publication.',
-  robots: { follow: false, index: false },
-  title: 'Guides',
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return createPageMetadata({
+    description: 'Draft moving guides for owner review before publication.',
+    follow: false,
+    indexable: false,
+    path: '/guides',
+    settings: await getSeoSettings(),
+    title: 'Guides',
+  });
+}
 
 export default function GuidesPage(): ReactNode {
   return (

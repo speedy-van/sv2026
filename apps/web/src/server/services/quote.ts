@@ -28,6 +28,7 @@ import { routeBetween, type RouteResult } from '../mapbox';
 import { getOperationsSettings, type OperationsSettings } from '../settings';
 import { overlayAvailability, type AvailabilityOverlay } from './availability';
 import { getActivePricingConfig } from './catalogue';
+import { jobSize } from './job-size';
 
 type Address = z.infer<typeof AddressSchema>;
 type ManualQuoteReason = z.infer<typeof ManualQuoteReasonSchema>;
@@ -216,14 +217,6 @@ function buildPricingInput(input: QuoteRequest, inventory: InventoryLine[], rout
     service: input.service,
     variant: input.variant,
   };
-}
-
-function jobSize(volumeM3: number, operations: OperationsSettings): { capacityUnits: number; blocksSlots: number } {
-  const matching = operations.jobSizeRules
-    .filter((rule) => volumeM3 >= rule.minVolumeM3)
-    .sort((left, right) => left.minVolumeM3 - right.minVolumeM3)
-    .at(-1);
-  return matching ? { blocksSlots: matching.blocksSlots, capacityUnits: matching.capacityUnits } : { blocksSlots: 1, capacityUnits: 1 };
 }
 
 function manualReasons(route: RouteResult, distanceLimit: number, pricingReasons: string[]): ManualQuoteReason[] {

@@ -5,11 +5,12 @@ import {
   AppError,
   BookingCreateResponseSchema,
   BookingStatusResponseSchema,
+  CouponCheckResponseSchema,
   fromDbDate,
   londonToday,
   toDbDate,
 } from '@sv/contracts';
-import type { BookingCreateSchema } from '@sv/contracts';
+import type { BookingCreateSchema, CouponCheckSchema } from '@sv/contracts';
 import { assertSlotCapacity, Prisma, prisma, type DbTx, type Slot } from '@sv/db';
 import {
   computeQuote,
@@ -29,8 +30,10 @@ import { getSetting, getOperationsSettings } from '../settings';
 import { dbDateLabel, slotLabel } from '../london-time';
 import { overlayAvailability } from './availability';
 import { getActivePricingConfig } from './catalogue';
+import { priceWithCoupon, releaseCoupon, reserveCoupon } from './coupon';
 
 type BookingCreateInput = z.infer<typeof BookingCreateSchema>;
+type CouponCheckInput = z.infer<typeof CouponCheckSchema>;
 
 const CROCKFORD = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
 
@@ -167,7 +170,7 @@ async function intentForBooking(booking: {
   return { clientSecret: intent.clientSecret, paymentIntentId: intent.id };
 }
 
-async function existingBookingResponse(idempotencyKey: string) {
+async function existingBookingResponse(idempotencyKey: string, now: Date) {
   const booking = await prisma.booking.findUnique({
     where: { idempotencyKey },
     select: {
@@ -175,15 +178,29 @@ async function existingBookingResponse(idempotencyKey: string) {
       holdExpiresAt: true,
       id: true,
       payments: {
-        where: { kind: 'BOOKING' },
-        select: { amountPence: true, bookingId: true, currency: true, id: true, kind: true, stripePaymentIntentId: true },
+        orderBy: { createdAt: 'desc' },
+        take: 1,
+        where: { kind: { in: ['BOOKING', 'ADMIN_BOOKING', 'MANUAL_QUOTE'] } },
+        select: { amountPence: true, bookingId: true, currency: true, id: true, kind: true, status: true, stripePaymentIntentId: true },
       },
       reference: true,
+      status: true,
       totalPence: true,
     },
   });
   if (!booking) return null;
-  if (!booking.holdExpiresAt) throw new AppError('CONFLICT', 'This booking is no longer awaiting payment.');
+  if (booking.status !== 'PENDING_PAYMENT') throw new AppError('CONFLICT', 'This booking is no longer awaiting payment.');
+  if (!booking.holdExpiresAt || booking.holdExpiresAt.getTime() <= now.getTime()) {
+    throw new AppError('QUOTE_EXPIRED', 'Your slot hold has expired. Please check prices and choose a slot again.');
+  }
+  const payment = booking.payments[0];
+  if (!payment) throw new AppError('INTERNAL', 'Booking payment is missing.');
+  if (payment.status === 'PROCESSING' || payment.status === 'SUCCEEDED') {
+    throw new AppError('CONFLICT', 'Your payment is being confirmed. Please check your booking status before trying again.');
+  }
+  if (payment.status === 'CANCELED') {
+    throw new AppError('CONFLICT', 'This payment was canceled and cannot be resumed. Please contact us for help.');
+  }
   const intent = await intentForBooking(booking);
   return BookingCreateResponseSchema.parse({
     clientSecret: intent.clientSecret,
@@ -194,9 +211,34 @@ async function existingBookingResponse(idempotencyKey: string) {
   });
 }
 
+/** Prices the chosen slot exactly as booking creation does, then applies the coupon without reserving it. */
+export async function checkCouponForQuote(input: CouponCheckInput, now = new Date()) {
+  const quote = await prisma.quote.findUnique({
+    where: { publicId: input.quotePublicId },
+    select: {
+      calendar: true,
+      expiresAt: true,
+      input: true,
+      pricingVersion: { select: { config: true, id: true } },
+      requiresManualQuote: true,
+      status: true,
+      today: true,
+    },
+  });
+  if (!quote) throw new AppError('NOT_FOUND', 'Quote not found.');
+  if (quote.status !== 'ACTIVE') throw new AppError('QUOTE_EXPIRED', 'This quote is no longer available.');
+  if (quote.requiresManualQuote) throw new AppError('MANUAL_QUOTE_REQUIRED', 'This move needs a manual quote.');
+  const priced = await priceSlot(quote, input.date, input.slot, now);
+  if (priced.totalPence !== input.expectedTotalPence) {
+    throw new AppError('PRICE_CHANGED', 'The price has changed. Please review the new price.', { newTotalPence: priced.totalPence });
+  }
+  const couponPrice = await priceWithCoupon(input.couponCode, priced.totalPence, now);
+  return CouponCheckResponseSchema.parse({ listPricePence: couponPrice.listPricePence, totalPence: couponPrice.totalPence });
+}
+
 export async function createBookingFromQuote(input: BookingCreateInput, now = new Date()) {
   await assertLegalAck(input, now);
-  const idempotent = await existingBookingResponse(input.idempotencyKey);
+  const idempotent = await existingBookingResponse(input.idempotencyKey, now);
   if (idempotent) return idempotent;
 
   const quote = await prisma.quote.findUnique({
@@ -237,6 +279,8 @@ export async function createBookingFromQuote(input: BookingCreateInput, now = ne
   if (priced.totalPence !== input.expectedTotalPence) {
     throw new AppError('PRICE_CHANGED', 'The price has changed. Please review the new price.', { newTotalPence: priced.totalPence });
   }
+  const couponPrice = input.couponCode ? await priceWithCoupon(input.couponCode, priced.totalPence, now) : null;
+  const chargedPence = couponPrice?.totalPence ?? priced.totalPence;
 
   await assertChosenSlotAvailable({
     blocksSlots: quote.blocksSlots,
@@ -260,6 +304,7 @@ export async function createBookingFromQuote(input: BookingCreateInput, now = ne
       now,
       slot: input.slot,
     });
+    if (couponPrice) await reserveCoupon(tx, couponPrice.couponId, now);
     const reference = await uniqueReference(tx);
     const savedCustomer = await tx.customer.upsert({
       create: {
@@ -284,6 +329,7 @@ export async function createBookingFromQuote(input: BookingCreateInput, now = ne
         contactEmail: email,
         contactName: input.contact.name,
         contactPhone: input.contact.phone,
+        couponId: couponPrice?.couponId ?? null,
         customerId: savedCustomer.id,
         customerNotes: input.customerNotes ?? null,
         distanceMiles: quote.distanceMiles,
@@ -296,7 +342,11 @@ export async function createBookingFromQuote(input: BookingCreateInput, now = ne
         moveDate,
         pickup: json(quote.pickup),
         pickupPostcode: postcode(quote.pickup),
-        priceBreakdown: json({ breakdown: priced.breakdown, slot: { date: input.date, multipliers: priced.multipliers, slot: input.slot } }),
+        priceBreakdown: json({
+          breakdown: priced.breakdown,
+          ...(couponPrice ? { coupon: { listPricePence: couponPrice.listPricePence } } : {}),
+          slot: { date: input.date, multipliers: priced.multipliers, slot: input.slot },
+        }),
         pricingInput: json(quote.input),
         pricingVersionId: priced.pricingVersionId,
         quoteId: quote.id,
@@ -308,11 +358,12 @@ export async function createBookingFromQuote(input: BookingCreateInput, now = ne
         startWithinCancellationAck: input.startWithinCancellationPeriodAck ? now : null,
         status: 'PENDING_PAYMENT',
         termsAcceptedAt: now,
-        totalPence: priced.totalPence,
+        totalPence: chargedPence,
         variant: quote.variant,
       },
       select: {
         contactEmail: true,
+        couponId: true,
         holdExpiresAt: true,
         id: true,
         payments: true,
@@ -322,7 +373,7 @@ export async function createBookingFromQuote(input: BookingCreateInput, now = ne
     });
     const payment = await tx.payment.create({
       data: {
-        amountPence: priced.totalPence,
+        amountPence: chargedPence,
         bookingId: booking.id,
         kind: 'BOOKING',
         status: 'REQUIRES_PAYMENT',
@@ -345,21 +396,29 @@ export async function createBookingFromQuote(input: BookingCreateInput, now = ne
     await prisma.$transaction(async (tx) => {
       await tx.payment.updateMany({ data: { status: 'CANCELED' }, where: { bookingId: customer.id, status: 'REQUIRES_PAYMENT' } });
       await tx.booking.update({ data: { holdExpiresAt: null, status: 'EXPIRED' }, where: { id: customer.id } });
+      if (customer.couponId) await releaseCoupon(tx, customer.couponId, new Date());
     });
     if (error instanceof AppError) throw error;
     throw new AppError('UPSTREAM_UNAVAILABLE', 'Payment could not be started.');
   }
 }
 
-export async function bookingStatusFromToken(token: string) {
+export async function bookingStatusFromToken(token: string, requestOrigin?: string) {
   const payload = verifyBookingStatusToken(token);
   const booking = await prisma.booking.findUnique({
     where: { id: payload.bookingId },
     select: {
       dropoff: true,
       contactEmail: true,
+      holdExpiresAt: true,
       id: true,
       moveDate: true,
+      payments: {
+        orderBy: { createdAt: 'desc' },
+        take: 1,
+        where: { kind: { in: ['BOOKING', 'ADMIN_BOOKING', 'MANUAL_QUOTE'] } },
+        select: { status: true },
+      },
       pickup: true,
       reference: true,
       service: true,
@@ -373,8 +432,18 @@ export async function bookingStatusFromToken(token: string) {
   }
   const web = await getSetting('web');
   const manageToken = booking.status === 'CONFIRMED' ? await manageLinkForBooking(booking) : null;
-  const manageUrl = manageToken ? new URL(`/manage/session?token=${encodeURIComponent(manageToken)}`, web.canonicalOrigin).toString() : undefined;
+  const origin = requestOrigin ?? web.canonicalOrigin;
+  const manageUrl = manageToken ? new URL(`/manage/session?token=${encodeURIComponent(manageToken)}`, origin).toString() : undefined;
+  const paymentStatus = booking.payments[0]?.status ?? null;
   return BookingStatusResponseSchema.parse({
+    checkout: {
+      canRetry: booking.status === 'PENDING_PAYMENT'
+        && booking.holdExpiresAt !== null
+        && booking.holdExpiresAt.getTime() > Date.now()
+        && (paymentStatus === 'REQUIRES_PAYMENT' || paymentStatus === 'FAILED'),
+      holdExpiresAt: booking.holdExpiresAt?.toISOString() ?? null,
+      paymentStatus,
+    },
     manageUrl,
     reference: booking.reference,
     status: booking.status,

@@ -1,0 +1,27 @@
+export const paymentCopy = {
+  testModeTitle: 'Test payment mode',
+  testModeMessage: 'No real money is charged. A test booking does not confirm a moving service.',
+  testBookingTitle: 'Test booking recorded',
+  testPaymentTitle: 'Test payment completed',
+  testTotal: 'Test total',
+  received: 'Payment received - thank you.',
+  processing: 'Your payment is still processing. Do not pay again. Check its status shortly.',
+  awaitingConfirmation: 'Your payment is awaiting confirmation. Do not pay again. Check its status shortly.',
+  incomplete: 'Your payment was not completed. Try again or choose another payment method.',
+  canceled: 'This payment was canceled. Contact our team to restart the payment.',
+  failed: 'Payment could not be confirmed. Please try again.',
+  checkFailed: 'We could not check your payment. Try checking again before making another payment.',
+  checking: 'Checking payment…',
+  checkStatus: 'Check payment status',
+  contact: 'Contact our team',
+} as const;
+
+export const couponCopy = {
+  label: 'Discount code',
+  apply: 'Apply',
+  applying: 'Checking…',
+  remove: 'Remove code',
+  applied: (total: string) => `Code applied. You pay ${total}.`,
+  listPrice: 'Price before code',
+  changed: 'Your discount code is no longer valid. Remove it or check the price again.',
+} as const;

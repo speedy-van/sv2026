@@ -36,7 +36,7 @@ Output: 28 days × 3 slots (MORNING, AFTERNOON, EVENING), day 0 = today in Europ
 
 | Component | Rule (defaults) |
 |---|---|
-| Service base | house removals £120, furniture £60, storage £45, office £150, man and van £45, student £80, IKEA £70, rubbish £90, piano £200, same-day £55 — × variant multiplier |
+| Service base | house removals £120, furniture £60, storage £45, office £150, man and van £45, student £80, IKEA £70, piano £200, same-day £55 — × variant multiplier |
 | Distance | billable = max(0, miles − 5). First 20 billable miles at £1.50; every billable mile after 20 at £1.50 × 0.85 |
 | Large-inventory distance | when the load is "large" and `largeInventory.distance` is set, those rates replace the standard ones (default: not set) |
 | Floors (each address) | floor × £8, × 1.5 when there's no lift. Ground = 0 |
@@ -58,7 +58,7 @@ There is **no weather factor**. Weather never affects price.
 |---|---|
 | Service card | `service` |
 | Property size / piano type / office size / storage direction / student type | `variant` (services with one variant send `standard`) |
-| Pickup + dropoff addresses → Mapbox driving route | `distanceMiles` = metres ÷ 1609.344, rounded to 2 dp **once**, stored on the quote. Single-address services send 0 |
+| Pickup + dropoff addresses → Mapbox driving route | `distanceMiles` = metres ÷ 1609.344, rounded to 2 dp **once**, stored on the quote. |
 | Floor picker at each address (Basement → 1, Ground → 0, 1st → 1 …) | `pickup.floor`, `dropoff.floor` |
 | "Is there a lift?" (shown only when floor ≥ 1) | `hasLift` |
 | Items picker (catalogue item or custom size) | `inventory[]` with `unitVolumeM3` **snapshotted** from the catalogue at quote time |
@@ -115,7 +115,7 @@ Both are stored: per-address detail in `Quote.accessDetail` / `Booking.accessDet
 
 **Example B — 2-bed house, 46.3 miles, Wednesday 1 July 2026 (peak month)**: base £120; distance 20 × £1.50 + 21.3 × £1.275 = £57.16; floors £8 (1st, lift) + £36 (3rd, no lift); 30 items / 12.5 m³ → large inventory max(£75, £120 + £150) = £270; narrow £25 + permit £20; 2 helpers + packing + assembly £96. **Subtotal £632.16.** Today afternoon: × 1.4 × 1.1 = **£973.53**. Saturday 4 July afternoon: × 1.15 × 1.1 = **£799.68**.
 
-**Example C — rubbish removal, single address, Saturday 20 Feb 2027**: 6 bags + 1 mattress = 7 items, exactly 1.0 m³ → large → £75 minimum; carry 30 m → £10; base £90. **Subtotal £175.00.** Friday 26 Feb (last 3 days of February) → **£189.00**.
+**Example C — furniture delivery, Saturday 20 Feb 2027**: 6 small boxes + 1 mattress = 7 items, exactly 1.0 m³ → large → £75 minimum; carry 30 m → £10; base £60. **Subtotal £145.00.** Friday 26 Feb (last 3 days of February) → **£156.60**.
 
 ## 7. Owner decisions (neutral defaults; approve in Admin → Pricing)
 
@@ -124,7 +124,6 @@ Both are stored: per-address detail in `Quote.accessDetail` / `Booking.accessDet
 | P1 | Variant multipliers (studio…4+ bed, office sizes, piano types, storage direction, student type) | all 1.0 | Pricing → Services |
 | P2 | Separate per-mile rates for large loads | not set (standard rates) | Pricing → Distance |
 | P3 | Per-address access → job-level | longest carry; narrow/permit once | fixed in code (change = new decision) |
-| P4 | Rubbish removal is single-address with no distance charge | yes | Pricing → Services |
 | P5 | Same-day service shows only today's remaining slots | yes | fixed in code (change = new decision) |
 | P6 | Basement counts as one floor of stairs | yes | fixed in UI mapping |
 

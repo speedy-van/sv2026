@@ -78,12 +78,23 @@ function requiredParam(params: Record<string, string>, key: string): string {
   return value;
 }
 
-function driverEarning(totalPence: number, payoutPercent: number | null | undefined): number {
-  return Math.round((totalPence * (payoutPercent ?? 0)) / 100);
+function driverEarning(totalPence: number, payoutPercent: number | null): number | null {
+  return payoutPercent === null ? null : Math.round((totalPence * payoutPercent) / 100);
 }
 
 function safePayload(value: Prisma.JsonValue): Record<string, unknown> {
   return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+}
+
+function inventoryItems(value: Prisma.JsonValue): Array<{ itemId: string; name: string; quantity: number; unitVolumeM3: number }> {
+  const inventory = safePayload(value).inventory;
+  if (!Array.isArray(inventory)) return [];
+  return inventory.flatMap((item) => {
+    if (!item || typeof item !== 'object' || Array.isArray(item)) return [];
+    const payload = item as Record<string, unknown>;
+    if (typeof payload.itemId !== 'string' || typeof payload.name !== 'string' || typeof payload.quantity !== 'number' || typeof payload.unitVolumeM3 !== 'number') return [];
+    return [{ itemId: payload.itemId, name: payload.name, quantity: payload.quantity, unitVolumeM3: payload.unitVolumeM3 }];
+  });
 }
 
 function addressLabel(value: Prisma.JsonValue): string {
@@ -102,7 +113,7 @@ function routeText(booking: { dropoff: Prisma.JsonValue | null; pickup: Prisma.J
   return booking.dropoff ? `${town(booking.pickup)} to ${town(booking.dropoff)}` : town(booking.pickup);
 }
 
-async function driverProfile(driverId: string): Promise<{ payoutPercent: number }> {
+async function driverProfile(driverId: string): Promise<{ payoutPercent: number | null }> {
   const profile = await prisma.driverProfile.findUnique({ select: { payoutPercent: true }, where: { userId: driverId } });
   if (!profile) throw new AppError('FORBIDDEN', 'Driver profile required.');
   return profile;
@@ -167,7 +178,7 @@ function mapJobCard(booking: {
   service: string;
   slot: string;
   totalPence: number;
-}, payoutPercent: number): Record<string, unknown> {
+}, payoutPercent: number | null): Record<string, unknown> {
   return {
     bookingId: booking.id,
     dispatchStatus: booking.dispatchStatus,
@@ -228,7 +239,7 @@ async function getJob(driverId: string, bookingId: string): Promise<unknown> {
     earningPence: driverEarning(booking.totalPence, profile.payoutPercent),
     extraCharges: booking.extraCharges.map((charge) => ({ amountPence: charge.amountPence, description: charge.description, id: charge.id, status: charge.status })),
     id: booking.id,
-    items: safePayload(booking.priceBreakdown).items ?? [],
+    items: inventoryItems(booking.pricingInput),
     jobStage: booking.jobStage,
     moveDate: fromDbDate(booking.moveDate),
     photos: booking.photos,

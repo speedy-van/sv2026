@@ -22,7 +22,8 @@ test('@marketing landing page renders required sections without missing facts', 
   await expect(main.getByRole('heading', { name: 'Areas we cover' })).toBeVisible();
   await expect(main.getByRole('heading', { name: 'Real example prices' })).toBeVisible();
   await expect(main.getByRole('heading', { name: 'Questions' })).toBeVisible();
-  await expect(page.locator('[data-booking-card]')).toHaveCount(2);
+  await expect(page.locator('[data-booking-card]')).toHaveCount(1);
+  await expect(page.getByRole('link', { name: 'Start your move', exact: true })).toHaveAttribute('href', '#start-your-move');
   await expectNoMissingFacts(page);
   await expectA11yClean(page);
 });

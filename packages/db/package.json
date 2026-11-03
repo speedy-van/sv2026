@@ -8,6 +8,7 @@
   },
   "scripts": {
     "build": "prisma generate && tsc --noEmit",
+    "db:coupon": "tsx src/coupon-cli.ts",
     "db:deploy": "prisma migrate deploy",
     "db:generate": "prisma generate",
     "db:migrate": "tsx src/migrate.ts",

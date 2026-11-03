@@ -20,9 +20,9 @@ company:
   icoRegistrationNumber: TODO(owner)    # data protection fee registration number (ico.org.uk)
 
 contact:
-  phoneDisplay: TODO(owner)             # as shown on the site, e.g. "0141 000 0000"
-  phoneE164: TODO(owner)                # same number in international format, e.g. "+441410000000"
-  whatsappE164: null                    # "+447..." to show a WhatsApp button, or null
+  phoneDisplay: "07465 227962"           # owner supplied 2026-10-15
+  phoneE164: "+447465227962"             # same number in international format
+  whatsappE164: "+447465227962"          # owner supplied WhatsApp number
   emailPublic: TODO(owner)              # shown on the site, e.g. "hello@speedyvan.uk"
   emailBookings: TODO(owner)            # sender/reply-to for booking emails, e.g. "bookings@speedyvan.uk"
   emailAdminAlerts: TODO(owner)         # who gets new-booking alert emails, comma-separated
@@ -92,6 +92,5 @@ The pricing engine implements your spec exactly. Six details weren't specified, 
 | P1 | Price multipliers per variant (e.g. studio vs 4-bed house, digital vs upright piano) | All 1.0 |
 | P2 | Different per-mile rates for large loads? | No — same as standard |
 | P3 | Carry distance / narrow access / permit asked per address — how combined? | Longest carry; narrow or permit at either address charged once |
-| P4 | Rubbish removal: single address, no distance charge | Yes |
 | P5 | Same-day service: only today's remaining slots bookable | Yes |
 | P6 | Basement counts as one floor of stairs | Yes |

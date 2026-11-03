@@ -66,7 +66,7 @@ Link: "More about how it works" → `/how-it-works`.
 
 ### S4 · Services
 
-A two-column list (desktop) / single list (mobile) — not a grid of identical cards. Each row: icon, service name (heading.sm), one line, and "From £X" (computed, §6), whole row links to the service page. Order: Home moves, Man and van, Furniture delivery, Student moves, Office moves, Storage moves, IKEA and flat-pack, Rubbish removal, Piano moving, Same-day delivery.
+A two-column list (desktop) / single list (mobile) — not a grid of identical cards. Each row: icon, service name (heading.sm), one line, and "From £X" (computed, §6), whole row links to the service page. Order: Home moves, Man and van, Furniture delivery, Student moves, Office moves, Storage moves, IKEA and flat-pack, Piano moving, Same-day delivery.
 
 ### S5 · How your price is worked out
 
@@ -78,7 +78,7 @@ Quiet typographic block: region names (12) as links, each with "{n} towns", plus
 
 ### S7 · Real example prices
 
-Table (`<table>` with caption) of 6 routes from the generated price data (08-seo §6), e.g. "Glasgow to Edinburgh, 1-bedroom flat — from £…". Caption states the assumptions and the date computed: "Cheapest available weekday slot when this page was updated on {date}. Your price depends on your items, access and date." Revalidated daily.
+Table (`<table>` with caption) of 5 routes from the generated price data (08-seo §6), e.g. "Glasgow to Edinburgh, 1-bedroom flat — from £…". Caption states the assumptions and the date computed: "Cheapest available weekday slot when this page was updated on {date}. Your price depends on your items, access and date." Revalidated daily.
 
 ### S8 · Reviews (hidden until there are at least 3 published)
 
@@ -94,7 +94,7 @@ Heading "Ready when you are" + the same booking card component (state shared wit
 
 ## 3. Service pages (`/services/[service]`)
 
-Slugs: `house-removals`, `man-and-van`, `furniture-delivery`, `student-moves`, `office-removals`, `storage-moves`, `ikea-delivery`, `rubbish-removal`, `piano-moving`, `same-day-delivery` (map to engine keys in `content/services.ts`).
+Slugs: `house-removals`, `man-and-van`, `furniture-delivery`, `student-moves`, `office-removals`, `storage-moves`, `ikea-delivery`, `piano-moving`, `same-day-delivery` (map to engine keys in `content/services.ts`).
 
 | Section | Spec |
 |---|---|
@@ -102,7 +102,7 @@ Slugs: `house-removals`, `man-and-van`, `furniture-delivery`, `student-moves`, `
 | What's included | 4–6 bullets from `content/services.ts` (owner-reviewed, `reviewedByOwner` flag shown in `/styleguide` list) |
 | Price for this service | Base price, which factors apply, a computed example, "From £X" |
 | Options | Variants explained (e.g. piano types and which need a survey) |
-| Good to know | Service-specific tips (e.g. rubbish: what we can't take — owner content) |
+| Good to know | Service-specific tips |
 | Areas | Links to the 8 city pages for this service where they exist, plus "All areas" |
 | FAQs | 4–6 service-specific |
 | Related services | 3 links |
@@ -161,7 +161,6 @@ For each service, a fixed profile is priced by the real engine over the real nex
 | Office moves | "Small office" preset, variant small |
 | Storage moves | 5 medium boxes, variant to-storage |
 | IKEA and flat-pack | 3 small flat-pack boxes |
-| Rubbish removal | 5 black bags |
 | Piano moving | upright, no other items |
 | Same-day delivery | 1 medium box, today's slots only (if none available, show "Today: fully booked" instead of a price) |
 

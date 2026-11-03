@@ -1,0 +1,80 @@
+.dialog {
+  position: fixed;
+  inset: calc(var(--chat-top, 0px) + max(16px, calc(var(--chat-vh, 100vh) - 696px))) max(16px, env(safe-area-inset-right)) auto auto;
+  z-index: 220;
+  width: min(420px, calc(100vw - 32px));
+  height: min(680px, calc(var(--chat-vh, 100vh) - 32px));
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid var(--sv-ink-200);
+  border-radius: 24px;
+  padding: 0;
+  background: white;
+  color: var(--sv-ink-900);
+  box-shadow: 0 24px 80px rgb(6 18 31 / 0.25);
+}
+
+.dialog:not([open]) { display: none; }
+.dialog::backdrop { background: rgb(6 18 31 / 0.32); }
+.frame { display: flex; height: 100%; min-height: 0; flex-direction: column; }
+.header { display: flex; flex: none; align-items: center; gap: 12px; border-bottom: 1px solid var(--sv-ink-100); padding: 18px 18px 14px; }
+.header > div { min-width: 0; flex: 1; }
+.header h2 { margin: 0; font-family: var(--font-display), system-ui, sans-serif; font-size: 1.25rem; line-height: 1.25; }
+.header p { margin: 4px 0 0; color: var(--sv-ink-500); font-size: 0.8125rem; }
+.avatar { display: grid; width: 44px; height: 44px; flex: none; place-items: center; border-radius: 15px; background: var(--sv-thistle-50); color: var(--sv-thistle-600); }
+.close { display: grid; width: 48px; height: 48px; flex: none; place-items: center; border: 0; border-radius: 50%; background: var(--sv-ink-50); color: var(--sv-ink-700); }
+.close:hover { background: var(--sv-ink-100); }
+.quickLinks { display: flex; flex: none; flex-wrap: wrap; align-items: center; gap: 0 14px; border-bottom: 1px solid var(--sv-ink-100); padding: 8px 18px; font-size: 0.8125rem; }
+.quickLinks > span { width: 100%; color: var(--sv-ink-500); font-size: 0.75rem; line-height: 1.5; }
+.quickLinks a { display: inline-flex; min-height: 44px; align-items: center; gap: 6px; color: var(--sv-thistle-700); font-weight: 750; }
+.sound { display: inline-flex; min-height: 44px; align-items: center; gap: 6px; margin-left: auto; border: 0; border-radius: 10px; padding: 0 8px; background: var(--sv-thistle-50); color: var(--sv-thistle-700); font-size: 0.75rem; font-weight: 750; }
+.sound:hover:not(:disabled) { background: var(--sv-thistle-100); }
+.sound:disabled { cursor: wait; }
+.quickLinks .soundStatus { color: var(--sv-ink-500); font-size: 0.6875rem; line-height: 1.5; padding-bottom: 4px; }
+.messages { min-width: 0; min-height: 72px; flex: 1; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; padding: 18px; background: #f8f9fc; }
+.welcome { padding: 12px 4px 24px; }
+.welcome > span { font-size: 1.75rem; }
+.welcome h3 { margin: 12px 0 8px; font-family: var(--font-display), system-ui, sans-serif; font-size: 1.5rem; }
+.welcome p { margin: 0; color: var(--sv-ink-500); font-size: 0.9375rem; line-height: 1.65; }
+.message { width: fit-content; max-width: 90%; margin-bottom: 16px; overflow-wrap: anywhere; }
+.message p { margin: 4px 0 6px; border: 1px solid var(--sv-ink-100); border-radius: 16px 16px 16px 4px; padding: 11px 14px; background: white; font-size: 0.9375rem; line-height: 1.6; white-space: pre-wrap; }
+.sender { color: var(--sv-ink-500); font-size: 0.75rem; font-weight: 700; }
+.message time { display: block; color: var(--sv-ink-500); font-size: 0.6875rem; line-height: 1.5; }
+.outgoing { margin-left: auto; }
+.outgoing .sender, .outgoing time { text-align: right; }
+.outgoing p { border-color: var(--sv-thistle-600); border-radius: 16px 16px 4px 16px; background: var(--sv-thistle-600); color: white; }
+.earlier { display: flex; min-height: 44px; align-items: center; justify-content: center; gap: 4px; margin: 0 auto 16px; border: 0; background: transparent; color: var(--sv-thistle-700); font-size: 0.8125rem; font-weight: 700; }
+.composer { flex: none; border-top: 1px solid var(--sv-ink-100); padding: 12px 16px; background: white; }
+.name { display: grid; gap: 5px; margin-bottom: 10px; color: var(--sv-ink-500); font-size: 0.75rem; font-weight: 650; }
+.name input { width: 100%; min-height: 44px; border: 1px solid var(--sv-ink-200); border-radius: 10px; padding: 8px 12px; font-size: 16px; }
+.inputRow { display: flex; min-width: 0; align-items: flex-end; gap: 10px; }
+.inputRow textarea { width: 100%; min-width: 0; min-height: 56px; max-height: 130px; flex: 1; resize: vertical; border: 1px solid var(--sv-ink-200); border-radius: 16px; padding: 12px; color: var(--sv-ink-900); font-size: 16px; line-height: 1.45; }
+.inputRow textarea::placeholder { color: var(--sv-ink-500); opacity: 1; }
+.send { display: grid; width: 48px; height: 48px; flex: none; place-items: center; border: 0; border-radius: 50%; background: var(--sv-thistle-600); color: white; }
+.send:hover:not(:disabled) { background: var(--sv-thistle-700); }
+.send:disabled { background: var(--sv-ink-100); color: var(--sv-ink-500); }
+.composer footer { display: flex; min-height: 32px; align-items: center; justify-content: space-between; gap: 8px; margin-top: 4px; color: var(--sv-ink-500); font-size: 0.6875rem; }
+.composer footer a { display: inline-flex; min-height: 32px; align-items: center; text-decoration: underline; text-underline-offset: 3px; }
+.error { margin: 8px 0; color: var(--sv-rowan-600); font-size: 0.8125rem; line-height: 1.5; }
+.error p { margin: 0; }
+.error button, .readError button { min-height: 44px; border: 0; background: transparent; color: var(--sv-thistle-700); font-weight: 700; text-decoration: underline; }
+.readError { padding: 0 16px; color: var(--sv-ink-500); font-size: 0.75rem; }
+.skeleton { display: grid; gap: 20px; padding: 12px 0; }
+.skeleton span { display: block; width: 80%; height: 64px; border-radius: 16px; background: var(--sv-ink-100); }
+.skeleton span:nth-child(2) { width: 65%; margin-left: auto; }
+
+@media (max-width: 599px) {
+  .dialog { inset: var(--chat-top, 0px) 0 auto; width: 100%; height: var(--chat-vh, 100vh); height: var(--chat-vh, 100dvh); border: 0; border-radius: 0; }
+  .header { padding-top: max(12px, env(safe-area-inset-top)); }
+  .composer { padding-bottom: max(10px, env(safe-area-inset-bottom)); }
+}
+
+@media (max-height: 500px) {
+  .header { padding-top: 8px; padding-bottom: 8px; }
+  .header p, .quickLinks > span:first-child { display: none; }
+  .quickLinks { padding-block: 0; }
+  .composer { padding-top: 8px; }
+  .name { gap: 2px; margin-bottom: 5px; }
+}

@@ -7,9 +7,12 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request): Promise<Response> {
   return withApi(request, { auth: false }, async ({ requestId }) => {
-    const token = new URL(request.url).searchParams.get('token');
+    const requestUrl = new URL(request.url);
+    const host = request.headers.get('host') ?? requestUrl.host;
+    const requestOrigin = `${requestUrl.protocol}//${host}`;
+    const token = requestUrl.searchParams.get('token');
     if (!token) throw new AppError('VALIDATION_ERROR', 'Missing status token.');
-    const status = await bookingStatusFromToken(token);
+    const status = await bookingStatusFromToken(token, requestOrigin);
     return apiJson(status, {}, requestId);
   });
 }

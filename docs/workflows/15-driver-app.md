@@ -60,7 +60,7 @@ One screen per stage, one full-width primary button at the bottom, the address a
 
 - Every press: haptic, local state updates instantly, event queued with `clientEventId` (UUID), timestamp and GPS point.
 - **Undo** chip for 2 minutes after a stage change (sends a correcting STAGE event the state machine allows only for the same driver within that window).
-- Stage path by service: dropoff stages skipped when the service has no dropoff (rubbish). The path comes from `@sv/contracts/booking-state` (`stagePathFor(service)`), shared with the server and the customer timeline.
+- Stage path by service comes from `@sv/contracts/booking-state` (`stagePathFor(service)`), shared with the server and the customer timeline.
 - **Report extra items** (from LOADING): description, optional suggested amount, photos → admin approval; status shown live (Requested → Awaiting customer payment → Paid). Copy: "Load extra items once the office confirms they're paid."
 - **Report a problem**: Customer not there · Access problem · Damage · Vehicle problem · Running late · Other + text + optional photos → `ISSUE` event → admin push.
 

@@ -3,10 +3,19 @@ import { NoPrefetchLink as Link } from '@/components/navigation/no-prefetch-link
 import { notFound } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { BookingStartCard } from '@/components/booking/booking-start-card';
+import { LocalMovePlanning } from '@/components/marketing/local-move-planning';
+import { LocalSearchServices } from '@/components/marketing/local-search-services';
 import { StructuredData } from '@/components/marketing/structured-data';
 import {
+  locationCopy,
+  locationFaqs,
+  locationPageCopy,
+  locationSearchHeading,
+  locationSearchTitle,
+} from '@/content/location-copy';
+import {
   breadcrumbJsonLd,
-  examplePrice,
+  isCitySlug,
   isIndexableLocation,
   locationPages,
   locationUrl,
@@ -14,57 +23,76 @@ import {
   nearestLocations,
   nearbyCities,
   regionLabels,
-  routeDistanceFor,
   routeJsonLd,
   routePages,
   routeUrl,
   routesBySlug,
   serviceJsonLd,
 } from '@/content/locations';
-import { getPricingConfigForMarketing } from '@/server/marketing';
-import { getPublicSettings } from '@/server/settings';
+import { serviceContent } from '@/content/services';
+import { getLocationExamples, getRouteExamples, todayLabel } from '@/server/marketing';
+import { getPublishedLocationContent } from '@/server/location-content';
+import { createPageMetadata, getSeoSettings } from '@/server/seo';
 
 export const revalidate = 86400;
 
 export function generateStaticParams(): Array<{ slug: string }> {
-  return [...locationPages.map((location) => ({ slug: location.slug })), ...routePages.map((route) => ({ slug: route.slug }))];
+  return [
+    ...locationPages.map((location) => ({ slug: location.slug })),
+    ...routePages.map((route) => ({ slug: route.slug })),
+  ];
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const [settings] = await Promise.all([getPublicSettings().catch(() => null)]);
-  const indexTier3 = settings?.seo.indexTier3 ?? false;
+  const settings = await getSeoSettings();
   const location = locationsBySlug.get(slug);
   if (location) {
-    const indexable = isIndexableLocation(location, indexTier3);
-    return {
-      alternates: { canonical: locationUrl(location) },
-      description: `Fixed-price removals and man and van moves in ${location.name}, ${regionLabels[location.region]}. Check live slots online.`,
-      robots: indexable ? undefined : { follow: true, index: false },
-      title: `Removals in ${location.name}`,
-    };
+    const published = await getPublishedLocationContent(slug);
+    return createPageMetadata({
+      path: locationUrl(location),
+      description: locationCopy(location).description,
+      title: locationSearchTitle(location),
+      settings,
+      indexable: isIndexableLocation(location, settings.seo.indexTier3, published?.localNotes),
+    });
   }
   const route = routesBySlug.get(slug);
-  if (route) {
-    return {
-      alternates: { canonical: routeUrl(route) },
-      description: `Plan a ${route.fromName} to ${route.toName} removal with Speedy Van, including example distance, journey time and fixed online prices.`,
+  if (route)
+    return createPageMetadata({
+      path: routeUrl(route),
+      description: `Plan a ${route.fromName} to ${route.toName} move with road distance, drive time and available prices for different move sizes.`,
       title: `${route.fromName} to ${route.toName} removals`,
-    };
-  }
-  return {};
+      settings,
+    });
+  notFound();
 }
 
-export default async function RemovalSeoPage({ params }: { params: Promise<{ slug: string }> }): Promise<ReactNode> {
+export default async function RemovalSeoPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<ReactNode> {
   const { slug } = await params;
   const route = routesBySlug.get(slug);
-  if (route) return <RoutePage route={route} />;
+  if (route) return <RemovalRoutePage route={route} />;
   const location = locationsBySlug.get(slug);
   if (!location) notFound();
-  const [settings, config] = await Promise.all([getPublicSettings(), getPricingConfigForMarketing()]);
-  const distance = routeDistanceFor(location);
-  const fromPrice = examplePrice(config, 'house-removals', distance.miles);
-  const indexable = isIndexableLocation(location, settings.seo.indexTier3);
+  const [settings, published, examples] = await Promise.all([
+    getSeoSettings(),
+    getPublishedLocationContent(slug),
+    getLocationExamples(location),
+  ]);
+  const copy = locationCopy(location);
+  const nearby = nearestLocations(location);
+  const cities = nearbyCities(location);
+  const cityLinks = isCitySlug(location.slug)
+    ? [location, ...cities.filter((city) => city.slug !== location.slug)]
+    : cities;
+  const localRoutes = routePages.filter(
+    (candidate) => candidate.fromSlug === location.slug || candidate.toSlug === location.slug,
+  );
+  const faqs = locationFaqs(location, examples[0]?.price);
   const data = [
     serviceJsonLd(location, settings.web.canonicalOrigin),
     breadcrumbJsonLd([
@@ -73,10 +101,16 @@ export default async function RemovalSeoPage({ params }: { params: Promise<{ slu
       { href: `/areas/${location.region}`, name: regionLabels[location.region] },
       { href: locationUrl(location), name: location.name },
     ]),
+    {
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: faqs.map((faq) => ({
+        '@type': 'Question',
+        name: faq.question,
+        acceptedAnswer: { '@type': 'Answer', text: faq.answer },
+      })),
+    },
   ];
-  const nearby = nearestLocations(location);
-  const cities = nearbyCities(location);
-
   return (
     <>
       <StructuredData data={data} />
@@ -90,74 +124,130 @@ export default async function RemovalSeoPage({ params }: { params: Promise<{ slu
               <span>/</span>
               <Link href={`/areas/${location.region}`}>{regionLabels[location.region]}</Link>
             </nav>
-            <h1 className="page-title">Removals in {location.name}</h1>
-            <p className="lead">Book a fixed-price move in {location.name}, with live morning, afternoon and evening slots across mainland Scotland.</p>
-            <p className="price-line">From {fromPrice} <span>studio example, nearest city route</span></p>
+            <h1 className="page-title">{locationSearchHeading(location)}</h1>
+            <p className="lead">{copy.lead}</p>
+            <p className="field-help">
+              {location.councilArea} · {location.postcodeArea} postcode area
+            </p>
           </div>
-          <BookingStartCard selected="Home move" title={`Start a ${location.name} move`} />
+          {copy.routeNote ? (
+            <div className="table-card">
+              <p>{copy.routeNote}</p>
+              <Link className="button button-primary" href="/contact">
+                {copy.quoteAction}
+              </Link>
+            </div>
+          ) : (
+            <BookingStartCard selected="Home move" title={`Start a ${location.name} move`} />
+          )}
         </div>
       </section>
-
-      {!indexable ? (
+      {examples.length > 0 ? (
         <section className="section section-muted">
           <div className="container">
-            <p className="empty-note">This tier 3 page is available for users but marked noindex until local owner notes are added.</p>
+            <h2>Example moves in {location.name}</h2>
+            <table className="data-table">
+              <caption>
+                {locationPageCopy.exampleCaption} Updated {todayLabel()}.
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Route</th>
+                  <th scope="col">Move</th>
+                  <th scope="col">Example price</th>
+                </tr>
+              </thead>
+              <tbody>
+                {examples.map((example) => (
+                  <tr key={example.detail}>
+                    <td>
+                      {example.route}, {example.distanceMiles} miles
+                    </td>
+                    <td>{example.detail}</td>
+                    <td>{example.price}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </section>
       ) : null}
-
-      <section className="section section-muted">
-        <div className="container two-column">
-          <div>
-            <h2>Local move details</h2>
-            <dl className="breakdown-list">
-              <div><dt>Region</dt><dd>{regionLabels[location.region]}</dd></div>
-              <div><dt>Example distance</dt><dd>{distance.miles} miles</dd></div>
-              <div><dt>Example drive time</dt><dd>{distance.minutes} minutes</dd></div>
-              <div><dt>Pricing</dt><dd>Distance, items, floors, carries and slot demand</dd></div>
-            </dl>
+      <LocalMovePlanning location={location} />
+      {published ? (
+        <section className="section section-muted">
+          <div className="container article-body">
+            <h2>Moving in {location.name}</h2>
+            {published.localNotes.split(/\n\s*\n/u).map((paragraph) => (
+              <p key={paragraph}>{paragraph}</p>
+            ))}
           </div>
-          <div className="table-card">
-            <h2>Popular services</h2>
-            <ul className="plain-list">
-              <li>House removals in {location.name}</li>
-              <li>Man and van in {location.name}</li>
-              <li>Furniture delivery around {regionLabels[location.region]}</li>
-              <li>Storage, student and office moves</li>
-            </ul>
-          </div>
-        </div>
-      </section>
-
+        </section>
+      ) : null}
+      <LocalSearchServices location={location} />
       <section className="section">
         <div className="container two-column">
           <div>
-            <h2>Nearby towns</h2>
+            <h2>Services in {location.name}</h2>
             <div className="related-list">
-              {nearby.map((item) => <Link href={locationUrl(item)} key={item.slug}>{item.name}</Link>)}
+              {serviceContent.map((service) => (
+                <Link href={`/services/${service.slug}`} key={service.slug}>
+                  {service.title}
+                </Link>
+              ))}
             </div>
           </div>
           <div>
-            <h2>Nearby city pages</h2>
+            <h2>Nearby towns</h2>
             <div className="related-list">
-              {cities.map((city) => <Link href={`/man-and-van/${city.slug}`} key={city.slug}>Man and van {city.name}</Link>)}
+              {nearby.map((item) => (
+                <Link href={locationUrl(item)} key={item.slug}>
+                  {item.name}
+                </Link>
+              ))}
             </div>
+            <Link className="text-link" href={`/areas/${location.region}`}>
+              All areas in {regionLabels[location.region]}
+            </Link>
           </div>
         </div>
       </section>
-
       <section className="section section-muted">
         <div className="container">
-          <h2>Questions</h2>
+          <h2>City man and van services</h2>
+          <div className="related-list">
+            {cityLinks.map((city) => (
+              <Link href={`/man-and-van/${city.slug}`} key={city.slug}>
+                Man and van in {city.name}
+              </Link>
+            ))}
+          </div>
+          {localRoutes.length > 0 ? (
+            <>
+              <h2>Routes involving {location.name}</h2>
+              <div className="related-list">
+                {localRoutes.map((item) => (
+                  <Link href={routeUrl(item)} key={item.slug}>
+                    {item.fromName} to {item.toName} removals
+                  </Link>
+                ))}
+              </div>
+            </>
+          ) : null}
+          <Link className="text-link" href="/areas">
+            All areas and removal routes
+          </Link>
+        </div>
+      </section>
+      <section className="section">
+        <div className="container">
+          <h2>Questions about moving in {location.name}</h2>
           <div className="accordion-list">
-            <details className="accordion-item">
-              <summary>Can I get an instant price in {location.name}?</summary>
-              <p>Yes. Enter the addresses, access and items you are moving, then choose from the fixed slot prices shown online.</p>
-            </details>
-            <details className="accordion-item">
-              <summary>What changes the price?</summary>
-              <p>Distance, inventory, stairs, lift access, carry distance, optional helpers and the slot you choose all affect the fixed price.</p>
-            </details>
+            {faqs.map((faq) => (
+              <details className="accordion-item" key={faq.question}>
+                <summary>{faq.question}</summary>
+                <p>{faq.answer}</p>
+              </details>
+            ))}
           </div>
         </div>
       </section>
@@ -165,12 +255,19 @@ export default async function RemovalSeoPage({ params }: { params: Promise<{ slu
   );
 }
 
-async function RoutePage({ route }: { route: (typeof routePages)[number] }): Promise<ReactNode> {
-  const [settings, config] = await Promise.all([getPublicSettings(), getPricingConfigForMarketing()]);
-  const fromPrice = examplePrice(config, 'house-removals', route.distanceMiles);
-  const origin = settings.web.canonicalOrigin;
+async function RemovalRoutePage({ route }: { route: (typeof routePages)[number] }): Promise<ReactNode> {
+  const [settings, destinationNotes, examples] = await Promise.all([
+    getSeoSettings(),
+    getPublishedLocationContent(route.toSlug),
+    getRouteExamples(route),
+  ]);
+  const destination = locationsBySlug.get(route.toSlug);
+  const reverse = routesBySlug.get(`${route.toSlug}-to-${route.fromSlug}`);
+  const otherRoutes = routePages.filter(
+    (candidate) => candidate.fromSlug === route.fromSlug && candidate.slug !== route.slug,
+  );
   const data = [
-    routeJsonLd(route, origin),
+    routeJsonLd(route, settings.web.canonicalOrigin),
     breadcrumbJsonLd([
       { href: '/', name: 'Home' },
       { href: '/areas', name: 'Areas' },
@@ -186,33 +283,103 @@ async function RoutePage({ route }: { route: (typeof routePages)[number] }): Pro
             <nav aria-label="Breadcrumb" className="breadcrumbs">
               <Link href="/">Home</Link>
               <span>/</span>
-              <Link href="/areas">Areas</Link>
+              <Link href="/areas">Areas and routes</Link>
             </nav>
-            <h1 className="page-title">{route.fromName} to {route.toName} removals</h1>
-            <p className="lead">Plan a fixed-price move between {route.fromName} and {route.toName}, with online booking for eligible mainland Scotland routes.</p>
-            <p className="price-line">From {fromPrice} <span>studio example, {route.distanceMiles} miles</span></p>
+            <h1 className="page-title">
+              {route.fromName} to {route.toName} removals
+            </h1>
+            <p className="lead">
+              Compare example move sizes for the journey from {route.fromName} to {route.toName}, then check
+              the available prices for your exact addresses.
+            </p>
+            <p>
+              {route.distanceMiles} miles, about {route.minutes} minutes by road.
+            </p>
           </div>
           <BookingStartCard selected="Home move" title="Start this route" />
         </div>
       </section>
-
       <section className="section section-muted">
+        <div className="container">
+          <h2>
+            Example prices for {route.fromName} to {route.toName}
+          </h2>
+          <table className="data-table">
+            <caption>
+              {locationPageCopy.routeCaption} Updated {todayLabel()}.
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">Move profile</th>
+                <th scope="col">Example price</th>
+              </tr>
+            </thead>
+            <tbody>
+              {examples.map((example) => (
+                <tr key={example.detail}>
+                  <td>{example.detail}</td>
+                  <td>{example.price}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+      <section className="section">
         <div className="container two-column">
           <div>
-            <h2>Route snapshot</h2>
-            <dl className="breakdown-list">
-              <div><dt>From</dt><dd>{route.fromName}</dd></div>
-              <div><dt>To</dt><dd>{route.toName}</dd></div>
-              <div><dt>Estimated road distance</dt><dd>{route.distanceMiles} miles</dd></div>
-              <div><dt>Estimated drive time</dt><dd>{route.minutes} minutes</dd></div>
-            </dl>
+            <h2>Arriving in {route.toName}</h2>
+            {destination ? (
+              <p>
+                {route.toName} is in {destination.councilArea}, in the {destination.postcodeArea} postcode
+                area.
+              </p>
+            ) : null}
+            {destinationNotes
+              ? destinationNotes.localNotes
+                  .split(/\n\s*\n/u)
+                  .map((paragraph) => <p key={paragraph}>{paragraph}</p>)
+              : null}
+            <Link className="text-link" href={`/removals/${route.toSlug}`}>
+              House removals in {route.toName}
+            </Link>
           </div>
-          <div className="table-card">
+          <div>
             <h2>Before you book</h2>
-            <p>Add each bulky item, floor, lift and long-carry detail before revealing prices so the van plan matches the route.</p>
-            <Link className="text-link" href={`/removals/${route.fromSlug}`}>See {route.fromName} local page</Link>
-            <Link className="text-link" href={`/removals/${route.toSlug}`}>See {route.toName} local page</Link>
+            <p>{locationPageCopy.routePreparation}</p>
+            <Link className="text-link" href={`/removals/${route.fromSlug}`}>
+              House removals in {route.fromName}
+            </Link>
+            <Link className="text-link" href="/pricing">
+              How removal prices are worked out
+            </Link>
           </div>
+        </div>
+      </section>
+      <section className="section section-muted">
+        <div className="container">
+          {reverse ? (
+            <p>
+              <Link className="text-link" href={routeUrl(reverse)}>
+                Moving back? {reverse.fromName} to {reverse.toName} removals
+              </Link>
+            </p>
+          ) : null}
+          {otherRoutes.length > 0 ? (
+            <>
+              <h2>Other routes from {route.fromName}</h2>
+              <div className="related-list">
+                {otherRoutes.map((item) => (
+                  <Link href={routeUrl(item)} key={item.slug}>
+                    {item.fromName} to {item.toName} removals
+                  </Link>
+                ))}
+              </div>
+            </>
+          ) : null}
+          <Link className="text-link" href="/areas">
+            All removal routes and areas
+          </Link>
         </div>
       </section>
     </>

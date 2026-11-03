@@ -1,12 +1,18 @@
 import { Bricolage_Grotesque, Manrope } from 'next/font/google';
+import Script from 'next/script';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import { ConsentBanner } from '@/components/consent/consent-banner';
+import { GoogleTagLoader } from '@/components/consent/google-tag-loader';
+import { GOOGLE_TAG_BOOTSTRAP } from '@/components/consent/google-tag-bootstrap';
+import { VisitorPresenceTracker } from '@/components/consent/visitor-presence-tracker';
 import { Footer } from '@/components/layout/footer';
+import { FloatingContact } from '@/components/layout/floating-contact';
 import { Header } from '@/components/layout/header';
 import { MobileStickyCta } from '@/components/layout/mobile-sticky-cta';
 import { SiteBanner } from '@/components/layout/site-banner';
-import { getPublicSettings } from '@/server/settings';
+import { businessStructuredData, createPageMetadata, getSeoSettings } from '@/server/seo';
+import { googleTagConfig } from '@/lib/google-tag-config';
 import './globals.css';
 
 const body = Manrope({
@@ -16,20 +22,30 @@ const body = Manrope({
 });
 
 const display = Bricolage_Grotesque({
-  axes: ['opsz'],
   display: 'swap',
   subsets: ['latin'],
   variable: '--font-display',
 });
 
-export const metadata: Metadata = {
-  description: 'See fixed prices for removals and man and van moves across Scotland.',
-  metadataBase: new URL('https://www.speedyvan.uk'),
-  title: {
-    default: 'Speedy Van',
-    template: '%s | Speedy Van',
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getSeoSettings();
+  const shared = createPageMetadata({
+    description: 'See fixed prices for removals and man and van moves across Scotland.',
+    path: '/',
+    settings,
+    title: settings.company.tradingName,
+  });
+  return {
+    description: shared.description,
+    metadataBase: new URL(settings.web.canonicalOrigin),
+    openGraph: shared.openGraph,
+    title: {
+      default: settings.company.tradingName,
+      template: `%s | ${settings.company.tradingName}`,
+    },
+    twitter: shared.twitter,
+  };
+}
 
 export default async function RootLayout({ children }: { children: ReactNode }): Promise<ReactNode> {
   let speedInsights: ReactNode = null;
@@ -37,25 +53,18 @@ export default async function RootLayout({ children }: { children: ReactNode }):
     const { SpeedInsights } = await import('@vercel/speed-insights/next');
     speedInsights = <SpeedInsights />;
   }
-  const settings = await getPublicSettings();
+  const settings = await getSeoSettings();
   const phoneHref = settings.contact.phoneE164 ? `tel:${settings.contact.phoneE164}` : null;
-  const origin = settings.web.canonicalOrigin;
-  const organizationJson = {
-    '@context': 'https://schema.org',
-    '@type': 'Organization',
-    name: settings.company.tradingName,
-    url: origin,
-  };
-  const websiteJson = {
-    '@context': 'https://schema.org',
-    '@type': 'WebSite',
-    name: settings.company.tradingName,
-    url: origin,
-  };
+  const googleConfig = googleTagConfig();
 
   return (
     <html className={`${body.variable} ${display.variable}`} lang="en-GB">
       <body>
+        {googleConfig.analyticsId || googleConfig.adsId ? (
+          <Script id="sv-google-tag-bootstrap" strategy="beforeInteractive">
+            {GOOGLE_TAG_BOOTSTRAP}
+          </Script>
+        ) : null}
         <a className="skip-link" href="#main-content">
           Skip to content
         </a>
@@ -65,11 +74,20 @@ export default async function RootLayout({ children }: { children: ReactNode }):
           <main id="main-content">{children}</main>
           <Footer settings={settings} />
           <MobileStickyCta phoneDisplay={settings.contact.phoneDisplay} phoneHref={phoneHref} />
+          <FloatingContact
+            phoneDisplay={settings.contact.phoneDisplay}
+            phoneE164={settings.contact.phoneE164}
+            whatsappE164={settings.contact.whatsappE164}
+          />
           <ConsentBanner />
+          <GoogleTagLoader />
+          <VisitorPresenceTracker />
         </div>
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify([organizationJson, websiteJson]).replaceAll('<', '\\u003c') }}
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(businessStructuredData(settings)).replaceAll('<', '\\u003c'),
+          }}
         />
         {speedInsights}
       </body>

@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { AppError, errorEnvelope } from '@sv/contracts';
+import * as Sentry from '@sentry/nextjs';
 import { randomUUID } from 'node:crypto';
 import { z, type ZodError, type ZodType } from 'zod';
 import { authenticateStaffRequest, type StaffAuthOptions, type StaffContext } from './auth/staff';
@@ -88,6 +89,7 @@ export async function withApi<TInput>(
       return apiError(error, requestId, headers);
     }
 
+    Sentry.captureException(error, { tags: { component: 'api' }, extra: { requestId, path: new URL(request.url).pathname } });
     return apiError(new AppError('INTERNAL', 'Something went wrong. Try again in a moment.'), requestId);
   }
 }

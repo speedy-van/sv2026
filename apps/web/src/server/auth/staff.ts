@@ -5,22 +5,31 @@ import {
   type DeviceSchema,
   type OtpRequestSchema,
   type OtpVerifySchema,
+  type PasswordLoginRequestSchema,
   type RefreshRequestSchema,
   type MeResponseSchema,
   type StaffRoleSchema,
 } from '@sv/contracts';
-import { enqueueOutbox, prisma, type Prisma } from '@sv/db';
+import { enqueueOutbox, prisma, type DbTx, type Prisma } from '@sv/db';
 import { jwtVerify, SignJWT } from 'jose';
-import { createHash, randomBytes, randomInt, timingSafeEqual } from 'node:crypto';
+import { createHash, createHmac, randomBytes, randomInt, timingSafeEqual } from 'node:crypto';
 import type { z } from 'zod';
 import { serverEnv } from '../env';
 import { getPublicSettings } from '../settings';
+import { verifyStaffPassword } from './password';
 
 export type StaffRole = z.infer<typeof StaffRoleSchema>;
 export type StaffApp = 'admin' | 'driver';
+export interface StaffAccessUser {
+  email: string;
+  id: string;
+  name: string;
+  role: StaffRole;
+  status: 'ACTIVE' | 'DISABLED' | 'INVITED';
+}
 
 type DbApp = 'ADMIN' | 'DRIVER';
-type DbPlatform = 'IOS' | 'ANDROID';
+type DbPlatform = 'IOS' | 'ANDROID' | 'WEB';
 
 export interface StaffAuthOptions {
   app?: StaffApp;
@@ -60,7 +69,9 @@ function secret(name: 'JWT_ACCESS_SECRET' | 'OTP_PEPPER'): string {
   const value = name === 'JWT_ACCESS_SECRET' ? env.JWT_ACCESS_SECRET : env.OTP_PEPPER;
   if (value) return value;
   if (process.env.NODE_ENV === 'production') throw new AppError('INTERNAL', `${name} is required.`);
-  return name === 'JWT_ACCESS_SECRET' ? 'local-development-jwt-access-secret' : 'local-development-otp-pepper';
+  return name === 'JWT_ACCESS_SECRET'
+    ? 'local-development-jwt-access-secret'
+    : 'local-development-otp-pepper';
 }
 
 function accessKey(): Uint8Array {
@@ -88,7 +99,7 @@ function dbToApp(app: DbApp): StaffApp {
 }
 
 function devicePlatform(platform: z.infer<typeof DeviceSchema>['platform']): DbPlatform {
-  return platform === 'android' ? 'ANDROID' : 'IOS';
+  return platform === 'web' ? 'WEB' : platform === 'android' ? 'ANDROID' : 'IOS';
 }
 
 function allowedRoleForApp(role: StaffRole, app: StaffApp): boolean {
@@ -142,11 +153,15 @@ function assertMinimumAppVersion(request: Request, tokenApp: StaffApp): void {
   const env = serverEnv();
   const minimum = tokenApp === 'admin' ? env.MIN_ADMIN_APP_VERSION : env.MIN_DRIVER_APP_VERSION;
   if (minimum && compareVersion(parsed.version, minimum) < 0) {
-    throw new AppError('APP_UPDATE_REQUIRED', 'Update required before continuing.', { minimumVersion: minimum });
+    throw new AppError('APP_UPDATE_REQUIRED', 'Update required before continuing.', {
+      minimumVersion: minimum,
+    });
   }
 }
 
-async function signAccessToken(claims: StaffClaims): Promise<{ accessExpiresAt: string; accessToken: string }> {
+async function signAccessToken(
+  claims: StaffClaims,
+): Promise<{ accessExpiresAt: string; accessToken: string }> {
   const expiresAt = addMinutes(new Date(), ACCESS_TOKEN_MINUTES);
   const accessToken = await new SignJWT({ app: claims.app, role: claims.role, sid: claims.sessionId, ver: 1 })
     .setProtectedHeader({ alg: 'HS256' })
@@ -157,7 +172,13 @@ async function signAccessToken(claims: StaffClaims): Promise<{ accessExpiresAt: 
   return { accessExpiresAt: expiresAt.toISOString(), accessToken };
 }
 
-function mapUser(user: { email: string; id: string; name: string; role: StaffRole; status: 'ACTIVE' | 'DISABLED' | 'INVITED' }) {
+function mapUser(user: {
+  email: string;
+  id: string;
+  name: string;
+  role: StaffRole;
+  status: 'ACTIVE' | 'DISABLED' | 'INVITED';
+}) {
   return {
     email: user.email,
     id: user.id,
@@ -168,7 +189,13 @@ function mapUser(user: { email: string; id: string; name: string; role: StaffRol
 }
 
 async function issueTokenResponse(
-  user: { email: string; id: string; name: string; role: StaffRole; status: 'ACTIVE' | 'DISABLED' | 'INVITED' },
+  user: {
+    email: string;
+    id: string;
+    name: string;
+    role: StaffRole;
+    status: 'ACTIVE' | 'DISABLED' | 'INVITED';
+  },
   sessionId: string,
   app: StaffApp,
   refreshToken: string,
@@ -178,18 +205,37 @@ async function issueTokenResponse(
   refreshToken: string;
   user: ReturnType<typeof mapUser>;
 }> {
-  const signed = await signAccessToken({ app, role: user.role, sessionId, userId: user.id, ver: 1 });
+  const signed = await issueStaffAccessResponse(user, sessionId, app);
   return {
     ...signed,
     refreshToken,
-    user: mapUser(user),
   };
 }
 
+export async function issueStaffAccessResponse(
+  user: StaffAccessUser,
+  sessionId: string,
+  app: StaffApp,
+): Promise<{
+  accessExpiresAt: string;
+  accessToken: string;
+  user: ReturnType<typeof mapUser>;
+}> {
+  const signed = await signAccessToken({ app, role: user.role, sessionId, userId: user.id, ver: 1 });
+  return { ...signed, user: mapUser(user) };
+}
+
 async function createSession(
-  user: { email: string; id: string; name: string; role: StaffRole; status: 'ACTIVE' | 'DISABLED' | 'INVITED' },
+  user: {
+    email: string;
+    id: string;
+    name: string;
+    role: StaffRole;
+    status: 'ACTIVE' | 'DISABLED' | 'INVITED';
+  },
   app: StaffApp,
   device: z.infer<typeof DeviceSchema>,
+  db: Pick<DbTx, 'session'> = prisma,
 ): Promise<{
   accessExpiresAt: string;
   accessToken: string;
@@ -197,14 +243,14 @@ async function createSession(
   user: ReturnType<typeof mapUser>;
 }> {
   const refreshToken = newRefreshToken();
-  const session = await prisma.session.create({
+  const session = await db.session.create({
     data: {
       app: appToDb(app),
       deviceId: device.deviceId,
       deviceName: device.deviceName,
       platform: devicePlatform(device.platform),
       appVersion: device.appVersion,
-      expiresAt: addDays(new Date(), REFRESH_DAYS),
+      expiresAt: app === 'admin' ? null : addDays(new Date(), REFRESH_DAYS),
       refreshTokenHash: refreshHash(refreshToken),
       userId: user.id,
     },
@@ -213,17 +259,42 @@ async function createSession(
   return issueTokenResponse(user, session.id, app, refreshToken);
 }
 
-export async function requestStaffOtp(input: z.infer<typeof OtpRequestSchema>): Promise<void> {
+export async function loginStaffPassword(input: z.infer<typeof PasswordLoginRequestSchema>): Promise<{
+  accessExpiresAt: string;
+  accessToken: string;
+  refreshToken: string;
+  user: ReturnType<typeof mapUser>;
+}> {
+  const user = await prisma.user.findUnique({
+    where: { email: input.email.toLowerCase() },
+    select: { email: true, id: true, name: true, passwordHash: true, role: true, status: true },
+  });
+  const validPassword = await verifyStaffPassword(input.password, user?.passwordHash ?? null);
+  if (!user || !validPassword || user.status === 'DISABLED' || !allowedRoleForApp(user.role, input.app)) {
+    throw new AppError('UNAUTHORIZED', 'Invalid email or password.');
+  }
+  const now = new Date();
+  return prisma.$transaction(async (tx) => {
+    const updated = await tx.user.updateMany({
+      where: { id: user.id, passwordHash: user.passwordHash, role: user.role, status: user.status },
+      data: { lastLoginAt: now, status: 'ACTIVE' },
+    });
+    if (updated.count !== 1) throw new AppError('UNAUTHORIZED', 'Invalid email or password.');
+    return createSession({ ...user, status: 'ACTIVE' }, input.app, input.device, tx);
+  });
+}
+
+export async function requestStaffOtp(input: z.infer<typeof OtpRequestSchema>): Promise<string | null> {
   const email = input.email.toLowerCase();
   const user = await prisma.user.findUnique({
     where: { email },
     select: { email: true, id: true, name: true, role: true, status: true },
   });
-  if (!user || user.status === 'DISABLED' || !allowedRoleForApp(user.role, input.app)) return;
+  if (!user || user.status === 'DISABLED' || !allowedRoleForApp(user.role, input.app)) return null;
 
   const code = String(randomInt(0, 1_000_000)).padStart(6, '0');
   const now = new Date();
-  await prisma.$transaction(async (tx) => {
+  return prisma.$transaction(async (tx) => {
     await tx.authOtp.updateMany({
       data: { consumedAt: now },
       where: { app: appToDb(input.app), consumedAt: null, email },
@@ -236,7 +307,7 @@ export async function requestStaffOtp(input: z.infer<typeof OtpRequestSchema>): 
         expiresAt: addMinutes(now, OTP_MINUTES),
       },
     });
-    await enqueueOutbox(
+    const event = await enqueueOutbox(
       tx,
       'email.send',
       json({
@@ -246,6 +317,7 @@ export async function requestStaffOtp(input: z.infer<typeof OtpRequestSchema>): 
       }),
       `staff-login-code:${email}:${input.app}:${now.toISOString()}`,
     );
+    return event.id;
   });
 }
 
@@ -285,7 +357,8 @@ export async function verifyStaffOtp(input: z.infer<typeof OtpVerifySchema>): Pr
     },
   });
   if (!otp) throw new AppError('UNAUTHORIZED', 'Invalid or expired code.');
-  if (otp.attempts >= 5) throw new AppError('RATE_LIMITED', 'Too many sign-in attempts. Try again shortly.', { retryAfter: 900 });
+  if (otp.attempts >= 5)
+    throw new AppError('RATE_LIMITED', 'Too many sign-in attempts. Try again shortly.', { retryAfter: 900 });
 
   const matches = timingSafeHexEqual(otp.codeHash, otpHash(email, input.code));
   if (!matches) {
@@ -307,7 +380,11 @@ export async function verifyStaffOtp(input: z.infer<typeof OtpVerifySchema>): Pr
   });
   await prisma.authOtp.update({ data: { consumedAt: now }, where: { id: otp.id } });
 
-  return createSession({ ...user, status: user.status === 'INVITED' ? 'ACTIVE' : user.status }, input.app, input.device);
+  return createSession(
+    { ...user, status: user.status === 'INVITED' ? 'ACTIVE' : user.status },
+    input.app,
+    input.device,
+  );
 }
 
 export async function refreshStaffSession(input: z.infer<typeof RefreshRequestSchema>): Promise<{
@@ -317,20 +394,54 @@ export async function refreshStaffSession(input: z.infer<typeof RefreshRequestSc
   user: ReturnType<typeof mapUser>;
 }> {
   const tokenHash = refreshHash(input.refreshToken);
-  const session = await prisma.session.findFirst({
-    include: { user: { select: { email: true, id: true, name: true, role: true, status: true } } },
-    where: {
-      OR: [{ refreshTokenHash: tokenHash }, { previousRefreshTokenHash: tokenHash }],
-    },
+  const candidate = await prisma.session.findFirst({
+    where: { OR: [{ refreshTokenHash: tokenHash }, { previousRefreshTokenHash: tokenHash }] },
+    select: { id: true },
   });
-  if (!session) throw new AppError('UNAUTHORIZED', 'Sign in again.');
-  if (session.previousRefreshTokenHash === tokenHash) {
-    await prisma.$transaction(async (tx) => {
+  if (!candidate) throw new AppError('UNAUTHORIZED', 'Sign in again.');
+  const result = await prisma.$transaction(async (tx) => {
+    // Serialize rotations and exact retries before inspecting the current/previous token hashes.
+    await tx.$queryRaw`SELECT "id" FROM "Session" WHERE "id" = ${candidate.id} FOR UPDATE`;
+    const session = await tx.session.findUnique({
+      where: { id: candidate.id },
+      include: { user: { select: { email: true, id: true, name: true, role: true, status: true } } },
+    });
+    const now = new Date();
+    if (
+      !session ||
+      session.revokedAt ||
+      (session.expiresAt !== null && session.expiresAt <= now) ||
+      (session.expiresAt === null && session.app !== 'ADMIN') ||
+      (session.app === 'DRIVER' && addDays(session.createdAt, REFRESH_ABSOLUTE_DAYS) <= now) ||
+      session.deviceId !== input.deviceId ||
+      session.user.status !== 'ACTIVE' ||
+      !allowedRoleForApp(session.user.role, dbToApp(session.app)) ||
+      (session.app === 'ADMIN' && session.platform === 'WEB')
+    ) {
+      throw new AppError('UNAUTHORIZED', 'Sign in again.');
+    }
+    const deriveRefreshToken = (requestId: string): string =>
+      createHmac('sha256', secret('OTP_PEPPER'))
+        .update(JSON.stringify(['sv.native-refresh.v1', session.id, requestId, tokenHash]))
+        .digest('base64url');
+    if (session.previousRefreshTokenHash === tokenHash) {
+      if (input.requestId && session.lastRefreshRequestId === input.requestId) {
+        const refreshToken = deriveRefreshToken(input.requestId);
+        if (timingSafeHexEqual(refreshHash(refreshToken), session.refreshTokenHash)) {
+          return {
+            revoked: false,
+            response: await issueTokenResponse(session.user, session.id, dbToApp(session.app), refreshToken),
+          } as const;
+        }
+      }
       await tx.session.update({
-        data: { revokedAt: new Date(), revokedReason: 'refresh-token-reuse' },
+        data: { revokedAt: now, revokedReason: 'refresh-token-reuse' },
         where: { id: session.id },
       });
-      await tx.pushDevice.updateMany({ data: { enabled: false, lastError: 'session-revoked' }, where: { sessionId: session.id } });
+      await tx.pushDevice.updateMany({
+        data: { enabled: false, lastError: 'session-revoked' },
+        where: { sessionId: session.id },
+      });
       await enqueueOutbox(
         tx,
         'email.send',
@@ -341,29 +452,45 @@ export async function refreshStaffSession(input: z.infer<typeof RefreshRequestSc
         }),
         `refresh-reuse-alert:${session.id}`,
       );
+      // Commit revocation and the alert before returning the unauthorized outcome.
+      return { revoked: true } as const;
+    }
+    if (!timingSafeHexEqual(session.refreshTokenHash, tokenHash))
+      throw new AppError('UNAUTHORIZED', 'Sign in again.');
+    const refreshToken = input.requestId ? deriveRefreshToken(input.requestId) : newRefreshToken();
+    const expiresAt =
+      session.app === 'ADMIN'
+        ? null
+        : minDate(addDays(now, REFRESH_DAYS), addDays(session.createdAt, REFRESH_ABSOLUTE_DAYS));
+    const updated = await tx.session.updateMany({
+      data: {
+        expiresAt,
+        lastUsedAt: now,
+        lastRefreshRequestId: input.requestId ?? null,
+        previousRefreshTokenHash: session.refreshTokenHash,
+        refreshTokenHash: refreshHash(refreshToken),
+      },
+      where: {
+        id: session.id,
+        refreshTokenHash: tokenHash,
+        revokedAt: null,
+        user: { is: { status: 'ACTIVE', role: session.user.role } },
+      },
     });
-    throw new AppError('UNAUTHORIZED', 'Sign in again.');
-  }
-  if (session.revokedAt || session.expiresAt.getTime() <= Date.now() || session.deviceId !== input.deviceId || session.user.status !== 'ACTIVE') {
-    throw new AppError('UNAUTHORIZED', 'Sign in again.');
-  }
-
-  const refreshToken = newRefreshToken();
-  const expiresAt = minDate(addDays(new Date(), REFRESH_DAYS), addDays(session.createdAt, REFRESH_ABSOLUTE_DAYS));
-  await prisma.session.update({
-    data: {
-      expiresAt,
-      lastUsedAt: new Date(),
-      previousRefreshTokenHash: session.refreshTokenHash,
-      refreshTokenHash: refreshHash(refreshToken),
-    },
-    where: { id: session.id },
+    if (updated.count !== 1) throw new AppError('UNAUTHORIZED', 'Sign in again.');
+    return {
+      revoked: false,
+      response: await issueTokenResponse(session.user, session.id, dbToApp(session.app), refreshToken),
+    } as const;
   });
-
-  return issueTokenResponse(session.user, session.id, dbToApp(session.app), refreshToken);
+  if (result.revoked) throw new AppError('UNAUTHORIZED', 'Sign in again.');
+  return result.response;
 }
 
-export async function authenticateStaffRequest(request: Request, options: StaffAuthOptions): Promise<StaffContext> {
+export async function authenticateStaffRequest(
+  request: Request,
+  options: StaffAuthOptions,
+): Promise<StaffContext> {
   const header = request.headers.get('authorization');
   const token = header?.startsWith('Bearer ') ? header.slice('Bearer '.length).trim() : null;
   if (!token) throw new AppError('UNAUTHORIZED', 'Sign in required.');
@@ -376,7 +503,13 @@ export async function authenticateStaffRequest(request: Request, options: StaffA
     const sid = verified.payload.sid;
     const sub = verified.payload.sub;
     const ver = verified.payload.ver;
-    if ((role !== 'OWNER' && role !== 'ADMIN' && role !== 'DRIVER') || (app !== 'admin' && app !== 'driver') || typeof sid !== 'string' || !sub || ver !== 1) {
+    if (
+      (role !== 'OWNER' && role !== 'ADMIN' && role !== 'DRIVER') ||
+      (app !== 'admin' && app !== 'driver') ||
+      typeof sid !== 'string' ||
+      !sub ||
+      ver !== 1
+    ) {
       throw new Error('invalid claims');
     }
     claims = { app, role, sessionId: sid, userId: sub, ver };
@@ -385,14 +518,31 @@ export async function authenticateStaffRequest(request: Request, options: StaffA
   }
 
   assertMinimumAppVersion(request, claims.app);
-  if (options.app && options.app !== claims.app) throw new AppError('FORBIDDEN', 'This endpoint is not available in this app.');
-  if (options.roles && !options.roles.includes(claims.role)) throw new AppError('FORBIDDEN', 'You do not have permission to do that.');
+  if (options.app && options.app !== claims.app)
+    throw new AppError('FORBIDDEN', 'This endpoint is not available in this app.');
+  if (options.roles && !options.roles.includes(claims.role))
+    throw new AppError('FORBIDDEN', 'You do not have permission to do that.');
 
   const session = await prisma.session.findUnique({
     where: { id: claims.sessionId },
-    select: { expiresAt: true, revokedAt: true, user: { select: { role: true, status: true } }, userId: true },
+    select: {
+      app: true,
+      expiresAt: true,
+      revokedAt: true,
+      user: { select: { role: true, status: true } },
+      userId: true,
+    },
   });
-  if (!session || session.userId !== claims.userId || session.revokedAt || session.expiresAt.getTime() <= Date.now() || session.user.status !== 'ACTIVE') {
+  if (
+    !session ||
+    session.userId !== claims.userId ||
+    session.app !== appToDb(claims.app) ||
+    session.revokedAt ||
+    (session.expiresAt !== null && session.expiresAt.getTime() <= Date.now()) ||
+    (session.expiresAt === null && session.app !== 'ADMIN') ||
+    session.user.status !== 'ACTIVE' ||
+    !allowedRoleForApp(session.user.role, claims.app)
+  ) {
     throw new AppError('UNAUTHORIZED', 'Sign in required.');
   }
   if (session.user.role !== claims.role) throw new AppError('UNAUTHORIZED', 'Sign in required.');
@@ -422,17 +572,25 @@ export async function staffMe(staff: StaffContext): Promise<z.infer<typeof MeRes
   return {
     appConfig: {
       featureFlags: {},
-      minVersion: staff.app === 'admin' ? env.MIN_ADMIN_APP_VERSION ?? '0.0.0' : env.MIN_DRIVER_APP_VERSION ?? '0.0.0',
+      minVersion:
+        staff.app === 'admin'
+          ? (env.MIN_ADMIN_APP_VERSION ?? '0.0.0')
+          : (env.MIN_DRIVER_APP_VERSION ?? '0.0.0'),
       slotWindows: settings.operations.slotWindows,
       supportPhone: settings.contact.phoneE164 ?? settings.contact.phoneDisplay,
     },
-    driverProfile: user.driver ? { homePostcode: user.driver.homePostcode, payoutPercent: user.driver.payoutPercent } : null,
+    driverProfile: user.driver
+      ? { homePostcode: user.driver.homePostcode, payoutPercent: user.driver.payoutPercent }
+      : null,
     role: user.role,
     user: mapUser(user),
   };
 }
 
-export async function upsertPushDevice(staff: StaffContext, input: { expoPushToken: string; platform: 'android' | 'ios' }): Promise<void> {
+export async function upsertPushDevice(
+  staff: StaffContext,
+  input: { expoPushToken: string; platform: 'android' | 'ios' },
+): Promise<void> {
   await prisma.pushDevice.upsert({
     create: {
       app: appToDb(staff.app),
@@ -531,7 +689,10 @@ export async function listNotifications(staff: StaffContext) {
   };
 }
 
-export async function markNotificationsRead(staff: StaffContext, input: { all: true } | { ids: string[] }): Promise<void> {
+export async function markNotificationsRead(
+  staff: StaffContext,
+  input: { all: true } | { ids: string[] },
+): Promise<void> {
   await prisma.notification.updateMany({
     data: { readAt: new Date() },
     where: {

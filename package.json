@@ -5,7 +5,7 @@
   "type": "module",
   "packageManager": "npm@11.5.1",
   "engines": {
-    "node": ">=24"
+    "node": "24.x"
   },
   "workspaces": [
     "apps/*",
@@ -35,7 +35,7 @@
   },
   "devDependencies": {
     "@eslint/js": "9.39.5",
-    "@next/eslint-plugin-next": "16.4.0",
+    "@next/eslint-plugin-next": "16.4.4",
     "@react-native/assets-registry": "0.86.3",
     "@rolldown/binding-wasm32-wasi": "^1.2.13",
     "@types/node": "26.6.5",

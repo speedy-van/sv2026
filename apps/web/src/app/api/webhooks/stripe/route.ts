@@ -1,10 +1,13 @@
 import { AppError } from '@sv/contracts';
+import { after } from 'next/server';
 import { constructStripeEvent } from '@/server/integrations/stripe';
 import { apiError, apiJson, requestIdFrom } from '@/server/request';
 import { handleStripeEvent } from '@/server/services/stripe-webhook';
+import { dispatchPendingOutbox } from '@/server/outbox/dispatch';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+export const maxDuration = 60;
 
 export async function POST(request: Request): Promise<Response> {
   const requestId = requestIdFrom(request);
@@ -12,6 +15,10 @@ export async function POST(request: Request): Promise<Response> {
     const body = await request.text();
     const event = constructStripeEvent(body, request.headers.get('stripe-signature'));
     const result = await handleStripeEvent(event);
+    if (event.type === 'payment_intent.succeeded') {
+      const paymentIntentId = event.data.object.id;
+      after(() => dispatchPendingOutbox(paymentIntentId));
+    }
     return apiJson({ ok: true, result }, {}, requestId);
   } catch (error) {
     if (error instanceof AppError && error.code === 'VALIDATION_ERROR') {

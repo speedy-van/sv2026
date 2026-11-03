@@ -1,6 +1,7 @@
 slug,name,category,volume_m3,popular,aliases,sort_order
 sofa-2-seater,Sofa (2-seater),living-room,1.00,1,settee|couch,10
 sofa-3-seater,Sofa (3-seater),living-room,1.40,1,settee|couch,20
+sofa-4-seater,Four seater sofa,living-room,1.80,0,settee|couch,25
 sofa-corner,Corner sofa,living-room,2.30,0,l-shaped sofa|sectional,30
 sofa-bed,Sofa bed,living-room,1.40,0,futon,40
 armchair,Armchair,living-room,0.60,1,chair|easy chair,50
@@ -39,6 +40,7 @@ dressing-table,Dressing table,bedroom,0.55,0,vanity,160
 blanket-box,Ottoman or blanket box,bedroom,0.30,0,storage box,170
 dining-table-small,Dining table (2 to 4 seats),dining,0.55,1,kitchen table,10
 dining-table-large,Dining table (6 to 8 seats),dining,1.00,0,kitchen table,20
+dining-table-8,8 seater dining table,dining,1.20,0,kitchen table,25
 dining-chair,Dining chair,dining,0.15,1,kitchen chair,30
 bar-stool,Bar stool,dining,0.10,0,stool,40
 bench,Bench,dining,0.30,0,,50
@@ -51,6 +53,7 @@ tumble-dryer,Tumble dryer,kitchen-appliances,0.40,0,dryer,60
 dishwasher,Dishwasher,kitchen-appliances,0.40,0,,70
 cooker,Cooker (freestanding),kitchen-appliances,0.55,0,oven|range,80
 microwave,Microwave,kitchen-appliances,0.10,0,,90
+kitchen-bin,Bin,kitchen-appliances,0.08,0,rubbish bin|trash can,100
 box-small,Small box,boxes-bags,0.04,0,carton,10
 box-medium,Medium box,boxes-bags,0.08,1,carton,20
 box-large,Large box,boxes-bags,0.13,1,carton,30
@@ -66,7 +69,9 @@ cabinet-filing-2,Filing cabinet (2-drawer),office,0.30,0,,40
 cabinet-filing-4,Filing cabinet (4-drawer),office,0.55,0,,50
 workstation,Computer and monitors (per desk),office,0.15,0,pc|monitor,60
 printer-desktop,Printer (desktop),office,0.10,0,,70
+office-lamp,Lamp,office,0.08,0,desk lamp,75
 printer-office,"Printer (office, floor-standing)",office,0.70,0,copier|photocopier,80
+computer,Computer,office,0.15,0,pc|monitor,85
 cupboard-office,Office storage cupboard,office,1.10,0,stationery cupboard,90
 meeting-table,Meeting table,office,1.10,0,boardroom table,100
 whiteboard,Whiteboard,office,0.15,0,,110
@@ -75,6 +80,7 @@ garden-table,Garden table,garden,0.55,0,patio table,10
 garden-chair,Garden chair,garden,0.15,0,patio chair,20
 garden-bench,Garden bench,garden,0.40,0,,30
 lawn-mower,Lawn mower,garden,0.30,0,mower,40
+tool-box,Tool box,garden,0.10,0,tools,45
 bbq,Barbecue,garden,0.40,0,grill,50
 bicycle,Bicycle,garden,0.40,0,bike,60
 parasol,Parasol,garden,0.10,0,umbrella,70
@@ -104,6 +110,8 @@ coat-stand,Coat stand,other,0.10,0,,70
 pet-crate,Pet crate,other,0.20,0,dog crate|cage,80
 fish-tank,Fish tank (empty),other,0.30,0,aquarium,90
 bathroom-cabinet,Bathroom cabinet,other,0.15,0,,100
+mirror-small,Small mirror,other,0.06,0,,101
+bath-tub,Bath tub,other,1.20,0,bathtub,102
 laundry-basket,Laundry basket,other,0.10,0,,110
 flatpack-small,Flat-pack box (small),other,0.15,0,ikea box,120
 flatpack-large,Flat-pack box (large),other,0.40,0,ikea box,130

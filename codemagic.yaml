@@ -1,0 +1,82 @@
+# Build the verified admin iOS release. No publishing or automatic triggers.
+# Secure app group speedyvan_admin_ios55 must contain CM_CERTIFICATE (base64
+# P12 with private key), CM_CERTIFICATE_PASSWORD, CM_PROVISIONING_PROFILE (base64).
+workflows:
+  sv-admin-ios-55:
+    name: SV Admin 1.0.1 (55)
+    instance_type: mac_mini_m2
+    max_build_duration: 90
+    environment:
+      node: 24.7.0
+      xcode: "26.6"
+      cocoapods: 1.16.2
+      groups:
+        - speedyvan_admin_ios55
+      vars:
+        CI: "1"
+        NODE_ENV: production
+        EXPO_NO_TELEMETRY: "1"
+        EXPO_NO_DOTENV: "1"
+        EAS_BUILD_PROFILE: production-store
+        EAS_PROJECT_ID: 0dd0709d-309d-455c-8ad8-eeeb4550adca
+        EXPO_PUBLIC_API_BASE_URL: https://www.speedyvan.uk
+    scripts:
+      - name: Verify source and pinned tools
+        script: |
+          set -euo pipefail
+          cd "$CM_BUILD_DIR"
+          test "$(node --version)" = "v24.7.0"
+          test "$(npm --version)" = "11.5.1"
+          test "$(pod --version)" = "1.16.2"
+          xcodebuild -version
+          python3 scripts/admin-ios-release-audit.py source
+      - name: Install exact monorepo dependencies
+        script: |
+          set -euo pipefail
+          cd "$CM_BUILD_DIR"
+          npm ci --include=dev --no-audit --no-fund
+      - name: Generate native iOS project and production update settings
+        script: |
+          set -euo pipefail
+          cd "$CM_BUILD_DIR/apps/admin"
+          test ! -e ios
+          node ../../node_modules/expo/bin/cli config --type public --json > "$CM_BUILD_DIR/build/reports/admin-public-config.json"
+          node ../../node_modules/expo/bin/cli prebuild --platform ios --no-install
+          cd "$CM_BUILD_DIR"
+          python3 scripts/admin-ios-release-audit.py native
+          # Expo/RN build phases source this file so Node remains available.
+          printf 'export NODE_BINARY=%s\n' "$(command -v node)" > apps/admin/ios/.xcode.env.local
+      - name: Install CocoaPods dependencies
+        script: |
+          set -euo pipefail
+          cd "$CM_BUILD_DIR/apps/admin/ios"
+          pod install
+          cp Podfile.lock "$CM_BUILD_DIR/build/reports/Podfile.lock"
+      - name: Install existing App Store signing credentials and apply profile
+        script: |
+          set -euo pipefail
+          cd "$CM_BUILD_DIR"
+          python3 scripts/admin-ios-release-audit.py signing
+          xcode-project use-profiles --project apps/admin/ios/SVAdmin.xcodeproj
+      - name: Archive and export signed IPA
+        script: |
+          set -euo pipefail
+          cd "$CM_BUILD_DIR"
+          xcode-project build-ipa \
+            --workspace apps/admin/ios/SVAdmin.xcworkspace \
+            --scheme SVAdmin \
+            --config Release \
+            --archive-directory build/ios/xcarchive \
+            --ipa-directory build/ios/ipa \
+            --export-options-plist "$HOME/export_options.plist" \
+            --no-show-build-settings
+      - name: Verify actual signed artifact and custom sound
+        script: |
+          set -euo pipefail
+          cd "$CM_BUILD_DIR"
+          python3 scripts/admin-ios-release-audit.py ipa
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - build/ios/xcarchive/*.xcarchive/dSYMs/*.dSYM
+      - build/reports/*.json
+      - build/reports/Podfile.lock

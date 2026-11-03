@@ -4,12 +4,17 @@ import type { ReactNode } from 'react';
 import { showDraftLegalBanner } from '@/server/marketing';
 import { getPublicSettings } from '@/server/settings';
 
-export const metadata: Metadata = {
-  alternates: { canonical: '/accessibility' },
-  description: 'Accessibility statement for Speedy Van.',
-  robots: { follow: true, index: false },
-  title: 'Accessibility statement',
-};
+import { createPageMetadata, getSeoSettings } from '@/server/seo';
+
+export async function generateMetadata(): Promise<Metadata> {
+  return createPageMetadata({
+    path: '/accessibility',
+    settings: await getSeoSettings(),
+    description: 'Accessibility statement for Speedy Van.',
+    indexable: false,
+    title: 'Accessibility statement',
+  });
+}
 
 export default async function AccessibilityPage(): Promise<ReactNode> {
   const [settings, showBanner] = await Promise.all([getPublicSettings(), showDraftLegalBanner()]);

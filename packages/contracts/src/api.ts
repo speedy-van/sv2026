@@ -73,7 +73,7 @@ export const AddressSchema = z
     lng: z.number().min(-8.7).max(1.8),
     label: z.string().trim().max(240),
     source: z.enum(['MAPBOX', 'MANUAL']),
-    mapboxId: z.string().trim().max(200).optional(),
+    mapboxId: z.string().trim().max(1024).optional(),
   })
   .strict();
 
@@ -254,9 +254,12 @@ export const AddressSuggestRequestSchema = z
   })
   .strict();
 
+// Mapbox Search Box ids are opaque; some address ids are 500+ characters.
+export const MapboxIdSchema = z.string().trim().min(1).max(1024);
+
 export const AddressSuggestionSchema = z
   .object({
-    id: z.string().trim().min(1).max(200),
+    id: MapboxIdSchema,
     primary: z.string().trim().min(1).max(160),
     secondary: z.string().trim().max(160),
     kind: z.enum(['address', 'postcode', 'place', 'poi']),
@@ -265,7 +268,7 @@ export const AddressSuggestionSchema = z
 
 export const AddressSuggestResponseSchema = z.object({ suggestions: z.array(AddressSuggestionSchema).max(10) }).strict();
 
-export const AddressRetrieveRequestSchema = z.object({ id: z.string().trim().min(1).max(200), sessionToken: UuidSchema }).strict();
+export const AddressRetrieveRequestSchema = z.object({ id: MapboxIdSchema, sessionToken: UuidSchema }).strict();
 export const AddressRetrieveResponseSchema = z
   .union([
     z.object({ address: AddressSchema }).strict(),
@@ -318,11 +321,20 @@ export const ManualQuoteRequestSchema = z
   .strict();
 export const ManualQuoteRequestResponseSchema = z.object({ reference: z.string().trim().min(1).max(40) }).strict();
 
+/** Codes are case-insensitive; the server compares a hash of the trimmed upper-case form. */
+export const CouponCodeSchema = z
+  .string()
+  .trim()
+  .min(6)
+  .max(40)
+  .regex(/^[A-Za-z0-9-]+$/u);
+
 export const BookingCreateSchema = z
   .object({
     quotePublicId: PublicIdSchema,
     date: IsoDateSchema,
     slot: SlotSchema,
+    /** Engine price for the slot, before any coupon. */
     expectedTotalPence: PenceSchema,
     idempotencyKey: UuidSchema,
     contact: ContactSchema,
@@ -330,6 +342,24 @@ export const BookingCreateSchema = z
     marketingOptIn: z.boolean(),
     termsAccepted: z.literal(true),
     startWithinCancellationPeriodAck: z.boolean(),
+    couponCode: CouponCodeSchema.optional(),
+  })
+  .strict();
+
+export const CouponCheckSchema = z
+  .object({
+    quotePublicId: PublicIdSchema,
+    date: IsoDateSchema,
+    slot: SlotSchema,
+    expectedTotalPence: PenceSchema,
+    couponCode: CouponCodeSchema,
+  })
+  .strict();
+
+export const CouponCheckResponseSchema = z
+  .object({
+    listPricePence: PenceSchema,
+    totalPence: PenceSchema,
   })
   .strict();
 
@@ -349,6 +379,11 @@ export const BookingStatusResponseSchema = z
     reference: z.string().nullable(),
     summary: z.record(z.string(), z.unknown()).nullable(),
     manageUrl: UrlSchema.optional(),
+    checkout: z.object({
+      paymentStatus: z.enum(['REQUIRES_PAYMENT', 'PROCESSING', 'SUCCEEDED', 'FAILED', 'CANCELED']).nullable(),
+      holdExpiresAt: IsoTimestampSchema.nullable(),
+      canRetry: z.boolean(),
+    }).strict().optional(),
   })
   .strict();
 
@@ -474,6 +509,11 @@ export const OtpVerifySchema = OtpRequestSchema.extend({
   code: z.string().regex(/^\d{6}$/),
   device: DeviceSchema,
 }).strict();
+export const StaffPasswordSchema = z.string().min(1).max(1024);
+export const PasswordLoginRequestSchema = OtpRequestSchema.extend({
+  password: StaffPasswordSchema,
+  device: DeviceSchema,
+}).strict();
 export const StaffUserSchema = z
   .object({
     id: z.string().min(1),
@@ -491,7 +531,9 @@ export const AuthTokenResponseSchema = z
     user: StaffUserSchema,
   })
   .strict();
-export const RefreshRequestSchema = z.object({ refreshToken: z.string().min(20), deviceId: z.string().min(1).max(160) }).strict();
+export const RefreshRequestSchema = z.object({
+  refreshToken: z.string().min(20), deviceId: z.string().min(1).max(160), requestId: z.uuid().optional(),
+}).strict();
 export const PushDevicePutSchema = z.object({ expoPushToken: z.string().min(1).max(300), platform: z.enum(['ios', 'android']) }).strict();
 export const NotificationReadSchema = z.union([
   z.object({ ids: z.array(z.string().min(1)).min(1).max(100) }).strict(),
@@ -594,7 +636,7 @@ export const ManualQuotePriceSchema = z
 export const CapacityRuleSchema = z.object({ weekday: z.number().int().min(0).max(6), slot: SlotSchema, capacity: z.number().int().min(0).max(100) }).strict();
 export const CapacityOverrideSchema = z.object({ date: IsoDateSchema, slot: SlotSchema, capacity: z.number().int().min(0).max(100), reason: z.string().max(200).optional() }).strict();
 export const DriverInviteSchema = z.object({ name: z.string().min(1).max(80), email: EmailSchema, phone: UkPhoneSchema.optional() }).strict();
-export const DriverPatchSchema = z.object({ name: z.string().min(1).max(80).optional(), phone: UkPhoneSchema.optional(), payoutPercent: z.number().int().min(0).max(100).optional() }).strict();
+export const DriverPatchSchema = z.object({ name: z.string().min(1).max(80).optional(), phone: UkPhoneSchema.optional(), payoutPercent: z.number().int().min(0).max(100).nullable().optional() }).strict();
 export const VanUpsertSchema = z.object({ registration: z.string().min(1).max(20), label: z.string().min(1).max(80), active: z.boolean() }).strict();
 export const PayoutCreateSchema = z.object({ driverId: z.string().min(1), earningIds: z.array(z.string().min(1)).min(1), method: z.string().min(1).max(80), reference: z.string().max(120).optional(), paidAt: IsoTimestampSchema }).strict();
 export const PricingDraftCreateSchema = z.object({ sourceVersionId: z.string().min(1).optional() }).strict();

@@ -12,6 +12,7 @@ import { assertSlotCapacity, enqueueOutbox, Prisma, prisma, type DbTx, type Slot
 import { priceForSlot, type PricingConfig, type PricingInput } from '@sv/pricing';
 import { createHash, randomInt } from 'node:crypto';
 import type { z } from 'zod';
+import { legalCopy } from '@/content/legal';
 import { createOrRetrievePaymentIntent } from '../integrations/stripe';
 import { dbDateLabel, londonDateTimeToUtc, slotLabel } from '../london-time';
 import { getOperationsSettings, getSetting } from '../settings';
@@ -86,7 +87,7 @@ async function emailDataBase(): Promise<{ canonicalOrigin: string; contactEmail:
   };
 }
 
-export async function requestManageLink(input: { email: string; reference: string }, now = new Date()): Promise<void> {
+export async function requestManageLink(input: { email: string; reference: string }, now = new Date()): Promise<string | null> {
   enforceEmailLimit(input.email, now);
   const booking = await prisma.booking.findFirst({
     where: {
@@ -95,10 +96,10 @@ export async function requestManageLink(input: { email: string; reference: strin
     },
     select: { contactEmail: true, id: true, moveDate: true, reference: true },
   });
-  if (!booking) return;
+  if (!booking) return null;
   const base = await emailDataBase();
   const token = await manageLinkForBooking(booking, now);
-  await enqueueOutbox(
+  const event = await enqueueOutbox(
     prisma,
     'email.send',
     json({
@@ -112,6 +113,7 @@ export async function requestManageLink(input: { email: string; reference: strin
     }),
     `manage-link:${booking.id}:${contactEmailHash(booking.contactEmail)}:${String(Math.floor(now.getTime() / 3_600_000))}`,
   );
+  return event.id;
 }
 
 export async function bookingIdFromManageToken(token: string): Promise<string> {
@@ -194,15 +196,19 @@ export async function manageView(token: string): Promise<Record<string, unknown>
 
 async function manageActionState(booking: { jobStage: string; moveDate: Date; slot: Slot; status: string }, now: Date): Promise<Record<string, string | boolean>> {
   const cancellation = await getSetting('cancellation');
-  const rescheduleHours = cancellation.selfServiceRescheduleHours ?? 48;
-  const canBefore = new Date(slotStart(booking).getTime() - rescheduleHours * 3_600_000);
-  const canReschedule = booking.status === 'CONFIRMED' && booking.jobStage === 'NOT_STARTED' && now <= canBefore;
+  const rescheduleHours = cancellation.selfServiceRescheduleHours;
+  const canReschedule = rescheduleHours !== null
+    && booking.status === 'CONFIRMED'
+    && booking.jobStage === 'NOT_STARTED'
+    && now.getTime() <= slotStart(booking).getTime() - rescheduleHours * 3_600_000;
   const canCancel = booking.status === 'CONFIRMED' && booking.jobStage === 'NOT_STARTED';
   return {
     canCancel,
     canReschedule,
     cancelReason: canCancel ? '' : 'Your move has started or is no longer confirmed. Call us for help.',
-    rescheduleReason: canReschedule ? '' : `You can change your date online until ${String(rescheduleHours)} hours before your slot.`,
+    rescheduleReason: canReschedule ? '' : rescheduleHours === null
+      ? legalCopy.reschedulePending
+      : `You can change your date online until ${String(rescheduleHours)} hours before your slot.`,
   };
 }
 

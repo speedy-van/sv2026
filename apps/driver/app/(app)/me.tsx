@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Badge, Button, Card, Screen, AppText, Row } from '@/components/primitives';
 import { getAvailability, getProfile, putAvailability } from '@/data/driver';
+import { formatPayoutAgreement } from '@/earnings/format';
 import { useAuth } from '@/state/auth';
 
 export default function MeScreen(): React.ReactElement {
@@ -17,7 +18,7 @@ export default function MeScreen(): React.ReactElement {
         <AppText muted>{profile.data?.email}</AppText>
         <Row>
           <AppText>Payout</AppText>
-          <Badge label={`${String(profile.data?.payoutPercent ?? 0)}%`} tone="success" />
+          {profile.data ? <Badge label={formatPayoutAgreement(profile.data.payoutPercent)} tone="success" /> : null}
         </Row>
         <Button label="Lock app" onPress={() => { auth.lockApp(); }} tone="secondary" />
       </Card>

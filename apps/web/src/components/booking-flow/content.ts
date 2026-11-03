@@ -5,7 +5,6 @@ import {
   Package,
   Piano,
   Sofa,
-  Trash2,
   Truck,
   Warehouse,
   Zap,
@@ -86,8 +85,8 @@ export const serviceOptions: ServiceOption[] = [
     label: 'Storage',
     requiresDropoff: true,
     variants: [
-      { key: 'into-storage', label: 'Into storage' },
-      { key: 'out-of-storage', label: 'Out of storage' },
+      { key: 'to-storage', label: 'Into storage' },
+      { key: 'from-storage', label: 'Out of storage' },
     ],
   },
   {
@@ -102,14 +101,6 @@ export const serviceOptions: ServiceOption[] = [
       { key: 'baby-grand', label: 'Baby grand', manualQuote: true },
       { key: 'grand', label: 'Grand', manualQuote: true },
     ],
-  },
-  {
-    description: 'Rubbish removal from one Scottish address.',
-    icon: Trash2,
-    key: 'rubbish',
-    label: 'Rubbish',
-    requiresDropoff: false,
-    variants: [{ key: 'standard', label: 'Standard' }],
   },
   {
     description: 'Parcels and single item courier jobs.',

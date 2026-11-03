@@ -4,55 +4,58 @@ import { NoPrefetchLink as Link } from '@/components/navigation/no-prefetch-link
 import { notFound } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { BookingStartCard } from '@/components/booking/booking-start-card';
+import { ServiceSearchCoverage } from '@/components/marketing/service-search-coverage';
 import { StructuredData } from '@/components/marketing/structured-data';
 import { cityMarketingLinks } from '@/content/marketing';
 import { services as navServices } from '@/content/navigation';
-import { serviceBySlug, serviceContent } from '@/content/services';
+import { getServiceSearchContent } from '@/content/service-search';
+import { serviceBySlug, serviceLandingPages } from '@/content/services';
 import { formatFromPrice, getFromPrices } from '@/server/marketing';
 import { getPublicSettings } from '@/server/settings';
+import { createPageMetadata } from '@/server/seo';
 
 export const revalidate = 86400;
 
 export function generateStaticParams(): Array<{ service: string }> {
-  return serviceContent.map((service) => ({ service: service.slug }));
+  return serviceLandingPages.map((service) => ({ service: service.slug }));
 }
 
-export async function generateMetadata({ params }: { params: Promise<{ service: string }> }): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ service: string }>;
+}): Promise<Metadata> {
   const { service: slug } = await params;
   const service = serviceBySlug(slug);
   if (!service) return {};
-  return {
-    alternates: { canonical: `/services/${service.slug}` },
-    description: service.lead,
-    title: `${service.label} in Scotland`,
-  };
+  return createPageMetadata({
+    path: `/services/${service.slug}`,
+    description: service.metaDescription ?? service.lead,
+    title: `${service.title} in Scotland`,
+    settings: await getPublicSettings(),
+  });
 }
 
-function selectedChip(slug: string): 'Furniture' | 'Home move' | 'Man and van' | 'Rubbish' {
-  if (slug === 'furniture-delivery') return 'Furniture';
-  if (slug === 'rubbish-removal') return 'Rubbish';
-  if (slug === 'house-removals') return 'Home move';
-  return 'Man and van';
-}
-
-export default async function ServicePage({ params }: { params: Promise<{ service: string }> }): Promise<ReactNode> {
+export default async function ServicePage({
+  params,
+}: {
+  params: Promise<{ service: string }>;
+}): Promise<ReactNode> {
   const { service: slug } = await params;
   const service = serviceBySlug(slug);
   if (!service) notFound();
+  const searchContent = getServiceSearchContent(slug);
   const [settings, fromPrices] = await Promise.all([getPublicSettings(), getFromPrices()]);
   const nav = navServices.find((item) => item.href === `/services/${service.slug}`);
   const Icon = nav?.icon ?? Receipt;
-  const price = fromPrices.get(service.slug);
+  const price = fromPrices.get(service.priceSourceSlug ?? service.slug);
   const serviceJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Service',
     areaServed: 'Scotland',
-    name: `${service.label} in Scotland`,
-    provider: {
-      '@type': 'Organization',
-      name: settings.company.tradingName,
-      ...(settings.web.canonicalOrigin ? { url: settings.web.canonicalOrigin } : {}),
-    },
+    name: `${service.title} in Scotland`,
+    serviceType: service.title,
+    provider: { '@id': `${settings.web.canonicalOrigin.replace(/\/$/, '')}/#business` },
   };
   const breadcrumbs = {
     '@context': 'https://schema.org',
@@ -85,26 +88,63 @@ export default async function ServicePage({ params }: { params: Promise<{ servic
               <Link href="/services">Services</Link>
             </nav>
             <Icon aria-hidden="true" color="#6D3BD7" size={34} />
-            <h1 className="page-title">{service.label} in Scotland</h1>
+            <h1 className="page-title">{service.title} in Scotland</h1>
             <p className="lead">{service.lead}</p>
-            <p className="price-line">{price ? formatFromPrice(price) : 'Price shown in booking'} <span>{service.profileLabel}</span></p>
+            <p className="price-line">
+              {price ? formatFromPrice(price) : 'Price shown in booking'} <span>{service.profileLabel}</span>
+            </p>
           </div>
-          <BookingStartCard selected={selectedChip(service.slug)} title={`Start ${service.label.toLowerCase()}`} />
+          <BookingStartCard
+            initialService={{
+              label: service.label,
+              requiresDropoff: true,
+              service: service.engineKey,
+              variant: service.variantKey,
+            }}
+            key={service.slug}
+            title={`Start ${service.label.toLowerCase()}`}
+          />
         </div>
       </section>
+
+      {searchContent?.sections.map((section) => (
+        <section className="section" key={section.heading}>
+          <div className="container article-body">
+            <h2>{section.heading}</h2>
+            {section.paragraphs.map((paragraph) => (
+              <p key={paragraph}>{paragraph}</p>
+            ))}
+            {section.bullets ? (
+              <ul className="check-list">
+                {section.bullets.map((bullet) => (
+                  <li key={bullet}>{bullet}</li>
+                ))}
+              </ul>
+            ) : null}
+          </div>
+        </section>
+      ))}
 
       <section className="section section-muted">
         <div className="container two-column">
           <div>
             <h2>What's included</h2>
             <ul className="check-list">
-              {service.included.map((item) => <li key={item}>{item}</li>)}
+              {service.included.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
             </ul>
           </div>
           <div className="table-card">
             <h2>Price for this service</h2>
-            <p>{price ? formatFromPrice(price) : 'Price shown in booking'} for {service.profileLabel.toLowerCase()}.</p>
-            <p className="field-help">The final price is computed from distance, inventory, access, optional extras and the slot you choose.</p>
+            <p>
+              {price ? formatFromPrice(price) : 'Price shown in booking'} for{' '}
+              {service.profileLabel.toLowerCase()}.
+            </p>
+            <p className="field-help">
+              The final price is computed from distance, inventory, access, optional extras and the slot you
+              choose.
+            </p>
           </div>
         </div>
       </section>
@@ -114,28 +154,45 @@ export default async function ServicePage({ params }: { params: Promise<{ servic
           <div>
             <h2>Options</h2>
             <ul className="plain-list">
-              {service.options.map((option) => <li key={option}>{option}</li>)}
+              {service.options.map((option) => (
+                <li key={option}>{option}</li>
+              ))}
             </ul>
           </div>
           <div>
             <h2>Good to know</h2>
             <ul className="plain-list">
-              {service.goodToKnow.map((item) => <li key={item}>{item}</li>)}
+              {service.goodToKnow.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
             </ul>
           </div>
         </div>
       </section>
 
-      <section className="section section-muted">
-        <div className="container">
-          <h2>Areas</h2>
-          <p className="lead">The instant-price flow covers mainland Scotland. These city pages are part of the wider area directory.</p>
-          <div className="city-links">
-            {cityMarketingLinks.map((city) => <Link href={city.href} key={city.href}>{city.label}</Link>)}
+      {searchContent ? (
+        <ServiceSearchCoverage serviceSlug={service.slug} />
+      ) : (
+        <section className="section section-muted">
+          <div className="container">
+            <h2>Areas</h2>
+            <p className="lead">
+              The instant-price flow covers mainland Scotland. These city pages are part of the wider area
+              directory.
+            </p>
+            <div className="city-links">
+              {cityMarketingLinks.map((city) => (
+                <Link href={city.href} key={city.href}>
+                  {city.label}
+                </Link>
+              ))}
+            </div>
+            <Link className="text-link" href="/areas">
+              All areas
+            </Link>
           </div>
-          <Link className="text-link" href="/areas">All areas</Link>
-        </div>
-      </section>
+        </section>
+      )}
 
       <section className="section">
         <div className="container two-column">
@@ -155,7 +212,11 @@ export default async function ServicePage({ params }: { params: Promise<{ servic
             <div className="related-list">
               {service.related.map((slug) => {
                 const related = serviceBySlug(slug);
-                return related ? <Link href={`/services/${related.slug}`} key={related.slug}>{related.label}</Link> : null;
+                return related ? (
+                  <Link href={`/services/${related.slug}`} key={related.slug}>
+                    {related.label}
+                  </Link>
+                ) : null;
               })}
             </div>
           </div>

@@ -2,16 +2,20 @@ import 'server-only';
 
 import {
   AdminBookingPatchSchema,
+  AdminBookingCleanupRequestSchema,
   AdminCancelSchema,
   AdminPhoneBookingSchema,
   AdminRescheduleSchema,
   AdminStatusChangeSchema,
+  AdminSlotClosureRequestSchema,
   AppError,
   AssignBookingSchema,
   BannerPutSchema,
+  BookingAlertReadRequestSchema,
   CapacityOverrideSchema,
   CapacityRuleSchema,
   DriverInviteSchema,
+  DriverCreateSchema,
   DriverPatchSchema,
   ExtraChargeCreateSchema,
   FaqAdminSchema,
@@ -34,7 +38,14 @@ import { Prisma, prisma } from '@sv/db';
 import { z, type ZodType } from 'zod';
 import { apiJson, withApi } from '../request';
 import type { StaffRole } from '../auth/staff';
-import { processOutboxEventNow } from '../outbox/processor';
+import { sendAdminTestPush } from './test-push';
+import { readAdminOperation } from './operations';
+import { deleteAdminBooking, restoreAdminBooking } from './booking-cleanup';
+import { setAdminSlotClosure } from './slot-closure';
+import { createDriverAccount } from './driver-account';
+import { enforceAdminDriverRateLimit } from '../rate-limit';
+import { assertBrowserSessionOrigin } from '../auth/browser-session';
+import { acknowledgeBookingAlerts, readBookingAlerts } from '../notifications/booking-alerts';
 
 export type AdminMethod = 'DELETE' | 'GET' | 'PATCH' | 'POST' | 'PUT';
 
@@ -85,13 +96,17 @@ function json(value: unknown): Prisma.InputJsonValue {
 
 export const ADMIN_ROUTE_DEFINITIONS: readonly AdminRouteDefinition[] = [
   { action: 'admin.dashboard.view', entityType: 'dashboard', method: 'GET', pattern: 'dashboard', response: 'summary' },
+  { action: 'admin.visitors.presence', entityType: 'websiteVisitorPresence', method: 'GET', pattern: 'visitors/presence', response: 'summary' },
   { action: 'admin.feed.view', entityType: 'feed', method: 'GET', pattern: 'feed', response: 'list' },
+  { action: 'admin.feed.read', entityType: 'notification', input: BookingAlertReadRequestSchema, method: 'POST', pattern: 'feed/read', response: 'ok' },
   { action: 'admin.system.health', entityType: 'system', method: 'GET', pattern: 'system/health', response: 'health' },
   { action: 'admin.system.outbox_retry', entityType: 'outboxEvent', input: EmptyBodySchema, method: 'POST', pattern: 'system/outbox/:id/retry', response: 'ok' },
   { action: 'admin.test_push', entityType: 'pushDevice', input: EmptyBodySchema, method: 'POST', pattern: 'test-push', response: 'ok' },
 
   { action: 'admin.bookings.list', entityType: 'booking', method: 'GET', pattern: 'bookings', response: 'list' },
   { action: 'admin.bookings.view', entityType: 'booking', method: 'GET', pattern: 'bookings/:id', response: 'detail' },
+  { action: 'admin.bookings.delete', entityType: 'booking', input: AdminBookingCleanupRequestSchema, method: 'DELETE', pattern: 'bookings/:id', response: 'ok' },
+  { action: 'admin.bookings.restore', entityType: 'booking', input: AdminBookingCleanupRequestSchema, method: 'POST', pattern: 'bookings/:id/restore', response: 'ok' },
   { action: 'admin.bookings.create', entityType: 'booking', input: AdminPhoneBookingSchema, method: 'POST', pattern: 'bookings', response: 'ok' },
   { action: 'admin.bookings.patch', entityType: 'booking', input: AdminBookingPatchSchema, method: 'PATCH', pattern: 'bookings/:id', response: 'ok' },
   { action: 'admin.bookings.reprice_preview', entityType: 'booking', input: RepricePreviewSchema, method: 'POST', pattern: 'bookings/:id/reprice-preview', response: 'detail' },
@@ -122,8 +137,10 @@ export const ADMIN_ROUTE_DEFINITIONS: readonly AdminRouteDefinition[] = [
   { action: 'admin.capacity.overrides.view', entityType: 'capacityOverride', method: 'GET', pattern: 'capacity/overrides', response: 'list' },
   { action: 'admin.capacity.overrides.put', entityType: 'capacityOverride', input: CapacityOverridesPutSchema, method: 'PUT', pattern: 'capacity/overrides', response: 'ok' },
   { action: 'admin.capacity.overrides.delete', entityType: 'capacityOverride', input: EmptyBodySchema, method: 'DELETE', pattern: 'capacity/overrides/:id', response: 'ok' },
+  { action: 'admin.capacity.closures.put', entityType: 'capacityClosure', input: AdminSlotClosureRequestSchema, method: 'PUT', pattern: 'capacity/closures', response: 'ok' },
 
   { action: 'admin.drivers.list', entityType: 'driver', method: 'GET', pattern: 'drivers', response: 'list' },
+  { action: 'admin.drivers.create', entityType: 'driver', input: DriverCreateSchema, method: 'POST', pattern: 'drivers', response: 'ok' },
   { action: 'admin.drivers.live', entityType: 'driverLocation', method: 'GET', pattern: 'drivers/live', response: 'list' },
   { action: 'admin.drivers.view', entityType: 'driver', method: 'GET', pattern: 'drivers/:id', response: 'detail' },
   { action: 'admin.drivers.invite', entityType: 'driver', input: DriverInviteSchema, method: 'POST', pattern: 'drivers/invite', response: 'ok' },
@@ -270,28 +287,6 @@ function responseFor(match: RouteMatch): unknown {
   return { id, ok: true };
 }
 
-async function sendAdminTestPush(staff: { userId: string }): Promise<{ id: string; ok: true; queued: boolean }> {
-  const event = await prisma.outboxEvent.create({
-    data: {
-      dedupeKey: `admin.test_push:${staff.userId}:${new Date().toISOString()}`,
-      payload: json({
-        app: 'ADMIN',
-        body: 'If this arrived, this phone can receive urgent booking alerts.',
-        category: 'NEW_BOOKING',
-        data: { eventType: 'admin.test_push', type: 'NEW_BOOKING' },
-        sound: 'new-job.wav',
-        timeSensitive: true,
-        title: 'Speedy Van test push',
-        userId: staff.userId,
-      }),
-      type: 'push.send',
-    },
-    select: { id: true },
-  });
-  await processOutboxEventNow(event.id);
-  return { id: event.id, ok: true, queued: true };
-}
-
 export async function handleAdminRoute(request: Request, method: AdminMethod, path: string): Promise<Response> {
   const match = matchAdminRoute(method, path);
   if (!match) {
@@ -307,6 +302,35 @@ export async function handleAdminRoute(request: Request, method: AdminMethod, pa
     },
     async ({ input, requestId, staff }) => {
       if (!staff) throw new Error('Missing staff context.');
+      if (match.definition.action === 'admin.drivers.create') {
+        if (request.headers.has('origin')) assertBrowserSessionOrigin(request);
+        await enforceAdminDriverRateLimit(staff.userId);
+        return apiJson(await createDriverAccount(DriverCreateSchema.parse(input), { userId: staff.userId, requestId }), { status: 201 }, requestId);
+      }
+      if (match.definition.action === 'admin.feed.view') {
+        return apiJson(await readBookingAlerts(staff.userId, new URL(request.url).searchParams), {}, requestId);
+      }
+      if (match.definition.action === 'admin.feed.read') {
+        const read = BookingAlertReadRequestSchema.parse(input);
+        return apiJson(await acknowledgeBookingAlerts(staff.userId, read.bookingId), {}, requestId);
+      }
+      if (method === 'GET') {
+        const result = await readAdminOperation(match.definition.action, match.params, new URL(request.url).searchParams);
+        if (result !== undefined) return apiJson(result, {}, requestId);
+      }
+      if (match.definition.action === 'admin.bookings.delete' || match.definition.action === 'admin.bookings.restore') {
+        const id = match.params.id;
+        if (!id) throw new AppError('NOT_FOUND', 'Booking not found.');
+        const cleanupInput = AdminBookingCleanupRequestSchema.parse(input);
+        const actor = { userId: staff.userId, requestId };
+        const result = match.definition.action === 'admin.bookings.delete'
+          ? await deleteAdminBooking(id, cleanupInput, actor)
+          : await restoreAdminBooking(id, cleanupInput, actor);
+        return apiJson(result, {}, requestId);
+      }
+      if (match.definition.action === 'admin.capacity.closures.put') {
+        return apiJson(await setAdminSlotClosure(AdminSlotClosureRequestSchema.parse(input), { userId: staff.userId, requestId }), {}, requestId);
+      }
       await writeAudit(input, match, staff, requestId);
       if (match.definition.action === 'admin.test_push') {
         return apiJson(await sendAdminTestPush(staff), { status: 201 }, requestId);

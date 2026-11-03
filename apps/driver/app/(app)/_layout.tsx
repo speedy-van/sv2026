@@ -1,8 +1,22 @@
 import { Tabs } from 'expo-router';
 import { BriefcaseBusiness, CircleUserRound, Clock3, Coins, Route } from 'lucide-react-native';
 import { theme } from '@/theme/theme';
+import { useAuth } from '@/state/auth';
+import { AppLockGate } from '@/components/app-lock-gate';
+import { DriverPermissionGates } from '@/components/permission-gates';
 
 export default function AppTabs(): React.ReactElement {
+  const auth = useAuth();
+  return <DriverAppSession key={auth.sessionVersion} />;
+}
+
+function DriverAppSession(): React.ReactElement {
+  const auth = useAuth();
+  if (auth.appLocked) return <AppLockGate />;
+  return <DriverPermissionGates><DriverTabs /></DriverPermissionGates>;
+}
+
+function DriverTabs(): React.ReactElement {
   return (
     <Tabs
       screenOptions={{

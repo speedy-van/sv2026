@@ -3,6 +3,9 @@ export {
   ORDERED_SLOTS,
   assertSlotCapacity,
   capacityFor,
+  capacityUnitsInSlot,
+  configuredCapacitiesForSlots,
+  configuredCapacityFor,
   countSlotUsage,
   lockSlot,
   slotsCovered,
@@ -10,5 +13,6 @@ export {
   type DbTx,
 } from './locks';
 export { enqueueOutbox } from './outbox';
+export { couponCodeHash, generateCouponCode } from './coupon';
 export { PrismaClient, Prisma } from './generated/prisma/client';
 export type { Slot } from './generated/prisma/client';

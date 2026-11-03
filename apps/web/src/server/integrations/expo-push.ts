@@ -1,14 +1,16 @@
 import 'server-only';
 
 import * as Sentry from '@sentry/nextjs';
-import { AppError } from '@sv/contracts';
+import { AppError, londonToday } from '@sv/contracts';
 import { enqueueOutbox, prisma, type Prisma } from '@sv/db';
 import { randomUUID } from 'node:crypto';
 import { Expo, type ExpoPushMessage, type ExpoPushReceipt, type ExpoPushTicket } from 'expo-server-sdk';
 import { serverEnv } from '../env';
+import { shouldSendChatPush } from '../chat/push';
+import { withExpoTransport } from './expo-transport';
 
 type AppKind = 'ADMIN' | 'DRIVER';
-type PushSound = 'default' | 'job-offer.wav' | 'new-job.wav';
+type PushSound = 'default' | 'job-offer.wav' | 'new-job.wav' | 'chat-message.wav';
 
 export interface PushSendPayload {
   app?: AppKind;
@@ -33,23 +35,23 @@ function json(value: unknown): Prisma.InputJsonValue {
   return value as Prisma.InputJsonValue;
 }
 
-let expoClient: Expo | undefined;
-
 function captureMode(): boolean {
   const env = serverEnv();
+  if (env.PUSH_MODE === 'capture' && process.env.NODE_ENV === 'production') {
+    throw new AppError('INTERNAL', 'Captured push delivery is not allowed in production.');
+  }
   return env.PUSH_MODE === 'capture' || (!env.EXPO_ACCESS_TOKEN && process.env.NODE_ENV !== 'production');
 }
 
 function expo(): Expo {
-  if (expoClient) return expoClient;
   const accessToken = serverEnv().EXPO_ACCESS_TOKEN;
   if (!accessToken) throw new AppError('INTERNAL', 'EXPO_ACCESS_TOKEN is required for live push sending.');
-  expoClient = new Expo({ accessToken });
-  return expoClient;
+  return new Expo({ accessToken });
 }
 
 function errorCode(value: ExpoPushReceipt | ExpoPushTicket): string | null {
-  return value.status === 'error' ? value.details?.error ?? value.message : null;
+  // Provider message text can contain a device token. Persist only error codes.
+  return value.status === 'error' ? value.details?.error ?? 'UnknownPushError' : null;
 }
 
 async function disableDevice(deviceId: string, reason: string): Promise<void> {
@@ -105,7 +107,9 @@ function messageFor(payload: PushSendPayload, token: string, badge: number): Exp
     },
     interruptionLevel: payload.timeSensitive ? 'time-sensitive' : 'active',
     priority: 'high',
-    sound: payload.sound,
+    sound: payload.app === 'ADMIN'
+      ? payload.category === 'CHAT_MESSAGE' ? 'chat-message.wav' : 'new-job.wav'
+      : payload.sound,
     title: payload.title,
     to: token,
     ttl: payload.ttl ?? 3600,
@@ -131,12 +135,27 @@ async function createTicket(device: PushDeviceRow, outboxEventId: string, ticket
 }
 
 export async function sendPushOutbox(payload: PushSendPayload, outboxEventId: string): Promise<{ devices: number; tickets: number }> {
+  if (payload.app === 'ADMIN' && payload.category === 'CHAT_MESSAGE' && !await shouldSendChatPush(payload.data)) {
+    return { devices: 0, tickets: 0 };
+  }
+  if (payload.app === 'ADMIN' && payload.category === 'NEW_BOOKING' && payload.data?.eventType !== 'admin.test_push') {
+    const bookingId = payload.data?.bookingId;
+    const booking = typeof bookingId === 'string' && bookingId ? await prisma.booking.findFirst({
+      where: { id: bookingId, status: 'CONFIRMED', deletedAt: null, moveDate: { gte: new Date(`${londonToday()}T00:00:00.000Z`) } },
+      select: { id: true },
+    }) : null;
+    if (!booking) return { devices: 0, tickets: 0 };
+  }
   const devices = await prisma.pushDevice.findMany({
     orderBy: { lastRegisteredAt: 'desc' },
     select: { app: true, expoPushToken: true, id: true, userId: true },
     where: {
       enabled: true,
       userId: payload.userId,
+      user: {
+        status: 'ACTIVE',
+        ...(payload.app === 'ADMIN' ? { role: { in: ['OWNER' as const, 'ADMIN' as const] } } : payload.app === 'DRIVER' ? { role: 'DRIVER' as const } : {}),
+      },
       ...(payload.app ? { app: payload.app } : {}),
     },
   });
@@ -154,10 +173,25 @@ export async function sendPushOutbox(payload: PushSendPayload, outboxEventId: st
     return { devices: 0, tickets: 0 };
   }
 
+  const capturing = captureMode();
+  // A later retry only targets devices for which Expo has not already accepted
+  // this event. Successful devices must not ring again after a partial failure.
+  const accepted = await prisma.pushTicket.findMany({
+    select: { pushDeviceId: true },
+    where: {
+      outboxEventId,
+      status: 'ok',
+      ...(capturing ? {} : { ticketId: { not: { startsWith: 'capture:' } } }),
+    },
+  });
+  const acceptedDeviceIds = new Set(accepted.map((ticket) => ticket.pushDeviceId));
+  const pendingDevices = validDevices.filter((device) => !acceptedDeviceIds.has(device.id));
+  if (pendingDevices.length === 0) return { devices: validDevices.length, tickets: 0 };
+
   const unreadCount = await prisma.notification.count({ where: { readAt: null, userId: payload.userId } });
 
-  if (captureMode()) {
-    for (const device of validDevices) {
+  if (capturing) {
+    for (const device of pendingDevices) {
       await prisma.pushTicket.upsert({
         create: {
           outboxEventId,
@@ -169,44 +203,55 @@ export async function sendPushOutbox(payload: PushSendPayload, outboxEventId: st
         where: { ticketId: `capture:${outboxEventId}:${device.id}` },
       });
     }
-    return { devices: validDevices.length, tickets: validDevices.length };
+    return { devices: validDevices.length, tickets: pendingDevices.length };
   }
 
-  const messages = validDevices.map((device) => messageFor(payload, device.expoPushToken, unreadCount));
-  const pairs = validDevices.map((device, index) => ({ device, message: messages[index] }));
+  const messages = pendingDevices.map((device) => messageFor(payload, device.expoPushToken, unreadCount));
   let cursor = 0;
   let tickets = 0;
+  const failures = new Set<string>();
   for (const chunk of expo().chunkPushNotifications(messages)) {
-    const chunkPairs = pairs.slice(cursor, cursor + chunk.length);
+    const chunkDevices = pendingDevices.slice(cursor, cursor + chunk.length);
     cursor += chunk.length;
-    const sent = await expo().sendPushNotificationsAsync(chunk);
+    const sent = await withExpoTransport((client) => client.sendPushNotificationsAsync(chunk));
     for (let index = 0; index < sent.length; index += 1) {
-      const pair = chunkPairs[index];
+      const device = chunkDevices[index];
       const ticket = sent[index];
-      if (!pair || !ticket) continue;
-      await createTicket(pair.device, outboxEventId, ticket);
+      if (!device || !ticket) continue;
+      await createTicket(device, outboxEventId, ticket);
       tickets += 1;
+      const code = errorCode(ticket);
+      if (code && code !== 'DeviceNotRegistered') failures.add(code);
     }
+    if (sent.length !== chunk.length) failures.add('UnexpectedTicketCount');
+  }
+  if (failures.size > 0) {
+    throw new AppError('UPSTREAM_UNAVAILABLE', `Push delivery was not accepted: ${[...failures].sort().join(', ')}.`);
   }
   return { devices: validDevices.length, tickets };
 }
 
 function receiptStatus(receipt: ExpoPushReceipt): { error: string | null; status: string } {
   if (receipt.status === 'ok') return { error: null, status: 'ok' };
-  return { error: receipt.details?.error ?? receipt.message, status: 'error' };
+  return { error: errorCode(receipt), status: 'error' };
 }
 
-export async function checkPushReceipts(now = new Date()): Promise<{ checked: number; disabled: number; errors: number }> {
+export async function checkPushReceipts(now = new Date(), limit = 500): Promise<{ checked: number; disabled: number; errors: number }> {
   if (captureMode()) {
     return { checked: 0, disabled: 0, errors: 0 };
   }
   const cutoff = new Date(now.getTime() - 15 * 60_000);
+  const retentionCutoff = new Date(now.getTime() - 24 * 60 * 60_000);
+  const batchSize = Number.isFinite(limit) ? Math.max(1, Math.min(500, Math.floor(limit))) : 500;
   const tickets = await prisma.pushTicket.findMany({
     include: { pushDevice: { select: { id: true, userId: true } } },
-    take: 500,
+    orderBy: { createdAt: 'asc' },
+    take: batchSize,
     where: {
       checkedAt: null,
-      createdAt: { lte: cutoff },
+      // Expo removes receipts after 24 hours. Older unknown outcomes cannot be
+      // recovered and must not monopolise each bounded polling batch.
+      createdAt: { gt: retentionCutoff, lte: cutoff },
       status: 'ok',
       ticketId: { not: { startsWith: 'capture:' } },
     },
@@ -214,8 +259,9 @@ export async function checkPushReceipts(now = new Date()): Promise<{ checked: nu
   let checked = 0;
   let disabled = 0;
   let errors = 0;
+  if (tickets.length === 0) return { checked, disabled, errors };
   for (const chunk of expo().chunkPushNotificationReceiptIds(tickets.map((ticket) => ticket.ticketId))) {
-    const receipts = await expo().getPushNotificationReceiptsAsync(chunk);
+    const receipts = await withExpoTransport((client) => client.getPushNotificationReceiptsAsync(chunk));
     for (const ticket of tickets.filter((row) => chunk.includes(row.ticketId))) {
       const receipt = receipts[ticket.ticketId];
       if (!receipt) continue;

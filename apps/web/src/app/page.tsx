@@ -3,21 +3,24 @@ import type { Metadata } from 'next';
 import { NoPrefetchLink as Link } from '@/components/navigation/no-prefetch-link';
 import type { ReactNode } from 'react';
 import { BookingStartCard } from '@/components/booking/booking-start-card';
-import { ScotlandRouteMap } from '@/components/maps/scotland-route-map';
+import { HeroRouteAnimation } from '@/components/maps/hero-route-animation';
 import { StructuredData } from '@/components/marketing/structured-data';
-import { cityMarketingLinks, howItWorksSteps, regionLinks } from '@/content/marketing';
+import { HeroBackgroundImage } from '@/components/marketing/hero-background-image';
+import { WorkedPriceBreakdown } from '@/components/marketing/worked-price-breakdown';
+import { examplePriceCaption } from '@/content/seo-examples';
+import { cityMarketingLinks, homeBookingCopy, howItWorksSteps, regionLinks } from '@/content/marketing';
 import { serviceContent } from '@/content/services';
 import { services as navServices } from '@/content/navigation';
+import { workedExampleCopy } from '@/content/pricing';
 import { formatFromPrice, getExampleRoutes, getFromPrices, getRenderedFaqs, getReviewSummary, getWorkedExample, todayLabel } from '@/server/marketing';
 import { getPublicSettings } from '@/server/settings';
+import { createPageMetadata, getSeoSettings } from '@/server/seo';
 
 export const revalidate = 86400;
 
-export const metadata: Metadata = {
-  alternates: { canonical: '/' },
-  description: 'See fixed prices for every day of the next four weeks and book removals or man and van moves online.',
-  title: 'Removals and man and van across Scotland',
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return createPageMetadata({ path: '/', description: 'See fixed prices for every day of the next four weeks and book removals or man and van moves online.', title: 'Removals and man and van across Scotland', settings: await getSeoSettings() });
+}
 
 const proofItems = [
   { icon: Receipt, text: 'Fixed price shown before you pay' },
@@ -49,7 +52,9 @@ export default async function HomePage(): Promise<ReactNode> {
   return (
     <>
       <StructuredData data={faqJson} />
-      <section className="hero">
+      <section className="hero home-hero">
+        <HeroBackgroundImage />
+        <HeroRouteAnimation />
         <div className="container hero-grid home-hero-grid">
           <div className="hero-main">
             <div className="hero-copy">
@@ -60,7 +65,7 @@ export default async function HomePage(): Promise<ReactNode> {
               <h1>Removals and man and van across Scotland</h1>
               <p>See fixed prices for every day of the next four weeks and book online in a few minutes.</p>
             </div>
-            <div className="hero-booking-panel">
+            <div className="hero-booking-panel" id="start-your-move">
               <BookingStartCard />
               <div className="hero-support-row">
                 <p className="field-help">Mainland Scotland is priced instantly. Ferry routes are priced by our team.</p>
@@ -72,7 +77,6 @@ export default async function HomePage(): Promise<ReactNode> {
               </div>
             </div>
           </div>
-          <ScotlandRouteMap />
         </div>
       </section>
 
@@ -156,20 +160,8 @@ export default async function HomePage(): Promise<ReactNode> {
             </Link>
           </div>
           <div className="table-card">
-            <h3>Example: 1-bedroom flat, 8 miles, 2nd floor with no lift, weekday afternoon</h3>
-            <dl className="breakdown-list">
-              {workedExample.breakdown.map((line) => (
-                <div key={line.label}>
-                  <dt>{line.label}</dt>
-                  <dd>{line.value}</dd>
-                </div>
-              ))}
-              <div>
-                <dt>Total example</dt>
-                <dd>{workedExample.total}</dd>
-              </div>
-            </dl>
-            <p className="field-help">Generated from the active pricing config on {workedExample.dateLabel}.</p>
+            <h3>Example: {workedExampleCopy.profile}</h3>
+            <WorkedPriceBreakdown example={workedExample} />
           </div>
         </div>
       </section>
@@ -201,7 +193,7 @@ export default async function HomePage(): Promise<ReactNode> {
         <div className="container">
           <h2>Real example prices</h2>
           <table className="data-table">
-            <caption>Cheapest available weekday slot when this page was updated on {todayLabel()}. Your price depends on your items, access and date.</caption>
+            <caption>{examplePriceCaption} Updated {todayLabel()}.</caption>
             <thead>
               <tr>
                 <th scope="col">Route</th>
@@ -212,8 +204,8 @@ export default async function HomePage(): Promise<ReactNode> {
             <tbody>
               {exampleRoutes.map((route) => (
                 <tr key={`${route.route}-${route.detail}`}>
-                  <td>{route.route}</td>
-                  <td>{route.detail}</td>
+                  <td><Link href={route.href}>{route.route}</Link></td>
+                  <td>{route.detail}, {route.distanceMiles} miles</td>
                   <td>{route.price}</td>
                 </tr>
               ))}
@@ -264,7 +256,9 @@ export default async function HomePage(): Promise<ReactNode> {
             <h2>Ready when you are</h2>
             <p className="lead">Start with addresses and the things you are moving. The booking flow shows the fixed price before you pay.</p>
           </div>
-          <BookingStartCard title="Ready when you are" />
+          <div className="button-row">
+            <a className="button button-primary" href="#start-your-move">{homeBookingCopy.returnToForm}</a>
+          </div>
         </div>
       </section>
     </>

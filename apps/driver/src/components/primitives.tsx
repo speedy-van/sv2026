@@ -1,4 +1,4 @@
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type TextInputProps, type ViewStyle } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type TextInputProps, type TextProps, type ViewStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppColors } from '@/theme/theme';
 
@@ -6,7 +6,7 @@ export function Screen(props: { children: React.ReactNode; title?: string | unde
   const colors = useAppColors();
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScrollView contentContainerStyle={styles.screen}>
+      <ScrollView automaticallyAdjustKeyboardInsets contentContainerStyle={styles.screen} keyboardShouldPersistTaps="handled">
         {props.title ? (
           <View style={{ gap: 4 }}>
             <Text style={[styles.title, { color: colors.text }]}>{props.title}</Text>
@@ -19,20 +19,20 @@ export function Screen(props: { children: React.ReactNode; title?: string | unde
   );
 }
 
-export function AppText(props: { children: React.ReactNode; muted?: boolean; size?: 'lg' | 'md' | 'sm'; weight?: 'bold' | 'regular' }): React.ReactElement {
+export function AppText({ children, muted, size = 'md', weight, ...props }: TextProps & { children: React.ReactNode; muted?: boolean; size?: 'lg' | 'md' | 'sm'; weight?: 'bold' | 'regular' }): React.ReactElement {
   const colors = useAppColors();
-  const size = props.size ?? 'md';
   return (
     <Text
-      style={{
-        color: props.muted ? colors.muted : colors.text,
-        fontFamily: props.weight === 'bold' ? 'Manrope_700Bold' : 'Manrope_500Medium',
+      {...props}
+      style={[{
+        color: muted ? colors.muted : colors.text,
+        fontFamily: weight === 'bold' ? 'Manrope_700Bold' : 'Manrope_500Medium',
         fontSize: size === 'lg' ? 22 : size === 'sm' ? 13 : 16,
-        fontWeight: props.weight === 'bold' ? '700' : '500',
+        fontWeight: weight === 'bold' ? '700' : '500',
         lineHeight: size === 'lg' ? 28 : size === 'sm' ? 18 : 23
-      }}
+      }, props.style]}
     >
-      {props.children}
+      {children}
     </Text>
   );
 }
@@ -53,7 +53,7 @@ export function Badge(props: { label: string; tone?: 'danger' | 'neutral' | 'suc
   );
 }
 
-export function Button(props: { disabled?: boolean; label: string; loading?: boolean; onPress: () => void; tone?: 'danger' | 'primary' | 'secondary' }): React.ReactElement {
+export function Button(props: { disabled?: boolean; label: string; loading?: boolean; loadingLabel?: string; onPress: () => void; tone?: 'danger' | 'primary' | 'secondary' }): React.ReactElement {
   const colors = useAppColors();
   const tone = props.tone ?? 'primary';
   const backgroundColor = props.disabled ? colors.border : tone === 'danger' ? colors.danger : tone === 'secondary' ? colors.surface : colors.action;
@@ -62,6 +62,8 @@ export function Button(props: { disabled?: boolean; label: string; loading?: boo
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityLabel={props.loading ? props.loadingLabel ?? props.label : props.label}
+      accessibilityState={{ busy: props.loading ?? false, disabled: Boolean(props.disabled || props.loading) }}
       disabled={props.disabled || props.loading}
       onPress={props.onPress}
       style={({ pressed }) => [

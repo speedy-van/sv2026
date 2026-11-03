@@ -11,6 +11,7 @@ import { getSetting } from '../settings';
 import { bookingPurposeLink, manageLinkForBooking } from '../auth/customer-links';
 import { payLinkForExtraCharge, payLinkForManualQuote } from '../services/customer-self-service';
 import { runRefundOutbox } from '../services/payments';
+import { outboxProcessFrom } from '../env';
 
 interface ClaimedOutboxEvent {
   attempts: number;
@@ -193,7 +194,7 @@ async function enqueueAdminNotification(
     await enqueueOutbox(
       tx,
       'notification.create',
-      json({ body, data, title, type: event.type, userId: user.id }),
+      json({ body, data: { ...data, deliveryKey: `${event.id}:notification:${user.id}` }, title, type: event.type, userId: user.id }),
       `${event.id}:notification:${user.id}`,
     );
   }
@@ -235,7 +236,7 @@ async function enqueueAdminPush(
         app: 'ADMIN',
         body,
         category: push.category,
-        data: { ...data, type: push.category },
+        data: { ...data, deliveryKey: `${event.id}:notification:${user.id}`, type: push.category },
         sound: push.sound,
         title,
         ...(push.timeSensitive ? { timeSensitive: true } : {}),
@@ -364,6 +365,14 @@ async function expandDomainEvent(tx: DbTx, event: ClaimedOutboxEvent): Promise<v
   const channels = channelsForEvent(event.type);
   if (!channels) return;
   const payload = asPayload(event.payload);
+  if (event.type === 'payment.after_expiry_refunded') {
+    const payment = payload.paymentId ? await tx.payment.findUnique({
+      where: { id: payload.paymentId },
+      select: { amountPence: true, refunds: { where: { status: 'SUCCEEDED' }, select: { amountPence: true } } },
+    }) : null;
+    const refundedPence = payment?.refunds.reduce((total, refund) => total + refund.amountPence, 0) ?? 0;
+    if (!payment || refundedPence < payment.amountPence) throw new Error('The late-payment refund has not succeeded yet.');
+  }
   if (event.type === 'job.stage_changed' && payload.toStage !== 'EN_ROUTE_TO_PICKUP') return;
   let customer: { customerEmail: string; data: EmailTemplateData } | null = null;
   if (payload.bookingId) {
@@ -387,7 +396,24 @@ async function expandDomainEvent(tx: DbTx, event: ClaimedOutboxEvent): Promise<v
   const title = event.type === 'booking.confirmed'
     ? `New booking - ${customer?.data.amountPence ? formatGBP(customer.data.amountPence) : 'paid'}`
     : event.type.replaceAll('_', ' ').replaceAll('.', ' ');
-  const body = payload.issue ?? customer?.data.routeLabel ?? 'Open Speedy Van admin.';
+  const body = event.type === 'booking.confirmed' && customer
+    ? `${customer.data.serviceLabel ?? 'Move'}, ${customer.data.moveDateLabel ?? ''} ${customer.data.slotLabel ?? ''}. ${customer.data.routeLabel ?? ''}`.trim()
+    : payload.issue ?? customer?.data.routeLabel ?? 'Open Speedy Van admin.';
+  // Only non-sensitive booking facts belong in push payloads. Never copy email data
+  // wholesale: it also contains signed customer links and contact information.
+  const alertData: Record<string, unknown> = {
+    ...payload, eventType: event.type,
+    ...(event.type === 'booking.confirmed' && customer ? {
+      type: 'NEW_BOOKING',
+      reference: customer.data.reference,
+      pricePence: customer.data.amountPence,
+      route: customer.data.routeLabel,
+      service: customer.data.serviceLabel,
+      slot: customer.data.slotLabel,
+      moveDateLabel: customer.data.moveDateLabel,
+      url: `speedyvan-admin://bookings/${encodeURIComponent(payload.bookingId ?? '')}`,
+    } : {}),
+  };
 
   if (channels.customerEmail && customer) {
     const refund = payload.refundId
@@ -418,12 +444,12 @@ async function expandDomainEvent(tx: DbTx, event: ClaimedOutboxEvent): Promise<v
       event,
       title,
       body,
-      { ...payload, eventType: event.type },
+      alertData,
       channels.adminNotificationOwnerOnly ? { ownerOnly: true } : {},
     );
   }
   if (channels.adminPush && (!channels.adminPush.onlyWithinHours || await bookingStartsWithinHours(tx, payload.bookingId, channels.adminPush.onlyWithinHours))) {
-    await enqueueAdminPush(tx, event, title, body, { ...payload, category: channels.adminPush.category, eventType: event.type }, channels.adminPush);
+    await enqueueAdminPush(tx, event, title, body, { ...alertData, category: channels.adminPush.category }, channels.adminPush);
   }
   if (channels.driverPush) {
     await enqueueDriverPush(tx, event, title, body, { ...payload, category: channels.driverPush.category, eventType: event.type }, payload);
@@ -437,8 +463,11 @@ async function handleEvent(event: ClaimedOutboxEvent): Promise<void> {
   }
   if (event.type === 'notification.create') {
     const payload = event.payload as { body: string; data?: Prisma.InputJsonValue; title: string; type: string; userId: string };
-    await prisma.notification.create({
-      data: {
+    await prisma.notification.upsert({
+      where: { id: event.id },
+      update: {},
+      create: {
+        id: event.id,
         body: payload.body,
         data: payload.data ?? Prisma.JsonNull,
         title: payload.title,
@@ -461,7 +490,21 @@ async function handleEvent(event: ClaimedOutboxEvent): Promise<void> {
   await prisma.$transaction(async (tx) => expandDomainEvent(tx, event));
 }
 
-async function claimDueEvents(limit: number): Promise<ClaimedOutboxEvent[]> {
+type ImmediateOutboxType = 'booking.confirmed' | 'booking.rescheduled' | 'booking.extra_paid'
+  | 'payment.refund' | 'payment.refund.created' | 'payment.after_expiry_refunded'
+  | 'notification.create' | 'push.send' | 'email.send';
+
+interface OutboxDispatchScope {
+  readonly rootEventId: string;
+}
+
+async function claimDueEvents(
+  limit: number,
+  types?: readonly ImmediateOutboxType[],
+  scope?: OutboxDispatchScope,
+): Promise<ClaimedOutboxEvent[]> {
+  if (scope && !scope.rootEventId) throw new Error('An outbox dispatch scope requires an event id.');
+  const processFrom = outboxProcessFrom();
   return prisma.$transaction(async (tx) => {
     return tx.$queryRaw<ClaimedOutboxEvent[]>`
       UPDATE "OutboxEvent"
@@ -470,7 +513,10 @@ async function claimDueEvents(limit: number): Promise<ClaimedOutboxEvent[]> {
         SELECT "id"
         FROM "OutboxEvent"
         WHERE "status" = 'PENDING' AND "nextAttemptAt" <= now()
-        ORDER BY "createdAt" ASC
+        ${processFrom ? Prisma.sql`AND "createdAt" >= ${processFrom}` : Prisma.empty}
+        ${types?.length ? Prisma.sql`AND "type" IN (${Prisma.join(types)})` : Prisma.empty}
+        ${scope ? Prisma.sql`AND ("id" = ${scope.rootEventId} OR starts_with("dedupeKey", ${`${scope.rootEventId}:`}))` : Prisma.empty}
+        ${scope ? Prisma.sql`ORDER BY CASE "type" WHEN 'notification.create' THEN 1 WHEN 'push.send' THEN 2 WHEN 'email.send' THEN 3 ELSE 0 END, "createdAt" ASC` : Prisma.sql`ORDER BY "createdAt" ASC`}
         FOR UPDATE SKIP LOCKED
         LIMIT ${limit}
       )
@@ -508,8 +554,12 @@ async function markFailed(event: ClaimedOutboxEvent, error: unknown): Promise<vo
   });
 }
 
-export async function processOutboxBatch(limit = 25): Promise<{ done: number; failed: number }> {
-  const events = await claimDueEvents(limit);
+export async function processOutboxBatch(
+  limit = 25,
+  types?: readonly ImmediateOutboxType[],
+  scope?: OutboxDispatchScope,
+): Promise<{ done: number; failed: number }> {
+  const events = await claimDueEvents(limit, types, scope);
   let done = 0;
   let failed = 0;
   for (const event of events) {
