@@ -25,7 +25,7 @@ describe('bounded daily outbox safety net', () => {
     expect(response.status).toBe(200); expect(await response.json()).toMatchObject({ done: 1, failed: 1 });
     expect(mocks.batch).toHaveBeenCalledTimes(3);
     for (const call of mocks.batch.mock.calls) expect(call).toEqual([1]);
-    expect(maxDuration).toBe(60);
+    expect(maxDuration).toBe(180);
     expect(mocks.receipts).toHaveBeenCalledOnce();
     expect(mocks.receipts.mock.invocationCallOrder[0]).toBeGreaterThan(mocks.auth.mock.invocationCallOrder[0] ?? 0);
   });
@@ -47,8 +47,15 @@ describe('bounded daily outbox safety net', () => {
     const now = new Date('2026-10-16T03:30:00.000Z');
     expect(await runIntegrityChecks(now)).toEqual({ alertsQueued: 0, stuckOutboxReset: 0 });
     expect(mocks.update).toHaveBeenCalledExactlyOnceWith({
-      data: { lastError: 'Reset by integrity cron after being stuck in PROCESSING.', nextAttemptAt: now, status: 'PENDING' },
-      where: { nextAttemptAt: { lt: new Date('2026-10-16T03:20:00.000Z') }, status: 'PROCESSING', createdAt: { gte: new Date('2026-10-15T22:00:00.000Z') } },
+      data: { claimedAt: null, lastError: 'Reset by integrity cron after being stuck in PROCESSING.', nextAttemptAt: now, status: 'PENDING' },
+      where: {
+        status: 'PROCESSING',
+        OR: [
+          { claimedAt: { lt: new Date('2026-10-16T03:20:00.000Z') } },
+          { claimedAt: null, nextAttemptAt: { lt: new Date('2026-10-16T03:20:00.000Z') } },
+        ],
+        createdAt: { gte: new Date('2026-10-15T22:00:00.000Z') },
+      },
     });
     expect(mocks.create).not.toHaveBeenCalled();
   });

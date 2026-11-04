@@ -10,6 +10,8 @@ export function scheduleOutboxRoots(key: { exact: string } | { prefix: string })
     after(async () => {
       try {
         const roots = await prisma.outboxEvent.findMany({ where: { dedupeKey: 'exact' in key ? key.exact : { startsWith: key.prefix } }, select: { id: true }, take: 25 });
+        // Callers allow 180s: stop new claims at 35s and let one final mail job
+        // finish its three bounded provider operations and database commits.
         const deadline = Date.now() + 35_000;
         let claims = 0;
         for (const root of roots) {

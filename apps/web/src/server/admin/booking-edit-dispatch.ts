@@ -12,6 +12,8 @@ async function dispatchBookingEdit(bookingId: string, version: number, source: '
       where: { dedupeKey: { startsWith: `${source}:${bookingId}:${String(version)}:` } },
       select: { id: true, type: true, payload: true }, orderBy: { createdAt: 'asc' }, take: 50,
     });
+    // Admin/driver routes allow 180s, including one final mail job with up to
+    // three 25s provider operations and database commits after the claim budget.
     const deadline = Date.now() + 35_000;
     let claims = 0;
     const drain = async (rootEventId: string): Promise<void> => {

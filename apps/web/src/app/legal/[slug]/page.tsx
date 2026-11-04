@@ -79,7 +79,7 @@ function PrivacyContent({ company }: { company: PublicSettings['company'] }): Re
       <p>{privacyControllerDescription(company)}</p>
       <p>Booking and job data are processed for contract; accounting records for legal obligation; fraud prevention, job tracking and operational records for legitimate interests; analytics, ads and marketing email only with consent.</p>
       <h2>Processors</h2>
-      <p>Processors include Vercel, Neon, Stripe, Mapbox, Resend, Expo, Apple push services, Sentry, Upstash and Google services when consented.</p>
+      <p>Processors include Vercel, Neon, Stripe, Mapbox, Lark Mail, Expo, Apple push services, Sentry, Upstash and Google services when consented.</p>
       <h2>{liveChatPrivacyNotice.heading}</h2>
       <p>{liveChatPrivacyNotice.body}</p>
       <h2>{bookingActivityPrivacyNotice.heading}</h2>

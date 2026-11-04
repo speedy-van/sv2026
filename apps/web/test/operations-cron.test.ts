@@ -40,7 +40,7 @@ describe('protected opt-in operations scheduler', () => {
     expect(response.status).toBe(200);
     expect(response.headers.get('cache-control')).toBe('no-store');
     expect(await response.json()).toMatchObject({ ok: true, bookingsExpired: 1, slotHoldsExpired: 2, bookingsChecked: 3, pushesQueued: 4, receiptsChecked: 5, devicesDisabled: 1, receiptErrors: 2, outboxDone: 1, outboxFailed: 1, deferred: false });
-    expect(maxDuration).toBe(60);
+    expect(maxDuration).toBe(180);
     expect(mocks.receipts).toHaveBeenCalledWith(expect.any(Date), 25);
     expect(mocks.batch).toHaveBeenCalledTimes(3);
     for (const call of mocks.batch.mock.calls) expect(call).toEqual([1]);

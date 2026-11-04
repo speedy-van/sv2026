@@ -6,11 +6,13 @@ import { maintainPushReceipts } from '@/server/notifications/receipt-maintenance
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-export const maxDuration = 60;
+export const maxDuration = 180;
 
 export async function GET(request: Request): Promise<Response> {
   return withApi(request, { auth: false }, async ({ request, requestId }) => {
     assertCronRequest(request);
+    // Stop starting jobs after 40s. One in-flight mail job can use three 25s
+    // provider operations plus database work; it must finish within this 180s invocation.
     const deadline = Date.now() + 40_000;
     // Reuse this authenticated daily invocation without adding a paid cron schedule.
     const receiptMaintenance = maintainPushReceipts();

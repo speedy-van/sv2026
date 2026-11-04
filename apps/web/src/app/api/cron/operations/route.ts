@@ -5,7 +5,7 @@ import { runOperationsCron } from '@/server/cron-jobs';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-export const maxDuration = 60;
+export const maxDuration = 180;
 
 export async function GET(request: Request): Promise<Response> {
   return withApi(request, { auth: false }, async ({ request, requestId }) => {

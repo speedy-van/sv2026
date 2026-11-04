@@ -21,7 +21,8 @@ function json(value: unknown): Prisma.InputJsonValue {
 export async function runOperationsCron(now = new Date()): Promise<OperationsCronResult> {
   // Fail closed before doing any operational work if production has no cutoff.
   outboxProcessFrom();
-  // Leave headroom for one already-started provider request and its retries.
+  // Stop starting work after 20s. One in-flight mail job may need three 25s
+  // provider operations plus database work; the protected route allows 180s.
   const deadline = Date.now() + 20_000;
   const result: OperationsCronResult = { bookingsExpired: 0, slotHoldsExpired: 0, bookingsChecked: 0, pushesQueued: 0,
     receiptsChecked: 0, devicesDisabled: 0, receiptErrors: 0, outboxDone: 0, outboxFailed: 0, deferred: false };
@@ -79,11 +80,16 @@ export async function runIntegrityChecks(now = new Date()): Promise<{ alertsQueu
   const stuck = await prisma.outboxEvent.updateMany({
     data: {
       lastError: 'Reset by integrity cron after being stuck in PROCESSING.',
+      claimedAt: null,
       nextAttemptAt: now,
       status: 'PENDING',
     },
     where: {
-      nextAttemptAt: { lt: new Date(now.getTime() - 10 * 60_000) }, status: 'PROCESSING',
+      status: 'PROCESSING',
+      OR: [
+        { claimedAt: { lt: new Date(now.getTime() - 10 * 60_000) } },
+        { claimedAt: null, nextAttemptAt: { lt: new Date(now.getTime() - 10 * 60_000) } },
+      ],
       ...(processFrom ? { createdAt: { gte: processFrom } } : {}),
     },
   });

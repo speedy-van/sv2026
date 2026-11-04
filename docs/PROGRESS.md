@@ -49,6 +49,24 @@ Runtime 1.0.1/build55: update group `78edaf07-d757-4b4a-be41-b5612161f365`, iOS 
 
 Activation: open SV Admin online, wait for Update ready and press Restart to update. If no banner appears, fully close and reopen after the download. The Cancel booking button then opens the existing guarded cancellation workspace from eligible booking details. Native build numbers remain unchanged. Provider publication and exact CDN verification are complete; physical iPhone activation is not verified. No native build, TestFlight submission, backend deployment, migration, real cancellation or test message occurred during this OTA release.
 
+## Lark business mailbox integration — 2026-11-04
+
+Plan and acceptance scope:
+
+- [~] Replace the transactional Resend path with Lark SMTP through the existing outbox; preserve signed Stripe authority and stable confirmation dedupe keys.
+- [~] Persist delivery attempts, quota reservations and Sent-copy status; hold ambiguous SMTP outcomes for review instead of automatically sending again.
+- [~] Add authenticated admin Inbox/Sent, message details, attachment handling, read state and replies through bounded IMAP operations.
+- [~] Render confirmation emails with actual paid/refunded/balance values, saved service labels and addresses while retaining privacy-safe push data.
+- [~] Add an additive database migration, claim timestamps, environment examples, setup documentation and isolated regression coverage.
+- [x] Verify the additive migration on the isolated Neon branch and pass the complete repository checks, including `mail-db.test.ts` real-SQL acceptance (`.tmp/lark-verify-final.log`).
+- [x] Enable public-mailbox IMAP/SMTP and verify local live account authentication with Nodemailer `verify` and an ImapFlow connect/list/read-only INBOX probe; Sent folder detected, zero messages sent (`.tmp/lark-auth-readback.json`).
+- [x] Save the nine Lark variables to the existing Vercel project's Production environment through the authenticated dashboard; confirm all names, types and Production targets after a full refresh, with the password stored as Secret and both access/send flags submitted as false.
+- [ ] Release the matching backend and production migration, verify deployed mailbox connectivity/inbox behavior and iPhone acceptance, then enable sending and periodic retries only with release approval and verify one authorized delivery.
+
+Final code verification: `npm run verify` exited 0 with lint, typecheck, tests and build passing across all ten workspaces. The suite covers 2,341 tests in 190 files/suites: web 1,556/111, admin 557/49, driver 32/6, contracts 123/13, pricing 26/4, database 7/2, emails 7/1, API client 24/1, config 6/2 and tokens 3/1. Turbo reused unchanged successful task results; the final web suite ran afresh, including six `mail-db.test.ts` cases against the independently confirmed non-default Neon branch `admin-features-test-20261103` (`br-little-thunder-b50bp08n`). They exercise atomic outbox/MIME rollback, simultaneous delivery workers, real quota serialization, uncertain recovery and acknowledgement, concurrent rate limits, and thread deduplication before pagination. Migration `20261104010000_lark_mail` applied only to that branch. The Next.js production build generated 317 pages. The temporary validation runner emitted Node's DEP0190 shell-invocation deprecation; application lint and type checks were clean. Evidence: `.tmp/lark-verify-final.log`. No production database or real email send was involved; live mailbox and device acceptance remain separate.
+
+Local account setup is complete: the public mailbox's IMAP/SMTP access is enabled, and its dedicated client password is stored locally in ignored, ACL-restricted `apps/web/.env.local`. Local `LARK_MAIL_ENABLED=true` and `LARK_MAIL_SEND_ENABLED=false` permit authenticated reads while keeping sending disabled. Real SMTP authentication and read-only IMAP checks succeeded; no message was sent. The owner's later instruction to add Production configuration is also complete: the authenticated dashboard saved nine variables to the existing `speedy-van/speedy-van-web` project, including the dedicated password as Secret. The other eight values were checked in the form before Save; after a full refresh, all nine names, types and Production targets persisted. Saved values were not revealed afterward because that requested a new identity check; no additional verification code was sent. Both Production flags were submitted as false and must stay false until the matching backend and migration are released. Connector/CLI authorization remains unavailable, but did not prevent this dashboard configuration. Q12 now tracks production release/migration, deployed connectivity/inbox, iPhone and actual-send acceptance. Existing DNS, production database, deployment and scheduler activation were untouched. Mail-dispatch routes allow 180 seconds and thread reads 300 seconds; the still-disabled workflow's request timeout matches its worker duration. D98 records the exact submitted configuration and remaining activation order.
+
 ## Admin iOS external notifications and owner-provided sound — 2026-10-28
 
 Owner authorizes repairing booking/chat/background notifications and using the audio from the supplied WhatsApp MP4. Diagnosis confirmed missing production `EXPO_ACCESS_TOKEN`, registered iOS devices, no chat Push producer, and daily-only outbox scheduling.
@@ -1023,3 +1041,103 @@ The corrected cloud build is READY, all 14 staged public pages pass, and canonic
 Evidence: `.tmp/admin-release-20261103/{db-readback.json,db-deploy.log,db-isolation-report.json}`, `.tmp/admin-release-20261103-final/{source-manifest.json,deploy.log,production-readback.json,promote.log,stage-http-report.json,public-checks.json,runtime-errors.jsonl}`, `.tmp/admin-tools-release-20261103/{read-only-smoke-stage-final.json,read-only-smoke-production.json}`, and `.tmp/admin-features-verify-isolated.log`. Temporary downloaded production environment credentials were removed after verification. Physical iPhone update activation, Face ID and actual external notification reception remain device acceptance, and the five-minute operations scheduler remains disabled.
 
 iOS delivery completed at 17:27:17Z. Runtime 1.0.1/build55 receives group `513f46bf-514e-4cc5-b555-0fb1d3ce7afb` / update `01a1a271-3391-7aa5-b185-855512b2ec3d`; runtime 1.0.0/build54 receives group `8f5f273d-6c9d-442c-9171-98fb64bac78e` / update `01a1a272-a718-763b-a6ba-a8c1b49abfcf`. Both published Hermes bytecode files match the validated immutable exports, including the root route and new admin features, and point to the production API. Delivery evidence is `C:/speedy van/admin-release-20261103/release-complete.json` and the `published-1.0.1/report.json` / `published-1.0.0/report.json` files beside it. To activate, open SV Admin online, wait for Update ready, then select Restart to update; a later complete close/reopen can load the downloaded update. No physical activation or actual Push reception is claimed.
+
+### Lark integration changed paths — 2026-11-04
+
+Working tree: `C:/SpeedyVan`, branch `phase/lark-mail-integration`, based on `d009681`. The original checkout and its unrelated edits remain at `C:/speedy van/speedyvan`. This manifest includes removed Resend files.
+
+```text
+.env.example
+.github/workflows/operations-cron.yml
+apps/admin/app/(app)/_layout.tsx
+apps/admin/app/(app)/mail/[id].tsx
+apps/admin/app/(app)/mail/deliveries.tsx
+apps/admin/app/(app)/mail/index.tsx
+apps/admin/app/(app)/more.tsx
+apps/admin/package.json
+apps/admin/src/components/admin-tab-bar.tsx
+apps/admin/src/components/mail-attachment.tsx
+apps/admin/src/components/mail-attachment.web.tsx
+apps/admin/src/components/mail-html.tsx
+apps/admin/src/components/mail-html.web.tsx
+apps/admin/src/components/mail-thread.tsx
+apps/admin/src/content/mail.ts
+apps/admin/src/data/mail.ts
+apps/admin/test/mail-fixtures.ts
+apps/admin/test/mail-hooks.test.tsx
+apps/admin/test/mail-preview.test.tsx
+apps/admin/test/mail-screens.test.tsx
+apps/web/package.json
+apps/web/src/app/api/cron/operations/route.ts
+apps/web/src/app/api/cron/outbox/route.ts
+apps/web/src/app/api/v1/admin/[[...path]]/route.ts
+apps/web/src/app/api/v1/admin/mail/deliveries/[id]/retry/route.ts
+apps/web/src/app/api/v1/admin/mail/deliveries/route.ts
+apps/web/src/app/api/v1/admin/mail/messages/[id]/attachments/[attachmentId]/route.ts
+apps/web/src/app/api/v1/admin/mail/messages/[id]/read/route.ts
+apps/web/src/app/api/v1/admin/mail/messages/[id]/reply/route.ts
+apps/web/src/app/api/v1/admin/mail/messages/route.ts
+apps/web/src/app/api/v1/admin/mail/status/route.ts
+apps/web/src/app/api/v1/admin/mail/sync/route.ts
+apps/web/src/app/api/v1/admin/mail/threads/[id]/route.ts
+apps/web/src/app/api/v1/auth/otp/request/route.ts
+apps/web/src/app/api/v1/bookings/route.ts
+apps/web/src/app/api/v1/contact/route.ts
+apps/web/src/app/api/v1/driver/[[...path]]/route.ts
+apps/web/src/app/api/webhooks/stripe/route.ts
+apps/web/src/app/legal/[slug]/page.tsx
+apps/web/src/server/admin/booking-edit-dispatch.ts
+apps/web/src/server/cron-jobs.ts
+apps/web/src/server/env.ts
+apps/web/src/server/integrations/mail.ts
+apps/web/src/server/integrations/resend.ts
+apps/web/src/server/mail/attachment-policy.ts
+apps/web/src/server/mail/config.ts
+apps/web/src/server/mail/delivery.ts
+apps/web/src/server/mail/errors.ts
+apps/web/src/server/mail/imap.ts
+apps/web/src/server/mail/lease.ts
+apps/web/src/server/mail/mime.ts
+apps/web/src/server/mail/quota.ts
+apps/web/src/server/mail/repository.ts
+apps/web/src/server/mail/routes.ts
+apps/web/src/server/mail/service.ts
+apps/web/src/server/mail/smtp.ts
+apps/web/src/server/outbox/dispatch.ts
+apps/web/src/server/outbox/processor.ts
+apps/web/src/server/outbox/schedule-roots.ts
+apps/web/src/server/services/stripe-webhook.ts
+apps/web/test/admin-action-outbox.test.ts
+apps/web/test/booking-alert-outbox.test.ts
+apps/web/test/booking-dispatch-outbox.test.ts
+apps/web/test/mail-attachment-policy.test.ts
+apps/web/test/mail-db.test.ts
+apps/web/test/mail-delivery-safety.test.ts
+apps/web/test/mail-imap.test.ts
+apps/web/test/mail-mime.test.ts
+apps/web/test/mail-quota.test.ts
+apps/web/test/mail-repository.test.ts
+apps/web/test/mail-routes.test.ts
+apps/web/test/mail-service.test.ts
+apps/web/test/mail-smtp.test.ts
+apps/web/test/mail-wrapper.test.ts
+apps/web/test/operations-cron.test.ts
+apps/web/test/outbox-cron.test.ts
+apps/web/test/outbox-mail-safety.test.ts
+apps/web/test/outbox-scope.test.ts
+apps/web/test/resend-timeout.test.ts
+apps/web/test/staff-auth-admin.test.ts
+apps/web/test/stripe-confirmation-authority.test.ts
+apps/web/test/stripe-notification-dispatch.test.ts
+docs/DECISIONS.md
+docs/PROGRESS.md
+docs/QUESTIONS.md
+package-lock.json
+packages/contracts/src/index.ts
+packages/contracts/src/mail.ts
+packages/contracts/test/mail.test.ts
+packages/db/prisma/migrations/20261104010000_lark_mail/migration.sql
+packages/db/prisma/schema.prisma
+packages/emails/src/index.ts
+packages/emails/test/emails.test.ts
+```

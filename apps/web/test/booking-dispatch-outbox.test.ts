@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { DEFAULT_PRICING_CONFIG } from '@sv/pricing';
 
 const mocks = vi.hoisted(() => ({ update: vi.fn(), create: vi.fn(), enqueue: vi.fn(), users: vi.fn(), booking: vi.fn(), assignments: vi.fn(), previousAssignment: vi.fn(), settings: vi.fn(), push: vi.fn(), email: vi.fn() }));
 vi.mock('@sv/db', () => {
@@ -10,7 +11,8 @@ vi.mock('../src/server/auth/customer-links', () => ({ manageLinkForBooking: vi.f
 vi.mock('../src/server/services/customer-self-service', () => ({ payLinkForExtraCharge: vi.fn(), payLinkForManualQuote: vi.fn() }));
 vi.mock('../src/server/services/payments', () => ({ runRefundOutbox: vi.fn() }));
 vi.mock('../src/server/integrations/expo-push', () => ({ sendPushOutbox: mocks.push }));
-vi.mock('../src/server/integrations/resend', () => ({ sendTransactionalEmail: mocks.email }));
+vi.mock('../src/server/integrations/mail', () => ({ sendTransactionalEmail: mocks.email }));
+vi.mock('../src/server/mail/delivery', () => ({ processMailDelivery: vi.fn() }));
 import { processOutboxEventNow } from '../src/server/outbox/processor';
 
 const snapshot = { kind: 'booking.offered', bookingId: 'booking-one', bookingVersion: 4, driverIds: ['driver-one'], assignmentIds: ['assignment-old'] };
@@ -19,7 +21,7 @@ beforeEach(() => {
   vi.resetAllMocks();
   mocks.booking.mockResolvedValue({ id: 'booking-one', version: 4, status: 'CONFIRMED', deletedAt: null, dispatchStatus: 'OFFERED', driverId: null,
     reference: 'SV-TEST12', contactEmail: 'customer@example.test', moveDate: new Date('2031-03-02T00:00:00Z'), completedAt: null,
-    service: 'man-and-van', slot: 'MORNING', totalPence: 10000, pickup: { town: 'Glasgow' }, dropoff: { town: 'Edinburgh' }, driver: { user: { name: 'Driver One' } } });
+    service: 'man-and-van', pricingVersion: { config: DEFAULT_PRICING_CONFIG }, slot: 'MORNING', totalPence: 10000, paidPence: 10000, refundedPence: 0, pickup: { town: 'Glasgow' }, dropoff: { town: 'Edinburgh' }, driver: { user: { name: 'Driver One' } } });
   mocks.assignments.mockResolvedValue([{ driverId: 'driver-one' }]);
   mocks.users.mockResolvedValue([]);
   mocks.settings.mockImplementation((key: string) => Promise.resolve(key === 'web' ? { canonicalOrigin: 'https://example.test' }

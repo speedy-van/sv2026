@@ -10,7 +10,7 @@ vi.mock('../src/server/services/stripe-webhook', () => ({ handleStripeEvent: moc
 vi.mock('../src/server/outbox/dispatch', () => ({ dispatchPendingOutbox: mocks.dispatch }));
 vi.mock('../src/server/auth/staff', () => ({ authenticateStaffRequest: vi.fn() }));
 vi.mock('../src/server/rate-limit', () => ({ enforceRateLimit: vi.fn() }));
-import { POST } from '../src/app/api/webhooks/stripe/route';
+import { POST, maxDuration } from '../src/app/api/webhooks/stripe/route';
 const request = () =>
   new Request('http://localhost/api/webhooks/stripe', {
     method: 'POST',
@@ -30,6 +30,7 @@ describe('payment webhook notification dispatch scheduling', () => {
       mocks.handle.mockResolvedValue(result);
       const response = await POST(request());
       expect(response.status).toBe(200);
+      expect(maxDuration).toBe(180);
       expect(mocks.construct).toHaveBeenCalledWith('signed-unit-event', 'unit-signature');
       expect(mocks.dispatch).not.toHaveBeenCalled();
       const callback = mocks.after.mock.calls[0]?.[0];

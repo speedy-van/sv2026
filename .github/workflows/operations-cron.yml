@@ -17,7 +17,7 @@ jobs:
     # GitHub schedules may be delayed; this is not an exact five-minute SLA.
     if: ${{ vars.OPERATIONS_CRON_ENABLED == 'true' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 3
+    timeout-minutes: 4
     steps:
       - name: Run protected operations batch
         env:
@@ -27,6 +27,6 @@ jobs:
             echo 'CRON_SECRET is required for the operations scheduler.' >&2
             exit 1
           fi
-          curl --fail --silent --show-error --max-time 70 \
+          curl --fail --silent --show-error --max-time 190 \
             --header "Authorization: Bearer $CRON_SECRET" \
             https://www.speedyvan.uk/api/cron/operations

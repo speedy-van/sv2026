@@ -89,7 +89,7 @@ export function AdminTabBar({
             focused ||
             (destination.name === 'bookings/index' && current?.startsWith('bookings/')) ||
             (destination.name === 'drivers/index' && current?.startsWith('drivers/')) ||
-            (destination.name === 'more' && current?.startsWith('chat/'));
+            (destination.name === 'more' && (current?.startsWith('chat/') || current?.startsWith('mail/')));
           const unread = destination.name === 'more' ? (chatUnreadCount ?? 0) : 0;
           const Icon = destination.icon;
           return (

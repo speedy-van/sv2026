@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-const mocks = vi.hoisted(() => ({ update: vi.fn(), enqueue: vi.fn(), create: vi.fn(), booking: vi.fn(), pending: vi.fn(), manual: vi.fn(), quote: vi.fn(), users: vi.fn(), settings: vi.fn(), sendEmail: vi.fn(), refund: vi.fn() }));
+import { DEFAULT_PRICING_CONFIG } from '@sv/pricing';
+const mocks = vi.hoisted(() => ({ update: vi.fn(), enqueue: vi.fn(), create: vi.fn(), booking: vi.fn(), pending: vi.fn(), manual: vi.fn(), quote: vi.fn(), users: vi.fn(), settings: vi.fn(), sendEmail: vi.fn(), refund: vi.fn(), ledgerUpdate: vi.fn() }));
 vi.mock('@sv/db', () => {
-  const tx = { booking: { findUnique: mocks.booking, findFirst: mocks.pending }, manualQuote: { findUnique: mocks.manual, findFirst: mocks.manual }, quote: { findUnique: mocks.quote }, user: { findMany: mocks.users }, outboxEvent: { update: mocks.update, create: mocks.create }, refund: { findUnique: mocks.refund } };
+  const tx = { booking: { findUnique: mocks.booking, findFirst: mocks.pending }, manualQuote: { findUnique: mocks.manual, findFirst: mocks.manual }, quote: { findUnique: mocks.quote }, user: { findMany: mocks.users }, outboxEvent: { update: mocks.update, create: mocks.create }, refund: { findUnique: mocks.refund }, mailDelivery: { updateMany: mocks.ledgerUpdate } };
   return { Prisma: { JsonNull: null }, enqueueOutbox: mocks.enqueue, prisma: { ...tx, $transaction: (run: (client: typeof tx) => Promise<unknown>) => run(tx) } };
 });
 vi.mock('../src/server/settings', () => ({ getSetting: mocks.settings }));
@@ -9,10 +10,11 @@ vi.mock('../src/server/auth/customer-links', () => ({ manageLinkForBooking: () =
 vi.mock('../src/server/services/customer-self-service', () => ({ payLinkForBooking: () => 'phone-pay-token', payLinkForManualQuote: () => 'manual-pay-token', payLinkForExtraCharge: vi.fn() }));
 vi.mock('../src/server/services/payments', () => ({ runRefundOutbox: vi.fn() }));
 vi.mock('../src/server/integrations/expo-push', () => ({ sendPushOutbox: vi.fn() }));
-vi.mock('../src/server/integrations/resend', () => ({ sendTransactionalEmail: mocks.sendEmail }));
+vi.mock('../src/server/integrations/mail', () => ({ sendTransactionalEmail: mocks.sendEmail }));
+vi.mock('../src/server/mail/delivery', () => ({ processMailDelivery: vi.fn() }));
 import { processOutboxEventNow } from '../src/server/outbox/processor';
 const now = new Date('2031-01-01T12:00:00Z');
-function booking() { return { id: 'booking-1', version: 4, status: 'PENDING_PAYMENT', deletedAt: null, holdExpiresAt: new Date('2031-01-02'), contactEmail: 'customer@example.test', reference: 'SV-TEST12', moveDate: new Date('2031-01-10'), slot: 'MORNING', service: 'man-and-van', totalPence: 10000, pickup: { town: 'Glasgow' }, dropoff: null, completedAt: null, driverId: null }; }
+function booking() { return { id: 'booking-1', version: 4, status: 'PENDING_PAYMENT', deletedAt: null, holdExpiresAt: new Date('2031-01-02'), contactEmail: 'customer@example.test', contactName: 'Customer One', reference: 'SV-TEST12', moveDate: new Date('2031-01-10'), slot: 'MORNING', service: 'man-and-van', pricingVersion: { config: DEFAULT_PRICING_CONFIG }, totalPence: 10000, paidPence: 0, refundedPence: 0, pickup: { town: 'Glasgow' }, dropoff: null, completedAt: null, driverId: null }; }
 function event(type: string, payload: unknown) { return { id: 'event-1', attempts: 1, type, payload }; }
 function emailPayload(): unknown { return mocks.enqueue.mock.calls.find((args: unknown[]) => args[1] === 'email.send')?.[2]; }
 beforeEach(() => {
