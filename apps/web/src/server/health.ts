@@ -9,7 +9,9 @@ export type HealthResponse = z.infer<typeof HealthResponseSchema>;
 const outboxBacklogLimitSeconds = 5 * 60;
 
 function currentVersion(): string {
-  return process.env.VERCEL_GIT_COMMIT_SHA ?? process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA ?? process.env.npm_package_version ?? 'local';
+  // Vercel exposes system variables as empty strings when a value is unavailable (for example a
+  // CLI deployment without a linked Git provider), so empty values must fall through too.
+  return process.env.VERCEL_GIT_COMMIT_SHA || process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA || process.env.npm_package_version || 'local';
 }
 
 export async function readHealth(now = new Date()): Promise<{ body: HealthResponse; status: number }> {

@@ -52,6 +52,26 @@ describe('Phase 16 health and security gates', () => {
     expect(body.oldestPendingSeconds).toBeGreaterThanOrEqual(300);
   });
 
+  it('still reports health when the platform exposes empty version variables', async () => {
+    const saved = {
+      sha: process.env.VERCEL_GIT_COMMIT_SHA,
+      publicSha: process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA,
+    };
+    process.env.VERCEL_GIT_COMMIT_SHA = '';
+    process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA = '';
+    try {
+      const response = await getHealth(new Request('http://localhost/api/v1/health'));
+      expect(response.status).not.toBe(500);
+      const body = HealthResponseSchema.parse(await response.json());
+      expect(body.version.length).toBeGreaterThan(0);
+    } finally {
+      if (saved.sha === undefined) delete process.env.VERCEL_GIT_COMMIT_SHA;
+      else process.env.VERCEL_GIT_COMMIT_SHA = saved.sha;
+      if (saved.publicSha === undefined) delete process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA;
+      else process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA = saved.publicSha;
+    }
+  });
+
   it('rejects cron calls without CRON_SECRET', async () => {
     const previous = process.env.CRON_SECRET;
     process.env.CRON_SECRET = `${prefix}cron-secret`;
