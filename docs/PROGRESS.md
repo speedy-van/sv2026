@@ -4,6 +4,38 @@ Codex ticks items as they're **done and verified** (per AGENTS.md §8), and adds
 
 Legend: `[ ]` not started · `[~]` in progress · `[x]` done and verified
 
+## Admin booking actions review fixes — local only, 2026-11-04
+
+A read-only review of the admin app (types, lint and 545 tests green) found small state and consistency issues in the booking-actions workspace.
+
+- [x] Switching action or reloading booking actions now resets every draft field: refund mode re-derived from the latest paid/refunded amounts, notify, payment choice, email template and a fresh received-at time (`admin-tools-screens.test.tsx`: "resets cancellation choices when switching actions and re-derives the refund default after reload"; confirmed failing without the fix).
+- [x] The booking-detail Cancel button now derives eligibility from `canBookingTransition(status, 'CANCELLED', 'ADMIN')` instead of a duplicated status list (R16) (`booking-detail.test.tsx`).
+- [x] Stale R0 notes under Phase 13 updated with current status; items remain unticked pending recorded end-to-end acceptance.
+
+No build, OTA, deployment or production mutation occurred.
+
+## Direct admin booking cancellation — 2026-11-03
+
+The owner paused the new TestFlight release and requested booking cancellation. The server and guarded cancellation workspace already exist; make the action discoverable from booking details. This task is local only while release instructions remain paused.
+
+- [x] Add a direct Cancel booking action for active/unpaid records and open cancellation immediately (`booking-detail.test.tsx`: pending/confirmed/in-progress navigation; completed/cancelled/expired/deleted exclusion and stale-data disablement).
+- [x] Retain server eligibility, refund preview, reason, customer-notification choice, version checks and device confirmation (`admin-tools-screens.test.tsx`: both menu/direct entry paths require preview, invalidate edits and confirm the exact refund with authentication).
+- [x] Verify navigation, cancellation confirmation and unavailable/stale record behavior: 31 tests in the two affected suites, admin typecheck/lint and git diff --check pass. No build or deployment.
+
+With no net payment, cancellation initially selects no refund so an unpaid booking does not depend on a configured refund policy; paid bookings retain the existing policy/manual decision flow. The server remains authoritative. Evidence: `.tmp/admin-cancellation-{tests,types,lint}.log`. D96 records the local change; no real booking was cancelled, no payment/message was sent, and TestFlight/OTA delivery remains paused.
+
+### Authorized cancellation OTA release — 2026-11-03
+
+The owner subsequently explicitly requested OTA publication so the new cancellation button appears in the installed app. Native/TestFlight work remains paused.
+
+- [x] Export immutable, audited iOS snapshots containing the cancellation changes for runtimes 1.0.1/build55 and 1.0.0/build54 (30/30 export checks per runtime; independent review matches all 315 snapshot files, native configuration and compiled cancellation guards).
+- [x] Publish each validated bundle to the existing production channel and verify the runtime-specific manifests and exact CDN asset bytes (15/15 published checks per runtime; Hermes and all 38 assets match; final channel/manifest readback at 2026-11-03T18:23:50Z).
+- [x] Record update IDs and activation instructions; preserve the existing backend/database and avoid live cancellation or message tests (release-complete.json and independent-review.json in C:/speedy van/admin-cancellation-ota-20261103).
+
+Runtime 1.0.1/build55: update group `78edaf07-d757-4b4a-be41-b5612161f365`, iOS update `01a1a2a5-5262-79ab-8677-87c6ff29ab6a`, launch SHA256 `6e2be74fc6f7acb9792fecd172a3696af49b50e74cc0b9a78f52ac74a0d10363` (10,273,949 bytes). Runtime 1.0.0/build54: update group `c24e90e3-7041-4cfd-8cc0-e90e7bd3c4b7`, iOS update `01a1a2a6-ed45-73f9-b405-39d18fc42404`, launch SHA256 `ccba6eb5d44430aa0b25a1ffef2ca0cbed9fde11ba3bce129ad21efa3b39a0e5` (10,273,947 bytes).
+
+Activation: open SV Admin online, wait for Update ready and press Restart to update. If no banner appears, fully close and reopen after the download. The Cancel booking button then opens the existing guarded cancellation workspace from eligible booking details. Native build numbers remain unchanged. Provider publication and exact CDN verification are complete; physical iPhone activation is not verified. No native build, TestFlight submission, backend deployment, migration, real cancellation or test message occurred during this OTA release.
+
 ## Admin iOS external notifications and owner-provided sound — 2026-10-28
 
 Owner authorizes repairing booking/chat/background notifications and using the audio from the supplied WhatsApp MP4. Diagnosis confirmed missing production `EXPO_ACCESS_TOKEN`, registered iOS devices, no chat Push producer, and daily-only outbox scheduling.
@@ -363,9 +395,9 @@ _Plan:_
 - [x] Build the app theme from `@sv/tokens` with light/dark palettes, Bricolage/Manrope font loading and reusable primitives (`ScreenState`, buttons, cards, badges, sheets).
 - [x] Implement auth/update/app-lock/notification-permission gates, OTP sign-in/code screens, secure token storage and API client wiring.
 - [x] Implement the tab shell: Today, Bookings, Schedule, Drivers and More, with iPhone and iPad-responsive layouts.
-- [ ] Build every documented Admin screen/menu surface from `14-admin-app.md` with loading, empty, error, success and disabled/submitting states. R0: several screens are fixture-driven or describe future surfaces; R6-R8 replace them.
-- [ ] Build booking detail actions and sheets: assign/offer, unassign, edit, re-price, reschedule, cancel, refund, extra charge, offline payment and resend email. R0: current app has placeholders/empty handlers and canned API underneath; R6 implements core sheets after R3.
-- [ ] Build new phone booking wizard using the quote/catalogue endpoints and payment-mode branch. R0: current wizard is a UI shell using fixture/static step data; R6 wires the real endpoints.
+- [ ] Build every documented Admin screen/menu surface from `14-admin-app.md` with loading, empty, error, success and disabled/submitting states. _Status 2026-11-04:_ the R0 fixture note is outdated — the screens under `apps/admin/app/(app)` now read the real API (`operations-screens.test.tsx`, `admin-tools-screens.test.tsx`). Left unticked until a full screen-by-screen audit against `14-admin-app.md` is recorded.
+- [ ] Build booking detail actions and sheets: assign/offer, unassign, edit, re-price, reschedule, cancel, refund, extra charge, offline payment and resend email. _Status 2026-11-04:_ the R0 placeholder note is outdated — every listed action is implemented against real endpoints (`booking-editor-screen.test.tsx`, `booking-editor-hooks.test.tsx`, `admin-tools-screens.test.tsx`, `booking-detail.test.tsx`). Left unticked until end-to-end acceptance against the real API on a device is recorded (R19).
+- [ ] Build new phone booking wizard using the quote/catalogue endpoints and payment-mode branch. _Status 2026-11-04:_ the R0 shell note is outdated — the wizard uses the create-context, catalogue, postcode, admin quote and booking endpoints (`phone-booking-screen.test.tsx`). Left unticked until end-to-end acceptance against the real API is recorded (R19).
 - [x] Implement push registration, notification categories, deep-link routing, foreground `NewJobModal`, sounds/haptics and feed polling fallback.
 - [x] Add React Query polling/invalidation rules, offline banner behavior and permission/role gating.
 - [x] Add jest-expo tests for api-client integration, `ScreenState`, permission gates, deep-link routing and `NewJobModal` stacking/dedupe.

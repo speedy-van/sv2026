@@ -168,6 +168,26 @@ describe('booking detail uses actual records without fixture fallbacks', () => {
     await fireEvent.press(view.getByRole('button', { name: 'Edit booking' }));
     expect(router.push).toHaveBeenCalledWith('/(app)/edit-booking?id=booking-test');
   });
+  it.each(['PENDING_PAYMENT', 'CONFIRMED', 'IN_PROGRESS'] as const)(
+    'opens cancellation directly for a %s booking', async (status) => {
+      mockQuery = query({ ...booking, status });
+      const view = await render(<BookingDetailScreen />);
+      await fireEvent.press(view.getByRole('button', { name: 'Cancel booking' }));
+      expect(router.push).toHaveBeenCalledWith('/(app)/booking-actions?id=booking-test&action=cancel');
+    },
+  );
+  it.each(['COMPLETED', 'CANCELLED', 'EXPIRED'] as const)(
+    'does not offer cancellation for a %s booking', async (status) => {
+      mockQuery = query({ ...booking, status });
+      const view = await render(<BookingDetailScreen />);
+      expect(view.queryByRole('button', { name: 'Cancel booking' })).toBeNull();
+    },
+  );
+  it('does not offer cancellation for a deleted booking', async () => {
+    mockQuery = query({ ...booking, deletedAt: '2031-03-02T12:00:00.000Z' });
+    const view = await render(<BookingDetailScreen />);
+    expect(view.queryByRole('button', { name: 'Cancel booking' })).toBeNull();
+  });
   it('labels the recorded creation timestamp separately from the move date and payment attempts', async () => {
     const view = await render(<BookingDetailScreen />);
     expect(view.getByText('Booking created')).toBeTruthy();
@@ -245,6 +265,8 @@ describe('booking detail uses actual records without fixture fallbacks', () => {
     expect(
       view.getByText('The booking could not be updated. The last loaded details are shown.'),
     ).toBeTruthy();
+    await fireEvent.press(view.getByRole('button', { name: 'Cancel booking' }));
+    expect(router.push).not.toHaveBeenCalled();
     await fireEvent.press(view.getByRole('button', { name: 'Try again' }));
     expect(mockQuery.refetch).toHaveBeenCalledTimes(1);
   });

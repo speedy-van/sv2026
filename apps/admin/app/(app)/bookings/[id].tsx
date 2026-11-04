@@ -1,4 +1,4 @@
-import { formatGBP, type AdminBookingDetailResponse } from '@sv/contracts';
+import { canBookingTransition, formatGBP, type AdminBookingDetailResponse } from '@sv/contracts';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ChevronLeft, CreditCard, MapPin, RefreshCw } from 'lucide-react-native';
 import { useState } from 'react';
@@ -92,6 +92,16 @@ export default function BookingDetailScreen(): React.ReactElement {
           ) : null}
           {!booking.deletedAt ? <Button label="Edit booking" onPress={() => { router.push(`/(app)/edit-booking?id=${encodeURIComponent(booking.id)}`); }} /> : null}
           {!booking.deletedAt ? <Button label="Payments, cancellation and emails" tone="secondary" onPress={() => { router.push(`/(app)/booking-actions?id=${encodeURIComponent(booking.id)}`); }} /> : null}
+          {!booking.deletedAt && canBookingTransition(booking.status, 'CANCELLED', 'ADMIN') ? (
+            <Button
+              label="Cancel booking"
+              tone="danger"
+              disabled={query.isError}
+              onPress={() => {
+                router.push(`/(app)/booking-actions?id=${encodeURIComponent(booking.id)}&action=cancel`);
+              }}
+            />
+          ) : null}
           <Card padding="lg">
             <View style={styles.badges}>
               <Badge

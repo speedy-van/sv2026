@@ -16,7 +16,7 @@ import { registerPushDevice } from '../src/notifications/register-push';
 
 jest.mock('expo-router', () => ({
   router: { push: jest.fn(), replace: jest.fn() },
-  useLocalSearchParams: () => ({ id: 'record-one' }),
+  useLocalSearchParams: () => mockRouteParams,
 }));
 jest.mock('../src/data/admin-tool-session', () => ({ useAdminToolSession: () => mockSession }));
 jest.mock('../src/state/auth', () => ({ useAuth: () => ({ api: {} }) }));
@@ -31,6 +31,7 @@ const now = '2031-10-01T12:00:00.000Z';
 const mockHttp = jest.fn<Promise<unknown>, [string, { method?: string; body?: unknown } | undefined]>();
 const mockInvalidate = jest.fn(() => Promise.resolve());
 let mockSession: AdminToolSession;
+let mockRouteParams: { id: string; action?: string } = { id: 'record-one' };
 const clients: QueryClient[] = [];
 const bookingContext = {
   id: 'record-one',
@@ -190,6 +191,7 @@ async function screen(element: ReactElement): ReturnType<typeof render> {
 }
 beforeEach(() => {
   jest.clearAllMocks();
+  mockRouteParams = { id: 'record-one' };
   jest.replaceProperty(Platform, 'OS', 'ios');
   mockHttp.mockImplementation((path, options) => Promise.resolve().then(() => response(path, options)));
   mockSession = {
@@ -227,12 +229,14 @@ afterEach(() => {
   jest.restoreAllMocks();
 });
 
-it('previews a cancellation, invalidates the preview on edits, then confirms the exact refund with Face ID', async () => {
+it.each(['menu', 'details'] as const)('previews cancellation from %s, invalidates edits, and confirms the exact refund with Face ID', async (entry) => {
+  if (entry === 'details') mockRouteParams = { id: 'record-one', action: 'cancel' };
   const view = await screen(<BookingActionsScreen />);
   await waitFor(() => {
     expect(view.getByRole('tab', { name: 'Cancel booking' })).toBeTruthy();
   });
-  await fireEvent.press(view.getByRole('tab', { name: 'Cancel booking' }));
+  if (entry === 'menu') await fireEvent.press(view.getByRole('tab', { name: 'Cancel booking' }));
+  expect(mockHttp.mock.calls.some(([, options]) => options?.method === 'POST')).toBe(false);
   await fireEvent.changeText(view.getByLabelText('Reason'), 'Customer requested cancellation');
   expect(view.queryByRole('button', { name: 'Confirm cancellation' })).toBeNull();
   await fireEvent.press(view.getByRole('button', { name: 'Preview cancellation' }));
@@ -262,6 +266,68 @@ it('previews a cancellation, invalidates the preview on edits, then confirms the
     );
   });
   expect(LocalAuthentication.authenticateAsync).toHaveBeenCalledTimes(1);
+});
+
+it('opens an unpaid cancellation with no refund and still requires a preview', async () => {
+  mockRouteParams = { id: 'record-one', action: 'cancel' };
+  mockHttp.mockImplementation((path, options) => Promise.resolve().then(() => {
+    if (path.endsWith('/actions-context')) return {
+      ...bookingContext, status: 'PENDING_PAYMENT', paidPence: 0, refundedPence: 0,
+      balancePence: bookingContext.totalPence, payments: [],
+    };
+    if (path.endsWith('/cancel-preview')) return {
+      id: 'record-one', expectedVersion: 7, refundPence: 0, paidNetPence: 0,
+      policySummary: 'Cancel without issuing a refund.', willUnassignDriver: false,
+    };
+    return response(path, options);
+  }));
+  const view = await screen(<BookingActionsScreen />);
+  await waitFor(() => { expect(view.getByRole('button', { name: 'Preview cancellation' })).toBeTruthy(); });
+  expect(view.queryByRole('button', { name: 'Confirm cancellation' })).toBeNull();
+  await fireEvent.changeText(view.getByLabelText('Reason'), 'Customer no longer needs the move');
+  await fireEvent.press(view.getByRole('button', { name: 'Preview cancellation' }));
+  await waitFor(() => { expect(view.getByText('Refund: £0.00')).toBeTruthy(); });
+  expect(mockHttp).toHaveBeenCalledWith('/api/v1/admin/bookings/record-one/cancel-preview', expect.objectContaining({
+    method: 'POST', body: {
+      expectedVersion: 7, reason: 'Customer no longer needs the move', notifyCustomer: true, refund: { mode: 'NONE' },
+    },
+  }));
+  expect(mockHttp.mock.calls.some(([path]) => path.endsWith('/cancel'))).toBe(false);
+});
+
+it('keeps unknown action links on the ordinary email form without sending anything', async () => {
+  mockRouteParams = { id: 'record-one', action: 'unknown' };
+  const view = await screen(<BookingActionsScreen />);
+  await waitFor(() => { expect(view.getByRole('button', { name: 'Send customer email' })).toBeTruthy(); });
+  expect(view.queryByRole('button', { name: 'Preview cancellation' })).toBeNull();
+  expect(mockHttp.mock.calls.some(([, options]) => options?.method === 'POST')).toBe(false);
+});
+
+it('resets cancellation choices when switching actions and re-derives the refund default after reload', async () => {
+  mockRouteParams = { id: 'record-one', action: 'cancel' };
+  const view = await screen(<BookingActionsScreen />);
+  await waitFor(() => { expect(view.getByRole('button', { name: 'Preview cancellation' })).toBeTruthy(); });
+  const previewBody = (): unknown =>
+    mockHttp.mock.calls.filter(([path]) => path.endsWith('/cancel-preview')).at(-1)?.[1]?.body;
+
+  await fireEvent.press(view.getByRole('tab', { name: 'Full' }));
+  await fireEvent.press(view.getByRole('tab', { name: 'Send email' }));
+  await fireEvent.press(view.getByRole('tab', { name: 'Cancel booking' }));
+  await fireEvent.changeText(view.getByLabelText('Reason'), 'Customer requested cancellation');
+  await fireEvent.press(view.getByRole('button', { name: 'Preview cancellation' }));
+  await waitFor(() => { expect(previewBody()).toEqual(expect.objectContaining({ refund: { mode: 'POLICY' } })); });
+
+  mockHttp.mockImplementation((path, options) => Promise.resolve().then(() =>
+    path.endsWith('/actions-context')
+      ? { ...bookingContext, refundedPence: bookingContext.paidPence }
+      : response(path, options),
+  ));
+  await fireEvent.press(view.getByRole('button', { name: 'Reload booking actions' }));
+  await waitFor(() => { expect(view.getByLabelText('Reason').props.value).toBe(''); });
+  await fireEvent.changeText(view.getByLabelText('Reason'), 'Customer requested cancellation');
+  await fireEvent.press(view.getByRole('button', { name: 'Preview cancellation' }));
+  await waitFor(() => { expect(previewBody()).toEqual(expect.objectContaining({ refund: { mode: 'NONE' } })); });
+  expect(mockHttp.mock.calls.some(([path]) => path.endsWith('/cancel'))).toBe(false);
 });
 
 it('blocks oversized refunds and non-owner offline payment without sending commands', async () => {

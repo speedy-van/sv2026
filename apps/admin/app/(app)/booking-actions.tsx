@@ -26,6 +26,10 @@ import { useAdminToolSession, type AdminToolSession } from '@/data/admin-tool-se
 import { displayBookingCreatedAt } from '@/lib/admin-date-time';
 
 type ActionKind = 'cancel' | 'refund' | 'offline-payment' | 'extra-charge' | 'resend-email';
+type RefundMode = 'POLICY' | 'FULL' | 'NONE' | 'CUSTOM';
+function defaultRefundMode(context: Pick<AdminBookingActionsContext, 'paidPence' | 'refundedPence'>): RefundMode {
+  return context.paidPence === context.refundedPence ? 'NONE' : 'POLICY';
+}
 const actionPaths: Record<ActionKind, string> = {
   cancel: 'cancel',
   refund: 'refunds',
@@ -34,8 +38,9 @@ const actionPaths: Record<ActionKind, string> = {
   'resend-email': 'resend-email',
 };
 export default function BookingActionsScreen(): React.ReactElement {
-  const params = useLocalSearchParams<{ id?: string }>();
+  const params = useLocalSearchParams<{ id?: string; action?: string }>();
   const id = typeof params.id === 'string' ? params.id : '';
+  const initialKind = params.action === 'cancel' ? 'cancel' : 'resend-email';
   const session = useAdminToolSession();
   const query = useQuery({
     ...session.queryOptions,
@@ -77,8 +82,9 @@ export default function BookingActionsScreen(): React.ReactElement {
     >
       {query.data && session.privateReady ? (
         <ActionsWorkspace
-          key={`${session.actorId ?? ''}:${id}`}
+          key={`${session.actorId ?? ''}:${id}:${initialKind}`}
           context={query.data}
+          initialKind={initialKind}
           session={session}
           stale={query.isError}
         />
@@ -89,22 +95,24 @@ export default function BookingActionsScreen(): React.ReactElement {
 
 function ActionsWorkspace({
   context,
+  initialKind,
   session,
   stale,
 }: {
   context: AdminBookingActionsContext;
+  initialKind: ActionKind;
   session: AdminToolSession;
   stale: boolean;
 }): React.ReactElement {
   const action = useAdminToolAction(session);
-  const [kind, setKind] = useState<ActionKind>('resend-email');
+  const [kind, setKind] = useState<ActionKind>(initialKind);
   const [version, setVersion] = useState(context.version);
   const [reason, setReason] = useState('');
   const [amount, setAmount] = useState('');
   const [reference, setReference] = useState('');
   const [paidAt, setPaidAt] = useState(new Date().toISOString());
   const [paymentId, setPaymentId] = useState('');
-  const [refundMode, setRefundMode] = useState<'POLICY' | 'FULL' | 'NONE' | 'CUSTOM'>('POLICY');
+  const [refundMode, setRefundMode] = useState<RefundMode>(defaultRefundMode(context));
   const [notify, setNotify] = useState(true);
   const [template, setTemplate] = useState<'CONFIRMATION' | 'PAYMENT_LINK' | 'MANAGE_LINK'>('PAYMENT_LINK');
   const [preview, setPreview] = useState<AdminCancelPreviewResponse | null>(null);
@@ -132,13 +140,18 @@ function ActionsWorkspace({
   const eligiblePayments = context.payments.filter(
     (payment) => payment.method === 'STRIPE' && payment.refundablePence > 0,
   );
-  function reset(next: ActionKind, nextVersion = context.version, balance = context.balancePence): void {
+  function reset(next: ActionKind, latest: AdminBookingActionsContext = context): void {
     if (action.busy) return;
     setKind(next);
-    setVersion(nextVersion);
+    setVersion(latest.version);
     setReason('');
-    setAmount(next === 'offline-payment' ? penceToInput(balance) : '');
+    setAmount(next === 'offline-payment' ? penceToInput(latest.balancePence) : '');
     setReference('');
+    setPaidAt(new Date().toISOString());
+    setPaymentId('');
+    setRefundMode(defaultRefundMode(latest));
+    setNotify(true);
+    setTemplate('PAYMENT_LINK');
     setPreview(null);
     setCompleted(false);
     action.clear();
@@ -238,7 +251,7 @@ function ActionsWorkspace({
       ),
     );
     if (result) {
-      reset(kind, result.version, result.balancePence);
+      reset(kind, result);
       await session.invalidate();
     }
   }
@@ -259,7 +272,9 @@ function ActionsWorkspace({
         sizing="content"
         value={kind}
         disabled={action.busy}
-        onChange={reset}
+        onChange={(next) => {
+          reset(next);
+        }}
         options={[
           { label: 'Send email', value: 'resend-email' },
           { label: 'Cancel booking', value: 'cancel' },
