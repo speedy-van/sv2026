@@ -4,6 +4,19 @@ Codex ticks items as they're **done and verified** (per AGENTS.md §8), and adds
 
 Legend: `[ ]` not started · `[~]` in progress · `[x]` done and verified
 
+## Lark mail backend release — 2026-11-04
+
+Owner-authorized release of the merged Lark mail backend (D98) with both mailbox flags still false.
+
+- [x] Database tests on the isolated Neon test branch `br-little-thunder-b50bp08n`: all 8 integration files, 34/34 tests (including `mail-db.test.ts`).
+- [x] Production snapshot `snap-ancient-pine-b5k75lba` (`before-lark-mail-migration-20261104`), then applied only the additive `20261104010000_lark_mail` to production (13/13 migrations finished; 8 Mail tables and nullable `OutboxEvent.claimedAt` read back). Evidence: `.tmp/admin-mail-release-20261104/db-readback.json`.
+- [x] First staged deployment `dpl_BgEbHKxD1GpSBe6W6kjF3UFhEfTP` (clean worktree at `3391914`) returned 500 on `/api/v1/health` and was not promoted. Cause: Vercel exposed empty version variables and the health contract rejected an empty version. Fixed in `753eb3d` (`phase16-qa.test.ts`: "still reports health when the platform exposes empty version variables"; fails without the fix).
+- [x] Staged `dpl_C7UdCV2JrrWBWsmV7zWy93c45Bfu` from a clean worktree at `753eb3d`, smoke-tested (pages and public API 200, admin/mail/driver APIs 401, health JSON identical to the previous release), then promoted. Previous production for rollback: `dpl_75j3A9LiFUeLGGBt5woL9nnmVEWA`.
+- [ ] Authenticated deployed mailbox read with `LARK_MAIL_ENABLED=true`, then an authorized send check before `LARK_MAIL_SEND_ENABLED=true` (Q12).
+- [ ] New native iOS build containing `expo-file-system`, `expo-sharing` and `react-native-webview` before the admin Mail screen can ship; OTA to builds 54/55 is not compatible.
+
+Health still reports 503 because of the 78 historical pending outbox events noted in D95; production had no successful `email.send` in the previous 14 days, so removing the Resend transport did not stop a working delivery path. Health `version` now reads `local` for CLI deployments without a linked Git provider.
+
 ## Admin plain-language redesign — 2026-11-04
 
 The owner said the admin design was very poor for a non-technical user (D97).
