@@ -15,6 +15,8 @@ The owner said the admin design was very poor for a non-technical user (D97).
 
 Admin typecheck, lint and 547/547 tests pass.
 
+- [x] Owner-requested OTA to the production channel (commit `31ba9ca`): runtime 1.0.1/build55 group `d4a8b46c-d440-43c8-ab27-bbb955b6f885` (iOS update `01a1a443-f71d-7f39-b77a-120f7a62e56c`) and runtime 1.0.0/build54 group `381cc999-085a-4e2f-a5f3-161d267838ef` (iOS update `01a1a444-49f6-73ca-b49b-5bc2e40a6f65`). 36/36 export audit checks and 15/15 published checks per runtime, exact Hermes/CDN bytes and all 38 assets match; evidence in `C:/speedy van/admin-plain-language-ota-20261104/release-complete.json`. No native build, backend deploy or business data change. Physical iPhone activation not verified.
+
 ## Admin booking actions review fixes — local only, 2026-11-04
 
 A read-only review of the admin app (types, lint and 545 tests green) found small state and consistency issues in the booking-actions workspace.
