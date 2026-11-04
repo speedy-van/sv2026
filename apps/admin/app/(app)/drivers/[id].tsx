@@ -82,11 +82,11 @@ export default function DriverDetailScreen(): React.ReactElement {
                 {contactError ? <AppText accessibilityRole="alert" accessibilityLiveRegion="polite" size="sm" tone="danger">{contactError}</AppText> : null}
               </Card>
               <Card>
-                <SectionHeader title="Driver record" />
+                <SectionHeader title="Driver details" />
                 <DetailRow label="Home postcode" value={driver.homePostcode || 'Not recorded'} />
                 <DetailRow label="Licence expiry" value={driver.licenceExpiry ? displayDate(driver.licenceExpiry) : 'Not recorded'} />
-                <DetailRow label="Right-to-work check recorded" value={driver.rightToWorkAt ? displayDate(driver.rightToWorkAt, false) : 'Not recorded'} />
-                <DetailRow label="Configured earnings rate" value={driver.payoutPercent === null ? 'Agreed by phone' : `${String(driver.payoutPercent)}%`} />
+                <DetailRow label="Right to work checked" value={driver.rightToWorkAt ? displayDate(driver.rightToWorkAt, false) : 'Not recorded'} />
+                <DetailRow label="Pay rate" value={driver.payoutPercent === null ? 'Agreed by phone' : `${String(driver.payoutPercent)}%`} />
                 {driver.notes ? <DetailRow label="Notes" value={driver.notes} /> : null}
               </Card>
             </View>

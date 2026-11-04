@@ -363,9 +363,9 @@ function BookingEditorWorkspace(props: {
               <AppText accessibilityRole="alert" tone="danger">
                 {changed ? bookingEditCopy.conflict : bookingEditCopy.uncertain}
               </AppText>
-              <AppText muted>Reloading replaces this unsaved draft with the current booking.</AppText>
+              <AppText muted>Refreshing throws away the changes you haven’t saved and shows the booking as it is now.</AppText>
               <Button
-                label="Reload latest booking"
+                label="Refresh"
                 disabled={!props.data.enabled || reloading}
                 loading={reloading}
                 onPress={() => {

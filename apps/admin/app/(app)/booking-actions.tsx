@@ -8,28 +8,32 @@ import {
   AdminOfflinePaymentRequestSchema,
   AdminPaymentRefundRequestSchema,
   AdminResendEmailRequestSchema,
+  addDays,
   formatGBP,
+  londonToday,
   type AdminBookingActionsContext,
   type AdminCancelPreviewResponse,
+  type BookingStatus,
 } from '@sv/contracts';
 import { useQuery } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { AdminToolFeedback } from '@/components/admin-tool-feedback';
 import { ToggleField } from '@/components/booking-edit-fields';
-import { AppText, Badge, Button, Card, TextField, SegmentedControl } from '@/components/primitives';
+import { ChipChoices, ChoiceList, type ChoiceOption } from '@/components/choice-list';
+import { AppText, Badge, Button, Card, TextField } from '@/components/primitives';
 import { ScreenState } from '@/components/screen-state';
 import { useAdminToolAction } from '@/data/admin-tool-action';
 import { penceToInput, poundsToPence } from '@/data/admin-tool-forms';
 import { useAdminToolSession, type AdminToolSession } from '@/data/admin-tool-session';
+import { bookingStatusLabel } from '@/data/operations';
 import { displayBookingCreatedAt } from '@/lib/admin-date-time';
 
 type ActionKind = 'cancel' | 'refund' | 'offline-payment' | 'extra-charge' | 'resend-email';
 type RefundMode = 'POLICY' | 'FULL' | 'NONE' | 'CUSTOM';
-function defaultRefundMode(context: Pick<AdminBookingActionsContext, 'paidPence' | 'refundedPence'>): RefundMode {
-  return context.paidPence === context.refundedPence ? 'NONE' : 'POLICY';
-}
+type EmailTemplate = 'CONFIRMATION' | 'PAYMENT_LINK' | 'MANAGE_LINK';
+
 const actionPaths: Record<ActionKind, string> = {
   cancel: 'cancel',
   refund: 'refunds',
@@ -37,10 +41,102 @@ const actionPaths: Record<ActionKind, string> = {
   'extra-charge': 'extra-charges',
   'resend-email': 'resend-email',
 };
+
+const actionChoices: readonly ChoiceOption<ActionKind>[] = [
+  {
+    value: 'resend-email',
+    title: 'Email the customer',
+    description: 'Send a payment link, their booking confirmation or a link to manage the booking.',
+  },
+  {
+    value: 'offline-payment',
+    title: 'Record cash or bank transfer',
+    description: 'The customer paid you directly. Only the owner can do this.',
+  },
+  {
+    value: 'extra-charge',
+    title: 'Add an extra charge',
+    description: 'The customer is emailed a link to pay it.',
+  },
+  {
+    value: 'refund',
+    title: 'Refund a card payment',
+    description: 'Send money back to the customer’s card.',
+  },
+  {
+    value: 'cancel',
+    title: 'Cancel this booking',
+    description: 'You will see exactly what happens before anything is changed.',
+  },
+];
+
+const emailChoices: readonly ChoiceOption<EmailTemplate>[] = [
+  { value: 'PAYMENT_LINK', title: 'Payment link', description: 'Asks the customer to pay what they still owe.' },
+  { value: 'CONFIRMATION', title: 'Booking confirmation', description: 'Sends their booking details again.' },
+  {
+    value: 'MANAGE_LINK',
+    title: 'Manage booking link',
+    description: 'Lets them view or change their booking online.',
+  },
+];
+
+const successMessages: Record<ActionKind, string> = {
+  cancel: 'Done. The booking is cancelled. Any refund will reach the customer’s card in a few working days.',
+  refund: 'Done. The refund is on its way. It usually reaches the customer’s card in a few working days.',
+  'resend-email': 'Done. The email is on its way to the customer.',
+  'extra-charge': 'Done. The charge was added and the customer has been emailed a link to pay it.',
+  'offline-payment': 'Done. The payment is saved on this booking.',
+};
+
+function defaultRefundMode(context: Pick<AdminBookingActionsContext, 'paidPence' | 'refundedPence'>): RefundMode {
+  return context.paidPence === context.refundedPence ? 'NONE' : 'POLICY';
+}
+
+function statusTone(status: BookingStatus): 'danger' | 'neutral' | 'success' | 'warning' {
+  if (status === 'CONFIRMED' || status === 'COMPLETED') return 'success';
+  if (status === 'PENDING_PAYMENT') return 'warning';
+  if (status === 'CANCELLED' || status === 'EXPIRED') return 'danger';
+  return 'neutral';
+}
+
+/** The last seven London days, newest first, labelled the way people say them. */
+function recentDays(now: Date): { value: string; label: string }[] {
+  const today = londonToday(now);
+  return Array.from({ length: 7 }, (_, index) => {
+    const date = addDays(today, -index);
+    const label =
+      index === 0
+        ? 'Today'
+        : index === 1
+          ? 'Yesterday'
+          : new Intl.DateTimeFormat('en-GB', {
+              weekday: 'short',
+              day: 'numeric',
+              month: 'short',
+              timeZone: 'Europe/London',
+            }).format(new Date(`${date}T12:00:00Z`));
+    return { value: date, label };
+  });
+}
+
+/** Today means "just now"; an earlier day is recorded at midday on that day. */
+function paidAtFor(day: string, now: Date): string {
+  return day === londonToday(now) ? now.toISOString() : new Date(`${day}T12:00:00Z`).toISOString();
+}
+
+function amountOrNull(value: string): number | null {
+  try {
+    return poundsToPence(value);
+  } catch {
+    // Not a complete amount yet while the person is still typing; the label simply stays generic.
+    return null;
+  }
+}
+
 export default function BookingActionsScreen(): React.ReactElement {
   const params = useLocalSearchParams<{ id?: string; action?: string }>();
   const id = typeof params.id === 'string' ? params.id : '';
-  const initialKind = params.action === 'cancel' ? 'cancel' : 'resend-email';
+  const direct = params.action === 'cancel';
   const session = useAdminToolSession();
   const query = useQuery({
     ...session.queryOptions,
@@ -55,8 +151,12 @@ export default function BookingActionsScreen(): React.ReactElement {
   });
   return (
     <ScreenState
-      title="Booking actions"
-      subtitle="Payments, cancellation and customer emails."
+      title={direct ? 'Cancel booking' : 'Payments and emails'}
+      subtitle={
+        direct
+          ? 'Choose the refund, check the summary, then confirm.'
+          : 'Take a payment, give a refund, add a charge or email the customer.'
+      }
       status={
         !id
           ? 'error'
@@ -66,7 +166,7 @@ export default function BookingActionsScreen(): React.ReactElement {
               ? 'ready'
               : 'error'
       }
-      errorMessage="Booking actions could not be loaded. Check your connection and retry."
+      errorMessage="We couldn’t open this booking. Check your internet connection and try again."
       onRetry={() => {
         void query.refetch();
       }}
@@ -82,9 +182,9 @@ export default function BookingActionsScreen(): React.ReactElement {
     >
       {query.data && session.privateReady ? (
         <ActionsWorkspace
-          key={`${session.actorId ?? ''}:${id}:${initialKind}`}
+          key={`${session.actorId ?? ''}:${id}:${direct ? 'cancel' : 'menu'}`}
           context={query.data}
-          initialKind={initialKind}
+          direct={direct}
           session={session}
           stale={query.isError}
         />
@@ -93,30 +193,42 @@ export default function BookingActionsScreen(): React.ReactElement {
   );
 }
 
+function MoneyRow(props: { label: string; pence: number; strong?: boolean }): React.ReactElement {
+  return (
+    <View style={styles.moneyRow}>
+      <AppText {...(props.strong ? { weight: 'bold' as const } : { muted: true })}>{props.label}</AppText>
+      <AppText numeric {...(props.strong ? { weight: 'bold' as const } : {})}>
+        {formatGBP(props.pence)}
+      </AppText>
+    </View>
+  );
+}
+
 function ActionsWorkspace({
   context,
-  initialKind,
+  direct,
   session,
   stale,
 }: {
   context: AdminBookingActionsContext;
-  initialKind: ActionKind;
+  direct: boolean;
   session: AdminToolSession;
   stale: boolean;
 }): React.ReactElement {
   const action = useAdminToolAction(session);
-  const [kind, setKind] = useState<ActionKind>(initialKind);
+  const [kind, setKind] = useState<ActionKind | null>(direct ? 'cancel' : null);
   const [version, setVersion] = useState(context.version);
   const [reason, setReason] = useState('');
   const [amount, setAmount] = useState('');
   const [reference, setReference] = useState('');
-  const [paidAt, setPaidAt] = useState(new Date().toISOString());
-  const [paymentId, setPaymentId] = useState('');
+  const [paidDay, setPaidDay] = useState(() => londonToday(new Date()));
+  const [paymentId, setPaymentId] = useState<string | null>(null);
   const [refundMode, setRefundMode] = useState<RefundMode>(defaultRefundMode(context));
   const [notify, setNotify] = useState(true);
-  const [template, setTemplate] = useState<'CONFIRMATION' | 'PAYMENT_LINK' | 'MANAGE_LINK'>('PAYMENT_LINK');
+  const [template, setTemplate] = useState<EmailTemplate>('PAYMENT_LINK');
   const [preview, setPreview] = useState<AdminCancelPreviewResponse | null>(null);
   const [completed, setCompleted] = useState(false);
+  const netPaidPence = context.paidPence - context.refundedPence;
   const changed = context.version !== version;
   const capability =
     kind === 'cancel'
@@ -140,15 +252,17 @@ function ActionsWorkspace({
   const eligiblePayments = context.payments.filter(
     (payment) => payment.method === 'STRIPE' && payment.refundablePence > 0,
   );
-  function reset(next: ActionKind, latest: AdminBookingActionsContext = context): void {
+  const typedPence = amountOrNull(amount);
+
+  function reset(next: ActionKind | null, latest: AdminBookingActionsContext = context): void {
     if (action.busy) return;
     setKind(next);
     setVersion(latest.version);
     setReason('');
     setAmount(next === 'offline-payment' ? penceToInput(latest.balancePence) : '');
     setReference('');
-    setPaidAt(new Date().toISOString());
-    setPaymentId('');
+    setPaidDay(londonToday(new Date()));
+    setPaymentId(null);
     setRefundMode(defaultRefundMode(latest));
     setNotify(true);
     setTemplate('PAYMENT_LINK');
@@ -180,7 +294,7 @@ function ActionsWorkspace({
     if (result) setPreview(result);
   }
   async function submit(): Promise<void> {
-    if (disabled || (kind === 'cancel' && !preview)) return;
+    if (!kind || disabled || (kind === 'cancel' && !preview)) return;
     const result = await action.run(
       async () => {
         const expectedVersion = version;
@@ -190,7 +304,7 @@ function ActionsWorkspace({
             : kind === 'refund'
               ? AdminPaymentRefundRequestSchema.parse({
                   expectedVersion,
-                  paymentId,
+                  paymentId: paymentId ?? '',
                   amountPence: poundsToPence(amount),
                   reason,
                 })
@@ -199,7 +313,7 @@ function ActionsWorkspace({
                     expectedVersion,
                     amountPence: poundsToPence(amount),
                     reference,
-                    paidAt,
+                    paidAt: paidAtFor(paidDay, new Date()),
                   })
                 : kind === 'extra-charge'
                   ? AdminExtraChargeRequestSchema.parse({
@@ -210,11 +324,12 @@ function ActionsWorkspace({
                   : AdminResendEmailRequestSchema.parse({ expectedVersion, template });
         if (kind === 'refund') {
           const payment = eligiblePayments.find((item) => item.id === paymentId);
-          if (!payment || poundsToPence(amount) > payment.refundablePence)
-            throw new Error('Choose a payment and an amount no greater than its refundable balance.');
+          if (!payment) throw new Error('Choose which card payment to refund.');
+          if (poundsToPence(amount) > payment.refundablePence)
+            throw new Error(`You can refund up to ${formatGBP(payment.refundablePence)} from this payment.`);
         }
         if (kind === 'offline-payment' && (!session.owner || poundsToPence(amount) !== context.balancePence))
-          throw new Error('The owner must record the complete remaining balance.');
+          throw new Error('Only the owner can record a payment, and it must be the full amount still owed.');
         return session.request(
           `/api/v1/admin/bookings/${encodeURIComponent(context.id)}/${actionPaths[kind]}`,
           AdminBookingMutationResponseSchema,
@@ -223,18 +338,9 @@ function ActionsWorkspace({
       },
       {
         ...(kind !== 'resend-email'
-          ? { authenticate: kind === 'cancel' ? 'Confirm booking cancellation' : 'Confirm financial action' }
+          ? { authenticate: kind === 'cancel' ? 'Confirm booking cancellation' : 'Confirm this payment change' }
           : {}),
-        success:
-          kind === 'cancel'
-            ? 'The booking was cancelled. Any approved refund is processed separately by the payment provider.'
-            : kind === 'refund'
-              ? 'The refund was requested. Your payment provider will process it.'
-              : kind === 'resend-email'
-                ? 'The customer email was queued.'
-                : kind === 'extra-charge'
-                  ? 'The extra charge was added and its payment email was queued.'
-                  : 'The offline payment was recorded.',
+        success: successMessages[kind],
       },
     );
     if (result) {
@@ -255,226 +361,363 @@ function ActionsWorkspace({
       await session.invalidate();
     }
   }
+  const clearPreview = (): void => {
+    setPreview(null);
+  };
+
   return (
-    <View style={{ gap: 20 }}>
+    <View style={styles.stack}>
       <AdminToolFeedback offline={session.offline} error={action.error} message={action.message} />
       <Card>
-        <View style={{ gap: 10 }}>
-          <Badge label={context.status} />
-          <AppText>Total: {formatGBP(context.totalPence)}</AppText>
-          <AppText>Received: {formatGBP(context.paidPence)}</AppText>
-          <AppText>Refunded: {formatGBP(context.refundedPence)}</AppText>
-          <AppText weight="bold">Remaining: {formatGBP(context.balancePence)}</AppText>
+        <View style={styles.cardStack}>
+          <View style={styles.moneyRow}>
+            <AppText weight="bold">Booking</AppText>
+            <Badge label={bookingStatusLabel(context.status)} tone={statusTone(context.status)} />
+          </View>
+          <MoneyRow label="Booking total" pence={context.totalPence} />
+          <MoneyRow label="Paid so far" pence={context.paidPence} />
+          {context.refundedPence > 0 ? <MoneyRow label="Refunded" pence={context.refundedPence} /> : null}
+          <MoneyRow label="Still to pay" pence={context.balancePence} strong />
         </View>
       </Card>
-      <SegmentedControl
-        label="Booking action"
-        sizing="content"
-        value={kind}
-        disabled={action.busy}
-        onChange={(next) => {
-          reset(next);
-        }}
-        options={[
-          { label: 'Send email', value: 'resend-email' },
-          { label: 'Cancel booking', value: 'cancel' },
-          { label: 'Refund payment', value: 'refund' },
-          { label: 'Record payment', value: 'offline-payment' },
-          { label: 'Extra charge', value: 'extra-charge' },
-        ]}
-      />
-      {(changed && !completed) || stale ? (
-        <AdminToolFeedback error="This booking has changed or could not be refreshed. Reload it before taking another action." />
+
+      {(changed && !completed) || stale || action.needsReload ? (
+        <Card tone="subtle">
+          <View style={styles.cardStack}>
+            <AppText accessibilityRole="alert" weight="bold">
+              This booking has just changed.
+            </AppText>
+            <AppText>Tap Refresh to see the latest details before you carry on.</AppText>
+            <Button
+              label="Refresh"
+              disabled={!session.enabled || action.busy}
+              onPress={() => {
+                void reloadActions();
+              }}
+            />
+          </View>
+        </Card>
       ) : null}
-      {capability && !capability.allowed ? (
-        <AppText accessibilityRole="alert">
-          {capability.reason ?? 'This action is unavailable for this booking.'}
-        </AppText>
+
+      {completed ? (
+        <View style={styles.cardStack}>
+          <Button
+            label="Back to booking"
+            onPress={() => {
+              router.replace(`/(app)/bookings/${encodeURIComponent(context.id)}`);
+            }}
+          />
+          {!direct ? (
+            <Button
+              label="Do something else"
+              tone="secondary"
+              onPress={() => {
+                void reloadActions().then(() => {
+                  setKind(null);
+                });
+              }}
+            />
+          ) : null}
+        </View>
       ) : null}
-      {kind === 'offline-payment' && !session.owner ? (
-        <AppText accessibilityRole="alert">Only the account owner can record an offline payment.</AppText>
+
+      {!completed && !direct ? (
+        <View style={styles.cardStack}>
+          <AppText size="lg" weight="bold" accessibilityRole="header">
+            What would you like to do?
+          </AppText>
+          <ChoiceList
+            label="What would you like to do?"
+            options={actionChoices}
+            value={kind}
+            disabled={action.busy}
+            onChange={(next) => {
+              reset(next);
+            }}
+          />
+        </View>
       ) : null}
-      {!completed ? (
+
+      {kind && !completed && capability && !capability.allowed ? (
+        <Card tone="subtle">
+          <AppText accessibilityRole="alert">
+            {capability.reason ?? 'This can’t be done for this booking right now.'}
+          </AppText>
+        </Card>
+      ) : null}
+      {kind === 'offline-payment' && !completed && !session.owner && capability?.allowed ? (
+        <Card tone="subtle">
+          <AppText accessibilityRole="alert">Only the owner can record a cash or bank payment.</AppText>
+        </Card>
+      ) : null}
+
+      {kind && !completed ? (
         <Card>
-          <View style={{ gap: 16 }}>
+          <View style={styles.form}>
             {kind === 'resend-email' ? (
               <>
-                <SegmentedControl
-                  label="Customer email"
-                  sizing="content"
-                  disabled={disabled}
+                <AppText weight="bold">Which email should we send?</AppText>
+                <ChoiceList
+                  label="Which email should we send?"
+                  options={emailChoices}
                   value={template}
-                  onChange={setTemplate}
-                  options={[
-                    { label: 'Payment link', value: 'PAYMENT_LINK' },
-                    { label: 'Confirmation', value: 'CONFIRMATION' },
-                    { label: 'Manage booking', value: 'MANAGE_LINK' },
-                  ]}
+                  disabled={disabled}
+                  onChange={(value) => {
+                    setTemplate(value);
+                  }}
                 />
-                <AppText muted>The selected email will be sent to the booking’s customer address.</AppText>
+                <AppText muted size="sm">
+                  It goes to the email address on this booking.
+                </AppText>
+                <Button
+                  label="Send email"
+                  disabled={disabled}
+                  loading={action.busy}
+                  onPress={() => {
+                    void submit();
+                  }}
+                />
               </>
             ) : null}
+
             {kind === 'cancel' ? (
               <>
-                <SegmentedControl
-                  label="Cancellation refund"
-                  sizing="content"
-                  disabled={disabled}
-                  value={refundMode}
-                  onChange={(value) => {
-                    setRefundMode(value);
-                    setPreview(null);
+                {netPaidPence > 0 ? (
+                  <>
+                    <AppText weight="bold">How much should the customer get back?</AppText>
+                    <ChoiceList
+                      label="How much should the customer get back?"
+                      disabled={disabled}
+                      value={refundMode}
+                      onChange={(value) => {
+                        setRefundMode(value);
+                        clearPreview();
+                      }}
+                      options={[
+                        {
+                          value: 'POLICY',
+                          title: 'Follow our cancellation policy',
+                          description: 'The amount depends on how close the move is. You’ll see it before confirming.',
+                        },
+                        {
+                          value: 'FULL',
+                          title: `Refund everything (${formatGBP(netPaidPence)})`,
+                          description: 'Give back all the money they paid.',
+                        },
+                        { value: 'NONE', title: 'No refund', description: 'Keep the money that was paid.' },
+                        { value: 'CUSTOM', title: 'Choose an amount', description: 'Type how much to give back.' },
+                      ]}
+                    />
+                    {refundMode === 'CUSTOM' ? (
+                      <TextField
+                        label="Amount to give back (£)"
+                        hint={`Up to ${formatGBP(netPaidPence)}.`}
+                        keyboardType="decimal-pad"
+                        value={amount}
+                        editable={!disabled}
+                        onChangeText={(value) => {
+                          setAmount(value);
+                          clearPreview();
+                        }}
+                      />
+                    ) : null}
+                  </>
+                ) : (
+                  <AppText>The customer hasn’t paid anything, so there is nothing to refund.</AppText>
+                )}
+                <TextField
+                  label="Why is it being cancelled?"
+                  hint="Kept on the booking for your records."
+                  value={reason}
+                  onChangeText={(value) => {
+                    setReason(value);
+                    clearPreview();
                   }}
-                  options={[
-                    { label: 'Policy', value: 'POLICY' },
-                    { label: 'Full', value: 'FULL' },
-                    { label: 'None', value: 'NONE' },
-                    { label: 'Custom', value: 'CUSTOM' },
-                  ]}
+                  multiline
+                  editable={!disabled}
+                  maxLength={500}
                 />
                 <ToggleField
-                  label="Notify customer by email"
+                  label="Email the customer to say it’s cancelled"
                   value={notify}
                   disabled={disabled}
                   onChange={(value) => {
                     setNotify(value);
-                    setPreview(null);
+                    clearPreview();
                   }}
                 />
+                {preview ? (
+                  <Card tone="subtle">
+                    <View style={styles.cardStack}>
+                      <AppText size="lg" weight="bold" accessibilityRole="header">
+                        Check before you cancel
+                      </AppText>
+                      <AppText>• The booking will be cancelled and its time slot freed up.</AppText>
+                      <AppText weight="bold">
+                        {preview.refundPence > 0
+                          ? `• The customer gets ${formatGBP(preview.refundPence)} back.`
+                          : '• No money will be refunded.'}
+                      </AppText>
+                      {refundMode === 'POLICY' && preview.paidNetPence > 0 ? (
+                        <AppText muted size="sm">
+                          {`Our policy gives back ${String(Math.round((preview.refundPence / preview.paidNetPence) * 100))}% of what they paid.`}
+                        </AppText>
+                      ) : null}
+                      {preview.willUnassignDriver ? (
+                        <AppText>• The driver will be taken off this job.</AppText>
+                      ) : null}
+                      <AppText>
+                        {notify ? '• The customer will get an email.' : '• The customer will not be emailed.'}
+                      </AppText>
+                      <Button
+                        label="Yes, cancel this booking"
+                        tone="danger"
+                        disabled={disabled}
+                        loading={action.busy}
+                        onPress={() => {
+                          void submit();
+                        }}
+                      />
+                      <Button label="Go back" tone="secondary" disabled={action.busy} onPress={clearPreview} />
+                    </View>
+                  </Card>
+                ) : (
+                  <Button
+                    label="Continue"
+                    disabled={disabled}
+                    loading={action.busy}
+                    onPress={() => {
+                      void previewCancellation();
+                    }}
+                  />
+                )}
               </>
             ) : null}
+
             {kind === 'refund' ? (
               <>
-                <AppText weight="bold">Choose the original card payment</AppText>
+                <AppText weight="bold">Which payment do you want to refund?</AppText>
                 {eligiblePayments.length ? (
-                  <SegmentedControl
-                    label="Original payment"
-                    sizing="content"
+                  <ChoiceList
+                    label="Which payment do you want to refund?"
                     value={paymentId}
                     disabled={disabled}
                     onChange={setPaymentId}
                     options={eligiblePayments.map((payment) => ({
-                      label: `${displayBookingCreatedAt(payment.createdAt)} · ${formatGBP(payment.refundablePence)} refundable`,
                       value: payment.id,
+                      title: `Card payment, ${displayBookingCreatedAt(payment.createdAt)}`,
+                      description: `Up to ${formatGBP(payment.refundablePence)} can be refunded.`,
                     }))}
                   />
                 ) : (
-                  <AppText>No refundable card payments are available.</AppText>
+                  <AppText>There are no card payments that can be refunded.</AppText>
                 )}
+                <TextField
+                  label="Amount to refund (£)"
+                  keyboardType="decimal-pad"
+                  value={amount}
+                  editable={!disabled}
+                  onChangeText={setAmount}
+                />
+                <TextField
+                  label="Why are you refunding?"
+                  hint="Kept on the booking for your records."
+                  value={reason}
+                  onChangeText={setReason}
+                  multiline
+                  editable={!disabled}
+                  maxLength={500}
+                />
+                <Button
+                  label={typedPence ? `Refund ${formatGBP(typedPence)}` : 'Refund'}
+                  disabled={disabled}
+                  loading={action.busy}
+                  onPress={() => {
+                    void submit();
+                  }}
+                />
               </>
             ) : null}
-            {kind === 'refund' ||
-            kind === 'extra-charge' ||
-            kind === 'offline-payment' ||
-            (kind === 'cancel' && refundMode === 'CUSTOM') ? (
-              <TextField
-                label="Amount in pounds"
-                keyboardType="decimal-pad"
-                value={amount}
-                editable={!disabled && kind !== 'offline-payment'}
-                onChangeText={(value) => {
-                  setAmount(value);
-                  setPreview(null);
-                }}
-              />
-            ) : null}
+
             {kind === 'offline-payment' ? (
               <>
-                <AppText muted>
-                  Record the full outstanding balance only after payment has been received.
-                </AppText>
+                <AppText>Use this when the customer paid you in cash or by bank transfer.</AppText>
+                <Card tone="subtle">
+                  <View style={styles.moneyRow}>
+                    <AppText weight="bold">Amount received</AppText>
+                    <AppText numeric weight="bold">
+                      {formatGBP(context.balancePence)}
+                    </AppText>
+                  </View>
+                  <AppText muted size="sm">
+                    This is everything they still owe. Only record it once you have all of it.
+                  </AppText>
+                </Card>
                 <TextField
-                  label="Payment reference"
+                  label="How did they pay?"
+                  hint="For example: cash to the driver, or the bank transfer reference."
                   value={reference}
                   onChangeText={setReference}
                   editable={!disabled}
                   maxLength={120}
                 />
-                <TextField
-                  label="Received at (ISO timestamp, for example 2026-11-03T14:30:00Z)"
-                  value={paidAt}
-                  onChangeText={setPaidAt}
-                  editable={!disabled}
-                  maxLength={30}
+                <AppText weight="bold">When did you get it?</AppText>
+                <ChipChoices
+                  label="When did you get it?"
+                  options={recentDays(new Date())}
+                  value={paidDay}
+                  disabled={disabled}
+                  onChange={setPaidDay}
                 />
-              </>
-            ) : null}
-            {kind === 'cancel' || kind === 'refund' || kind === 'extra-charge' ? (
-              <TextField
-                label={kind === 'extra-charge' ? 'Charge description for customer' : 'Reason'}
-                value={reason}
-                onChangeText={(value) => {
-                  setReason(value);
-                  setPreview(null);
-                }}
-                multiline
-                editable={!disabled}
-                maxLength={kind === 'extra-charge' ? 200 : 500}
-              />
-            ) : null}
-            {kind === 'cancel' ? (
-              <>
                 <Button
-                  label="Preview cancellation"
-                  tone="secondary"
+                  label="Save payment"
                   disabled={disabled}
                   loading={action.busy}
                   onPress={() => {
-                    void previewCancellation();
+                    void submit();
                   }}
                 />
-                {preview ? (
-                  <Card tone="subtle">
-                    <View style={{ gap: 10 }}>
-                      <AppText weight="bold">Refund: {formatGBP(preview.refundPence)}</AppText>
-                      <AppText>{preview.policySummary}</AppText>
-                      <AppText>
-                        {preview.willUnassignDriver
-                          ? 'The driver assignment will be removed.'
-                          : 'No driver assignment will be removed.'}
-                      </AppText>
-                      <AppText>This cancels the booking and releases its reserved slot.</AppText>
-                      <Button
-                        label="Confirm cancellation"
-                        tone="danger"
-                        disabled={disabled}
-                        onPress={() => {
-                          void submit();
-                        }}
-                      />
-                    </View>
-                  </Card>
-                ) : null}
               </>
-            ) : (
-              <Button
-                label={
-                  kind === 'refund'
-                    ? 'Confirm refund'
-                    : kind === 'offline-payment'
-                      ? 'Confirm received payment'
-                      : kind === 'extra-charge'
-                        ? 'Add charge and send payment email'
-                        : 'Send customer email'
-                }
-                disabled={disabled}
-                loading={action.busy}
-                onPress={() => {
-                  void submit();
-                }}
-              />
-            )}
+            ) : null}
+
+            {kind === 'extra-charge' ? (
+              <>
+                <TextField
+                  label="Amount (£)"
+                  keyboardType="decimal-pad"
+                  value={amount}
+                  editable={!disabled}
+                  onChangeText={setAmount}
+                />
+                <TextField
+                  label="What is it for?"
+                  hint="The customer will see this in their email."
+                  value={reason}
+                  onChangeText={setReason}
+                  multiline
+                  editable={!disabled}
+                  maxLength={200}
+                />
+                <Button
+                  label="Add charge and email the customer"
+                  disabled={disabled}
+                  loading={action.busy}
+                  onPress={() => {
+                    void submit();
+                  }}
+                />
+              </>
+            ) : null}
           </View>
         </Card>
       ) : null}
-      <Button
-        label="Reload booking actions"
-        tone="secondary"
-        disabled={!session.enabled || action.busy}
-        onPress={() => {
-          void reloadActions();
-        }}
-      />
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  stack: { gap: 20 },
+  cardStack: { gap: 10 },
+  form: { gap: 16 },
+  moneyRow: { alignItems: 'center', flexDirection: 'row', gap: 12, justifyContent: 'space-between' },
+});

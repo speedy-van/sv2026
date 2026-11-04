@@ -5,6 +5,8 @@ import * as Notifications from 'expo-notifications';
 import { router } from 'expo-router';
 import type { ReactElement } from 'react';
 import { Platform } from 'react-native';
+import { ApiClientError } from '@sv/api-client';
+import { addDays, londonToday } from '@sv/contracts';
 import type { z } from 'zod';
 import BookingActionsScreen from '../app/(app)/booking-actions';
 import LeadsScreen from '../app/(app)/leads';
@@ -229,27 +231,30 @@ afterEach(() => {
   jest.restoreAllMocks();
 });
 
-it.each(['menu', 'details'] as const)('previews cancellation from %s, invalidates edits, and confirms the exact refund with Face ID', async (entry) => {
+it.each(['menu', 'details'] as const)('checks the cancellation from %s, clears the check on edits, and confirms the exact refund with Face ID', async (entry) => {
   if (entry === 'details') mockRouteParams = { id: 'record-one', action: 'cancel' };
   const view = await screen(<BookingActionsScreen />);
   await waitFor(() => {
-    expect(view.getByRole('tab', { name: 'Cancel booking' })).toBeTruthy();
+    expect(view.getByText('Still to pay')).toBeTruthy();
   });
-  if (entry === 'menu') await fireEvent.press(view.getByRole('tab', { name: 'Cancel booking' }));
+  if (entry === 'menu') await fireEvent.press(view.getByRole('radio', { name: 'Cancel this booking' }));
+  else expect(view.queryByRole('radio', { name: 'Cancel this booking' })).toBeNull();
   expect(mockHttp.mock.calls.some(([, options]) => options?.method === 'POST')).toBe(false);
-  await fireEvent.changeText(view.getByLabelText('Reason'), 'Customer requested cancellation');
-  expect(view.queryByRole('button', { name: 'Confirm cancellation' })).toBeNull();
-  await fireEvent.press(view.getByRole('button', { name: 'Preview cancellation' }));
+  await fireEvent.changeText(view.getByLabelText('Why is it being cancelled?'), 'Customer requested cancellation');
+  expect(view.queryByRole('button', { name: 'Yes, cancel this booking' })).toBeNull();
+  await fireEvent.press(view.getByRole('button', { name: 'Continue' }));
   await waitFor(() => {
-    expect(view.getByText('Refund: £120.00')).toBeTruthy();
+    expect(view.getByText('• The customer gets £120.00 back.')).toBeTruthy();
   });
-  await fireEvent.changeText(view.getByLabelText('Reason'), 'Changed reason');
-  expect(view.queryByRole('button', { name: 'Confirm cancellation' })).toBeNull();
-  await fireEvent.press(view.getByRole('button', { name: 'Preview cancellation' }));
+  expect(view.getByText('• The driver will be taken off this job.')).toBeTruthy();
+  expect(view.getByText('Our policy gives back 80% of what they paid.')).toBeTruthy();
+  await fireEvent.changeText(view.getByLabelText('Why is it being cancelled?'), 'Changed reason');
+  expect(view.queryByRole('button', { name: 'Yes, cancel this booking' })).toBeNull();
+  await fireEvent.press(view.getByRole('button', { name: 'Continue' }));
   await waitFor(() => {
-    expect(view.getByRole('button', { name: 'Confirm cancellation' })).toBeTruthy();
+    expect(view.getByRole('button', { name: 'Yes, cancel this booking' })).toBeTruthy();
   });
-  await fireEvent.press(view.getByRole('button', { name: 'Confirm cancellation' }));
+  await fireEvent.press(view.getByRole('button', { name: 'Yes, cancel this booking' }));
   await waitFor(() => {
     expect(mockHttp).toHaveBeenCalledWith(
       '/api/v1/admin/bookings/record-one/cancel',
@@ -266,9 +271,13 @@ it.each(['menu', 'details'] as const)('previews cancellation from %s, invalidate
     );
   });
   expect(LocalAuthentication.authenticateAsync).toHaveBeenCalledTimes(1);
+  await waitFor(() => {
+    expect(view.getByText(/Done\. The booking is cancelled\./)).toBeTruthy();
+  });
+  expect(view.getAllByRole('button', { name: 'Back to booking' })).toHaveLength(2);
 });
 
-it('opens an unpaid cancellation with no refund and still requires a preview', async () => {
+it('opens an unpaid cancellation with no refund choices and still requires the check', async () => {
   mockRouteParams = { id: 'record-one', action: 'cancel' };
   mockHttp.mockImplementation((path, options) => Promise.resolve().then(() => {
     if (path.endsWith('/actions-context')) return {
@@ -282,11 +291,14 @@ it('opens an unpaid cancellation with no refund and still requires a preview', a
     return response(path, options);
   }));
   const view = await screen(<BookingActionsScreen />);
-  await waitFor(() => { expect(view.getByRole('button', { name: 'Preview cancellation' })).toBeTruthy(); });
-  expect(view.queryByRole('button', { name: 'Confirm cancellation' })).toBeNull();
-  await fireEvent.changeText(view.getByLabelText('Reason'), 'Customer no longer needs the move');
-  await fireEvent.press(view.getByRole('button', { name: 'Preview cancellation' }));
-  await waitFor(() => { expect(view.getByText('Refund: £0.00')).toBeTruthy(); });
+  await waitFor(() => { expect(view.getByRole('button', { name: 'Continue' })).toBeTruthy(); });
+  expect(view.getByText('The customer hasn’t paid anything, so there is nothing to refund.')).toBeTruthy();
+  expect(view.getByText('Awaiting payment')).toBeTruthy();
+  expect(view.queryByRole('radio', { name: 'No refund' })).toBeNull();
+  expect(view.queryByRole('button', { name: 'Yes, cancel this booking' })).toBeNull();
+  await fireEvent.changeText(view.getByLabelText('Why is it being cancelled?'), 'Customer no longer needs the move');
+  await fireEvent.press(view.getByRole('button', { name: 'Continue' }));
+  await waitFor(() => { expect(view.getByText('• No money will be refunded.')).toBeTruthy(); });
   expect(mockHttp).toHaveBeenCalledWith('/api/v1/admin/bookings/record-one/cancel-preview', expect.objectContaining({
     method: 'POST', body: {
       expectedVersion: 7, reason: 'Customer no longer needs the move', notifyCustomer: true, refund: { mode: 'NONE' },
@@ -295,37 +307,45 @@ it('opens an unpaid cancellation with no refund and still requires a preview', a
   expect(mockHttp.mock.calls.some(([path]) => path.endsWith('/cancel'))).toBe(false);
 });
 
-it('keeps unknown action links on the ordinary email form without sending anything', async () => {
+it('shows the plain-language action menu for unknown action links without sending anything', async () => {
   mockRouteParams = { id: 'record-one', action: 'unknown' };
   const view = await screen(<BookingActionsScreen />);
-  await waitFor(() => { expect(view.getByRole('button', { name: 'Send customer email' })).toBeTruthy(); });
-  expect(view.queryByRole('button', { name: 'Preview cancellation' })).toBeNull();
+  await waitFor(() => { expect(view.getByRole('radio', { name: 'Email the customer' })).toBeTruthy(); });
+  expect(view.getByText('What would you like to do?')).toBeTruthy();
+  expect(view.queryByRole('button', { name: 'Continue' })).toBeNull();
+  expect(view.queryByRole('button', { name: 'Send email' })).toBeNull();
   expect(mockHttp.mock.calls.some(([, options]) => options?.method === 'POST')).toBe(false);
 });
 
-it('resets cancellation choices when switching actions and re-derives the refund default after reload', async () => {
-  mockRouteParams = { id: 'record-one', action: 'cancel' };
+it('resets cancellation choices when switching actions and re-derives the refund default after Refresh', async () => {
   const view = await screen(<BookingActionsScreen />);
-  await waitFor(() => { expect(view.getByRole('button', { name: 'Preview cancellation' })).toBeTruthy(); });
+  await waitFor(() => { expect(view.getByRole('radio', { name: 'Cancel this booking' })).toBeTruthy(); });
   const previewBody = (): unknown =>
     mockHttp.mock.calls.filter(([path]) => path.endsWith('/cancel-preview')).at(-1)?.[1]?.body;
 
-  await fireEvent.press(view.getByRole('tab', { name: 'Full' }));
-  await fireEvent.press(view.getByRole('tab', { name: 'Send email' }));
-  await fireEvent.press(view.getByRole('tab', { name: 'Cancel booking' }));
-  await fireEvent.changeText(view.getByLabelText('Reason'), 'Customer requested cancellation');
-  await fireEvent.press(view.getByRole('button', { name: 'Preview cancellation' }));
+  await fireEvent.press(view.getByRole('radio', { name: 'Cancel this booking' }));
+  await fireEvent.press(view.getByRole('radio', { name: /Refund everything/ }));
+  await fireEvent.press(view.getByRole('radio', { name: 'Email the customer' }));
+  await fireEvent.press(view.getByRole('radio', { name: 'Cancel this booking' }));
+  await fireEvent.changeText(view.getByLabelText('Why is it being cancelled?'), 'Customer requested cancellation');
+  await fireEvent.press(view.getByRole('button', { name: 'Continue' }));
   await waitFor(() => { expect(previewBody()).toEqual(expect.objectContaining({ refund: { mode: 'POLICY' } })); });
 
-  mockHttp.mockImplementation((path, options) => Promise.resolve().then(() =>
-    path.endsWith('/actions-context')
+  await fireEvent.press(view.getByRole('button', { name: 'Go back' }));
+  mockHttp.mockImplementation((path, options) => Promise.resolve().then(() => {
+    if (path.endsWith('/cancel-preview')) throw new ApiClientError(409, 'This booking changed.');
+    return path.endsWith('/actions-context')
       ? { ...bookingContext, refundedPence: bookingContext.paidPence }
-      : response(path, options),
-  ));
-  await fireEvent.press(view.getByRole('button', { name: 'Reload booking actions' }));
-  await waitFor(() => { expect(view.getByLabelText('Reason').props.value).toBe(''); });
-  await fireEvent.changeText(view.getByLabelText('Reason'), 'Customer requested cancellation');
-  await fireEvent.press(view.getByRole('button', { name: 'Preview cancellation' }));
+      : response(path, options);
+  }));
+  await fireEvent.press(view.getByRole('button', { name: 'Continue' }));
+  await waitFor(() => { expect(view.getByText('This booking has just changed.')).toBeTruthy(); });
+  await fireEvent.press(view.getByRole('button', { name: 'Refresh' }));
+  await waitFor(() => { expect(view.getByLabelText('Why is it being cancelled?').props.value).toBe(''); });
+
+  mockHttp.mockImplementation((path, options) => Promise.resolve().then(() => response(path, options)));
+  await fireEvent.changeText(view.getByLabelText('Why is it being cancelled?'), 'Customer requested cancellation');
+  await fireEvent.press(view.getByRole('button', { name: 'Continue' }));
   await waitFor(() => { expect(previewBody()).toEqual(expect.objectContaining({ refund: { mode: 'NONE' } })); });
   expect(mockHttp.mock.calls.some(([path]) => path.endsWith('/cancel'))).toBe(false);
 });
@@ -333,21 +353,47 @@ it('resets cancellation choices when switching actions and re-derives the refund
 it('blocks oversized refunds and non-owner offline payment without sending commands', async () => {
   const view = await screen(<BookingActionsScreen />);
   await waitFor(() => {
-    expect(view.getByRole('tab', { name: 'Refund payment' })).toBeTruthy();
+    expect(view.getByRole('radio', { name: 'Refund a card payment' })).toBeTruthy();
   });
-  await fireEvent.press(view.getByRole('tab', { name: 'Refund payment' }));
-  await fireEvent.press(view.getByRole('tab', { name: /£150.00 refundable/ }));
-  await fireEvent.changeText(view.getByLabelText('Amount in pounds'), '151');
-  await fireEvent.changeText(view.getByLabelText('Reason'), 'Goodwill refund');
-  await fireEvent.press(view.getByRole('button', { name: 'Confirm refund' }));
+  await fireEvent.press(view.getByRole('radio', { name: 'Refund a card payment' }));
+  await fireEvent.press(view.getByRole('radio', { name: /^Card payment/ }));
+  await fireEvent.changeText(view.getByLabelText('Amount to refund (£)'), '151');
+  await fireEvent.changeText(view.getByLabelText('Why are you refunding?'), 'Goodwill refund');
+  await fireEvent.press(view.getByRole('button', { name: 'Refund £151.00' }));
   await waitFor(() => {
-    expect(
-      view.getByText('Choose a payment and an amount no greater than its refundable balance.'),
-    ).toBeTruthy();
+    expect(view.getByText('You can refund up to £150.00 from this payment.')).toBeTruthy();
   });
   expect(mockHttp.mock.calls.some(([, options]) => options?.method === 'POST')).toBe(false);
-  await fireEvent.press(view.getByRole('tab', { name: 'Record payment' }));
-  expect(view.getByRole('button', { name: 'Confirm received payment' })).toBeDisabled();
+  await fireEvent.press(view.getByRole('radio', { name: 'Record cash or bank transfer' }));
+  expect(view.getByText('Only the owner can record a cash or bank payment.')).toBeTruthy();
+  expect(view.getByRole('button', { name: 'Save payment' })).toBeDisabled();
+});
+
+it('lets the owner record a cash payment received yesterday without typing a timestamp', async () => {
+  mockSession = { ...mockSession, owner: true };
+  const view = await screen(<BookingActionsScreen />);
+  await waitFor(() => {
+    expect(view.getByRole('radio', { name: 'Record cash or bank transfer' })).toBeTruthy();
+  });
+  await fireEvent.press(view.getByRole('radio', { name: 'Record cash or bank transfer' }));
+  await fireEvent.changeText(view.getByLabelText('How did they pay?'), 'Cash to the driver');
+  await fireEvent.press(view.getByRole('radio', { name: 'Yesterday' }));
+  await fireEvent.press(view.getByRole('button', { name: 'Save payment' }));
+  const yesterday = addDays(londonToday(new Date()), -1);
+  await waitFor(() => {
+    expect(mockHttp).toHaveBeenCalledWith(
+      '/api/v1/admin/bookings/record-one/payments/offline',
+      expect.objectContaining({
+        method: 'POST',
+        body: {
+          expectedVersion: 7,
+          amountPence: 6000,
+          reference: 'Cash to the driver',
+          paidAt: `${yesterday}T12:00:00.000Z`,
+        },
+      }),
+    );
+  });
 });
 
 it('prices a manual quote using the displayed revision and exact pence', async () => {

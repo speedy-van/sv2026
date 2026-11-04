@@ -253,7 +253,7 @@ function QuoteWorkspace({
         </Card>
       ) : null}
       <Button
-        label="Reload latest request"
+        label="Refresh"
         tone="secondary"
         disabled={!session.enabled || action.busy}
         onPress={() => {

@@ -4,6 +4,17 @@ Codex ticks items as they're **done and verified** (per AGENTS.md §8), and adds
 
 Legend: `[ ]` not started · `[~]` in progress · `[x]` done and verified
 
+## Admin plain-language redesign — 2026-11-04
+
+The owner said the admin design was very poor for a non-technical user (D97).
+
+- [x] Rebuild booking actions as a plain-language choice menu with clear money summary, refund choices only when money was paid, day chips for offline payments and a "Check before you cancel" summary (`admin-tools-screens.test.tsx`: cancellation from menu/details, unpaid cancellation, unknown action menu, reset after Refresh, oversized refund, owner cash payment "Yesterday").
+- [x] Replace raw validation and conflict errors with field-specific everyday prompts (`admin-tool-action.ts`, `booking-edit.ts`).
+- [x] Reword booking edit, booking detail and driver detail labels (`booking-editor-screen.test.tsx`, `booking-detail.test.tsx`).
+- [ ] Server-originated reasons (for example "No captured Stripe payment…") still need a backend wording pass.
+
+Admin typecheck, lint and 547/547 tests pass.
+
 ## Admin booking actions review fixes — local only, 2026-11-04
 
 A read-only review of the admin app (types, lint and 545 tests green) found small state and consistency issues in the booking-actions workspace.

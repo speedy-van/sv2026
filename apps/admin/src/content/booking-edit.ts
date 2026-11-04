@@ -2,20 +2,20 @@ import { ApiClientError } from '@sv/api-client';
 import { ZodError } from 'zod';
 
 export const bookingEditCopy = {
-  offline: 'You are offline. Your draft is kept here. Reconnect before previewing or saving changes.',
+  offline: 'You’re offline. Your changes are kept here. Reconnect to the internet to check the price or save.',
   conflict:
-    'This booking changed. Your draft has been kept. Reload the latest booking and review it before saving.',
+    'Someone else changed this booking just now. Your changes are kept. Tap Refresh to see the latest booking, then check it before saving.',
   uncertain:
-    'The save result could not be confirmed. Your draft has been kept. Reload the booking before trying again.',
-  emailWarning: 'Changing the email address invalidates the customer’s existing booking links.',
-  previewRequired: 'Preview the revised price before saving. Any change to the move invalidates the preview.',
-  loadError: 'The booking editor could not be loaded. Check your connection and retry.',
+    'We couldn’t tell if your changes were saved. Your changes are kept. Tap Refresh to check before trying again.',
+  emailWarning: 'If you change the email address, the links already sent to the customer will stop working.',
+  previewRequired: 'Check the new price before saving. If you change the move again, check the price again.',
+  loadError: 'We couldn’t open this booking for editing. Check your internet connection and try again.',
 } as const;
 
 export function bookingEditFailure(error: unknown): { message: string; reload: boolean } {
   if (error instanceof ZodError)
     return {
-      message: error.issues[0]?.message ?? 'Check the highlighted details before continuing.',
+      message: 'Some details are missing or not quite right. Please check the form and try again.',
       reload: false,
     };
   if (error instanceof ApiClientError) {

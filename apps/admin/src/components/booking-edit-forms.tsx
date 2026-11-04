@@ -449,7 +449,7 @@ function MoveFields(
       />
       <Feedback message={error} />
       <Button
-        label="Preview revised price"
+        label="Check the new price"
         tone="secondary"
         disabled={busy || !validAddress.pickup || !validAddress.dropoff}
         loading={props.data.previewMove.isPending}
@@ -668,7 +668,7 @@ export function BookingScheduleForm(props: BookingFormProps): React.ReactElement
           />
           <Feedback message={error} />
           <Button
-            label="Preview date change"
+            label="Check the date change"
             tone="secondary"
             disabled={
               busy ||

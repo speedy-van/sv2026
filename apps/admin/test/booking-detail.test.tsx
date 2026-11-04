@@ -214,7 +214,7 @@ describe('booking detail uses actual records without fixture fallbacks', () => {
     const view = await render(<BookingDetailScreen />);
     expect(view.getByText('Booking created')).toBeTruthy();
     expect(view.getByText('1 March 2031 at 12:34 GMT')).toBeTruthy();
-    expect(view.getByText('No payment records for this booking.')).toBeTruthy();
+    expect(view.getByText('No payments yet.')).toBeTruthy();
     expect(view.queryByText('Received')).toBeNull();
   });
 
@@ -274,9 +274,9 @@ describe('booking detail uses actual records without fixture fallbacks', () => {
   it('uses recorded paid/refunded totals instead of assuming the booking total or all payment attempts were received', async () => {
     const view = await render(<BookingDetailScreen />);
     expect(view.getByText('£234.56')).toBeTruthy();
-    expect(view.getByText('Recorded paid')).toBeTruthy();
+    expect(view.getByText('Paid')).toBeTruthy();
     expect(view.getByText('£173.45')).toBeTruthy();
-    expect(view.getByText('Recorded refunded')).toBeTruthy();
+    expect(view.getByText('Refunded')).toBeTruthy();
     expect(view.getByText('£3.45')).toBeTruthy();
     expect(view.getAllByText('Received')).toHaveLength(2);
     expect(view.getByText('Failed')).toBeTruthy();
@@ -303,7 +303,7 @@ describe('booking detail uses actual records without fixture fallbacks', () => {
     });
     const view = await render(<BookingDetailScreen />);
     expect(view.getAllByText('Address not recorded.')).toHaveLength(2);
-    expect(view.getByText('No payment records for this booking.')).toBeTruthy();
+    expect(view.getByText('No payments yet.')).toBeTruthy();
     expect(view.getByText('£0.00')).toBeTruthy();
     expect(view.queryByText('Received')).toBeNull();
     expect(view.queryByText('Notes')).toBeNull();

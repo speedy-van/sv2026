@@ -109,7 +109,7 @@ it('keeps the draft on conflict, blocks overwriting, and replaces it only on exp
     contact: { ...editContext.contact, name: 'Server name' },
   };
   await view.rerender(<EditBookingScreen />);
-  await fireEvent.press(view.getByRole('button', { name: 'Reload latest booking' }));
+  await fireEvent.press(view.getByRole('button', { name: 'Refresh' }));
   expect(view.getByLabelText('Contact name').props.value).toBe('Server name');
 });
 
@@ -131,11 +131,11 @@ it('requires price preview, uses the server settlement amount, and invalidates i
   await fireEvent.press(view.getByRole('tab', { name: 'Move & price' }));
   expect(view.queryByRole('button', { name: 'Save and send payment link' })).toBeNull();
   await fireEvent.changeText(view.getByLabelText('Reason for move changes'), 'Extra packing requested');
-  await fireEvent.press(view.getByRole('button', { name: 'Preview revised price' }));
+  await fireEvent.press(view.getByRole('button', { name: 'Check the new price' }));
   expect(view.getByText('Send a payment link for £80.00.')).toBeTruthy();
   await fireEvent(view.getByLabelText('Packing'), 'valueChange', true);
   expect(view.queryByRole('button', { name: 'Save and send payment link' })).toBeNull();
-  await fireEvent.press(view.getByRole('button', { name: 'Preview revised price' }));
+  await fireEvent.press(view.getByRole('button', { name: 'Check the new price' }));
   await fireEvent.press(view.getByRole('button', { name: 'Save and send payment link' }));
   const saved = mockSave.mock.calls[0]?.[0];
   expect(saved?.operation).toBe('move');
@@ -153,11 +153,11 @@ it('verifies a changed postcode before allowing a route preview', async () => {
   const view = await render(<EditBookingScreen />);
   await fireEvent.press(view.getByRole('tab', { name: 'Move & price' }));
   await fireEvent.changeText(view.getByLabelText('Pickup postcode'), 'G1 1AB');
-  expect(view.getByRole('button', { name: 'Preview revised price' })).toBeDisabled();
+  expect(view.getByRole('button', { name: 'Check the new price' })).toBeDisabled();
   await fireEvent.press(view.getByRole('button', { name: 'Verify pickup address' }));
   expect(mockLookup).toHaveBeenCalledWith('G1 1AB');
-  expect(view.getByRole('button', { name: 'Preview revised price' })).toBeEnabled();
-  await fireEvent.press(view.getByRole('button', { name: 'Preview revised price' }));
+  expect(view.getByRole('button', { name: 'Check the new price' })).toBeEnabled();
+  await fireEvent.press(view.getByRole('button', { name: 'Check the new price' }));
   expect(mockPreviewMove.mock.calls[0]?.[0].changes.pickup).toMatchObject({
     postcode: 'G1 1AB',
     lat: 55.86,
@@ -173,7 +173,7 @@ it('previews date changes, exposes availability, and explains driver removal bef
   expect(view.getByRole('button', { name: 'Afternoon 12pm–4pm' })).toBeDisabled();
   expect(view.queryByLabelText('Override capacity')).toBeNull();
   await fireEvent.changeText(view.getByLabelText('Reason for date change'), 'Customer requested Thursday');
-  await fireEvent.press(view.getByRole('button', { name: 'Preview date change' }));
+  await fireEvent.press(view.getByRole('button', { name: 'Check the date change' }));
   expect(
     view.getByText(
       'Changing the date will remove the current driver assignment. Assign a driver again after saving.',
@@ -246,7 +246,7 @@ it('requires device confirmation before applying a refund', async () => {
   const view = await render(<EditBookingScreen />);
   await fireEvent.press(view.getByRole('tab', { name: 'Move & price' }));
   await fireEvent.changeText(view.getByLabelText('Reason for move changes'), 'Customer removed items');
-  await fireEvent.press(view.getByRole('button', { name: 'Preview revised price' }));
+  await fireEvent.press(view.getByRole('button', { name: 'Check the new price' }));
   await fireEvent.press(view.getByRole('button', { name: 'Save and refund £10.00' }));
   await waitFor(() => {
     expect(view.getByText('Refund confirmation was cancelled. No changes were sent.')).toBeTruthy();
@@ -266,7 +266,7 @@ it('resumes a confirmed refund after native Face ID temporarily deactivates the 
   const view = await render(<EditBookingScreen />);
   await fireEvent.press(view.getByRole('tab', { name: 'Move & price' }));
   await fireEvent.changeText(view.getByLabelText('Reason for move changes'), 'Customer removed items');
-  await fireEvent.press(view.getByRole('button', { name: 'Preview revised price' }));
+  await fireEvent.press(view.getByRole('button', { name: 'Check the new price' }));
   await fireEvent.press(view.getByRole('button', { name: 'Save and refund £10.00' }));
   mockEditor.enabled = false;
   await view.rerender(<EditBookingScreen />);
@@ -296,7 +296,7 @@ it.each(['identity', 'version'] as const)(
     const view = await render(<EditBookingScreen />);
     await fireEvent.press(view.getByRole('tab', { name: 'Move & price' }));
     await fireEvent.changeText(view.getByLabelText('Reason for move changes'), 'Customer removed items');
-    await fireEvent.press(view.getByRole('button', { name: 'Preview revised price' }));
+    await fireEvent.press(view.getByRole('button', { name: 'Check the new price' }));
     await fireEvent.press(view.getByRole('button', { name: 'Save and refund £10.00' }));
     if (change === 'identity') mockEditor.sessionIdentity = {};
     else mockEditor.context.data = { ...editContext, version: 8 };
@@ -336,17 +336,17 @@ it('requires reload after an uncertain save while preserving the draft', async (
   expect(view.getByLabelText('Contact name').props.value).toBe('My unsaved name');
   expect(view.getAllByText(bookingEditCopy.uncertain).length).toBeGreaterThan(0);
   expect(view.getByRole('button', { name: 'Save contact and notes' })).toBeDisabled();
-  expect(view.getByRole('button', { name: 'Reload latest booking' })).toBeTruthy();
+  expect(view.getByRole('button', { name: 'Refresh' })).toBeTruthy();
 });
 
 it('removes an earlier preview when a fresh price request fails', async () => {
   const view = await render(<EditBookingScreen />);
   await fireEvent.press(view.getByRole('tab', { name: 'Move & price' }));
   await fireEvent.changeText(view.getByLabelText('Reason for move changes'), 'Updated inventory');
-  await fireEvent.press(view.getByRole('button', { name: 'Preview revised price' }));
+  await fireEvent.press(view.getByRole('button', { name: 'Check the new price' }));
   expect(view.getByRole('button', { name: 'Save and send payment link' })).toBeTruthy();
   mockPreviewMove.mockRejectedValueOnce(new ApiClientError(400, 'The selected move cannot be priced.'));
-  await fireEvent.press(view.getByRole('button', { name: 'Preview revised price' }));
+  await fireEvent.press(view.getByRole('button', { name: 'Check the new price' }));
   expect(view.getByText('The selected move cannot be priced.')).toBeTruthy();
   expect(view.queryByRole('button', { name: 'Save and send payment link' })).toBeNull();
 });
@@ -357,7 +357,7 @@ it('sends updated quantities and custom items in the preview instead of a client
   await fireEvent.changeText(view.getByLabelText('Quantity of Test sofa'), '2');
   await fireEvent.changeText(view.getByLabelText('Custom item name'), 'Large test box');
   await fireEvent.press(view.getByRole('button', { name: 'Add custom item' }));
-  await fireEvent.press(view.getByRole('button', { name: 'Preview revised price' }));
+  await fireEvent.press(view.getByRole('button', { name: 'Check the new price' }));
   expect(mockPreviewMove.mock.calls[0]?.[0].changes.items).toEqual([
     { kind: 'catalogue', itemSlug: 'sofa', quantity: 2 },
     { kind: 'custom', name: 'Large test box', size: 'M', quantity: 1 },

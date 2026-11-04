@@ -91,7 +91,7 @@ export default function BookingDetailScreen(): React.ReactElement {
             </Card>
           ) : null}
           {!booking.deletedAt ? <Button label="Edit booking" onPress={() => { router.push(`/(app)/edit-booking?id=${encodeURIComponent(booking.id)}`); }} /> : null}
-          {!booking.deletedAt ? <Button label="Payments, cancellation and emails" tone="secondary" onPress={() => { router.push(`/(app)/booking-actions?id=${encodeURIComponent(booking.id)}`); }} /> : null}
+          {!booking.deletedAt ? <Button label="Payments and emails" tone="secondary" onPress={() => { router.push(`/(app)/booking-actions?id=${encodeURIComponent(booking.id)}`); }} /> : null}
           {!booking.deletedAt && canBookingTransition(booking.status, 'CANCELLED', 'ADMIN') ? (
             <Button
               label="Cancel booking"
@@ -223,12 +223,12 @@ export default function BookingDetailScreen(): React.ReactElement {
 
           <Card>
             <SectionHeader title="Payments" />
-            <DetailRow label="Recorded paid" value={formatGBP(booking.paidPence)} />
+            <DetailRow label="Paid" value={formatGBP(booking.paidPence)} />
             {booking.refundedPence > 0 ? (
-              <DetailRow label="Recorded refunded" value={formatGBP(booking.refundedPence)} />
+              <DetailRow label="Refunded" value={formatGBP(booking.refundedPence)} />
             ) : null}
             {booking.payments.length === 0 ? (
-              <AppText muted>No payment records for this booking.</AppText>
+              <AppText muted>No payments yet.</AppText>
             ) : (
               booking.payments.map((payment) => (
                 <View key={payment.id} style={[styles.payment, { borderTopColor: colors.separator }]}>

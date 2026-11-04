@@ -5,17 +5,30 @@ import { Platform } from 'react-native';
 import { ZodError } from 'zod';
 import type { AdminToolSession } from './admin-tool-session';
 
+// Plain-language prompts for form fields, so the owner never sees raw validation wording.
+const fieldPrompts: Record<string, string> = {
+  reason: 'Please write a reason.',
+  description: 'Please say what the charge is for.',
+  reference: 'Please say how they paid.',
+  paymentId: 'Please choose which payment to refund.',
+  amountPence: 'Please enter an amount.',
+  paidAt: 'Please choose when it was paid.',
+};
+
 export function adminActionError(cause: unknown): string {
-  if (cause instanceof ZodError)
-    return `Check the form: ${cause.issues[0]?.message ?? 'Complete all required fields.'}`;
+  if (cause instanceof ZodError) {
+    const field = cause.issues[0]?.path[0];
+    return (typeof field === 'string' ? fieldPrompts[field] : undefined) ??
+      'Some details are missing or not quite right. Please check the form and try again.';
+  }
   if (
     cause instanceof ApiClientError &&
     (cause.envelope?.error.code === 'CONFLICT' || cause.envelope?.error.code === 'PRICE_CHANGED')
   )
-    return `${cause.message} Reload the current record before trying again.`;
+    return `${cause.message} Tap Refresh to load the latest details, then try again.`;
   return cause instanceof Error
     ? cause.message
-    : 'The action could not be completed. Check your connection and try again.';
+    : 'That didn’t go through. Check your internet connection and try again.';
 }
 
 interface AdminAction {
