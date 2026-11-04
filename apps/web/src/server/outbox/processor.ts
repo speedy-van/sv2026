@@ -1,11 +1,13 @@
 import 'server-only';
 
-import { addDays as addLondonDays, formatGBP, fromDbDate, londonToday } from '@sv/contracts';
+import { AddressSchema, ServiceKeySchema, addDays as addLondonDays, formatGBP, fromDbDate, londonToday } from '@sv/contracts';
 import { enqueueOutbox, Prisma, prisma, type DbTx } from '@sv/db';
 import type { EmailTemplateData, EmailTemplateKey } from '@sv/emails';
 import { z } from 'zod';
 import { sendPushOutbox, type PushSendPayload } from '../integrations/expo-push';
-import { sendTransactionalEmail, type EmailSendPayload } from '../integrations/resend';
+import { sendTransactionalEmail, type EmailSendPayload } from '../integrations/mail';
+import { processMailDelivery } from '../mail/delivery';
+import { MailDeferredError, MailPermanentError, MailReviewRequiredError, MailTransientError } from '../mail/errors';
 import { dbDateLabel, londonDateTimeToUtc, slotLabel } from '../london-time';
 import { channelsForEvent, type MatrixChannels } from '../notifications/matrix';
 import { getSetting } from '../settings';
@@ -85,6 +87,8 @@ type AdminPushConfig = NonNullable<MatrixChannels['adminPush']>;
 type DriverPushTarget = NonNullable<MatrixChannels['driverPush']>['target'];
 
 const BACKOFF_MINUTES = [1, 5, 15, 60, 360] as const;
+// Email reads a display label only; it does not revalidate or change pricing.
+const ServiceLabelsSchema = z.object({ services: z.record(z.string(), z.object({ label: z.string().trim().min(1).max(120) })) });
 
 function json(value: unknown): Prisma.InputJsonValue {
   return value as Prisma.InputJsonValue;
@@ -106,6 +110,13 @@ function routeLabel(pickup: unknown, dropoff: unknown): string {
   const pickupTown = pickup && typeof pickup === 'object' && 'town' in pickup ? String(pickup.town) : 'Pickup';
   const dropoffTown = dropoff && typeof dropoff === 'object' && 'town' in dropoff ? String(dropoff.town) : null;
   return dropoffTown ? `${pickupTown} to ${dropoffTown}` : pickupTown;
+}
+
+function addressLabel(value: unknown): string | undefined {
+  const parsed = AddressSchema.safeParse(value);
+  if (!parsed.success) return undefined;
+  const address = parsed.data;
+  return [address.flat, address.line1, address.line2, address.town, address.postcode].filter(Boolean).join(', ');
 }
 
 function addDays(date: Date, days: number): Date {
@@ -131,18 +142,26 @@ async function bookingEmailData(tx: DbTx, bookingId: string, extra: Partial<Emai
     where: { id: bookingId },
     select: {
       contactEmail: true,
+      contactName: true,
       completedAt: true,
       dropoff: true,
       id: true,
       moveDate: true,
+      paidPence: true,
       pickup: true,
+      pricingVersion: { select: { config: true } },
       reference: true,
+      refundedPence: true,
       service: true,
       slot: true,
       totalPence: true,
     },
   });
   if (!booking) throw new Error(`Booking ${bookingId} not found`);
+  const savedConfig = ServiceLabelsSchema.safeParse(booking.pricingVersion.config);
+  const service = ServiceKeySchema.safeParse(booking.service);
+  const pickupLabel = addressLabel(booking.pickup);
+  const dropoffLabel = addressLabel(booking.dropoff);
   const [web, contact, company] = await Promise.all([getSetting('web'), getSetting('contact'), getSetting('company')]);
   const [manageToken, trackToken, reviewToken] = await Promise.all([
     manageLinkForBooking(booking),
@@ -151,15 +170,22 @@ async function bookingEmailData(tx: DbTx, bookingId: string, extra: Partial<Emai
   ]);
   const data: EmailTemplateData = {
     amountPence: booking.totalPence,
+    paidPence: booking.paidPence,
+    refundedPence: booking.refundedPence,
+    totalPence: booking.totalPence,
+    balancePence: booking.totalPence - (booking.paidPence - booking.refundedPence),
     canonicalOrigin: web.canonicalOrigin,
     contactEmail: contact.emailBookings ?? contact.emailPublic,
+    customerName: booking.contactName,
     legalLine: company.legalName ? `${company.legalName}. Booking reference ${booking.reference}.` : `Booking reference ${booking.reference}.`,
     manageUrl: `/manage/session?token=${encodeURIComponent(manageToken)}`,
     moveDateLabel: dbDateLabel(booking.moveDate),
     reference: booking.reference,
     routeLabel: routeLabel(booking.pickup, booking.dropoff),
-    serviceLabel: booking.service,
+    serviceLabel: savedConfig.success && service.success ? savedConfig.data.services[service.data]?.label ?? booking.service : booking.service,
     slotLabel: slotLabel(booking.slot),
+    ...(pickupLabel ? { pickupLabel } : {}),
+    ...(dropoffLabel ? { dropoffLabel } : {}),
     ...(reviewToken ? { reviewUrl: `/review/${encodeURIComponent(reviewToken)}` } : {}),
     trackingUrl: `/track/${encodeURIComponent(trackToken)}`,
     ...extra,
@@ -226,7 +252,7 @@ async function contactEmailData(tx: DbTx, payload: EventPayload): Promise<{ cust
 
 async function enqueueEmail(tx: DbTx, event: ClaimedOutboxEvent, template: EmailTemplateKey, to: string | string[], data: EmailTemplateData, actionEmailGuard?: ActionEmailGuard): Promise<void> {
   const recipients = Array.isArray(to) ? to : [to];
-  if (recipients.length === 0) return;
+  if (recipients.length === 0) throw new MailPermanentError('MAIL_INVALID_RECIPIENT');
   await enqueueOutbox(
     tx,
     'email.send',
@@ -421,6 +447,9 @@ async function expandDomainEvent(tx: DbTx, event: ClaimedOutboxEvent): Promise<v
   if (!channels) return;
   const payload = asPayload(event.payload);
   let actionEmailGuard: ActionEmailGuard | undefined;
+  if (event.type === 'booking.confirmed' && !z.string().trim().min(1).safeParse(payload.bookingId).success) {
+    throw new MailPermanentError('MAIL_BOOKING_CONFIRMATION_MISSING_BOOKING');
+  }
   if ((event.type === 'manual_quote.priced' || event.type === 'manual_quote.declined') && payload.manualQuoteId && payload.expectedUpdatedAt) {
     actionEmailGuard = { kind: 'manual-quote', id: payload.manualQuoteId, expectedUpdatedAt: payload.expectedUpdatedAt, status: event.type === 'manual_quote.priced' ? 'PRICED' : 'DECLINED' };
     if (!await actionEmailStillValid(tx, actionEmailGuard)) return;
@@ -522,7 +551,9 @@ async function expandDomainEvent(tx: DbTx, event: ClaimedOutboxEvent): Promise<v
   }
   if (channels.adminEmail) {
     const emails = await adminEmails(tx);
-    await enqueueEmail(tx, event, channels.adminEmail as EmailTemplateKey, emails, customer?.data ?? { message: payload.issue ?? event.type });
+    // Admin email is optional when no recipients are configured. Required
+    // customer jobs must always persist and surface invalid-address failures.
+    if (emails.length > 0) await enqueueEmail(tx, event, channels.adminEmail as EmailTemplateKey, emails, customer?.data ?? { message: payload.issue ?? event.type });
   }
   if (channels.adminNotification) {
     await enqueueAdminNotification(
@@ -543,6 +574,11 @@ async function expandDomainEvent(tx: DbTx, event: ClaimedOutboxEvent): Promise<v
 }
 
 async function handleEvent(event: ClaimedOutboxEvent): Promise<void> {
+  if (event.type === 'email.reply') {
+    const payload = z.object({ deliveryId: z.string().min(1) }).strict().parse(event.payload);
+    await processMailDelivery(payload.deliveryId);
+    return;
+  }
   if (event.type === 'email.send') {
     const actionGuard = readActionEmailGuard(event.payload);
     if (actionGuard && !await actionEmailStillValid(prisma, actionGuard)) return;
@@ -592,12 +628,11 @@ async function handleEvent(event: ClaimedOutboxEvent): Promise<void> {
     await prisma.$transaction(async (tx) => runRefundOutbox(tx, payload.refundId as string, { notifyCustomer: payload.notifyCustomer !== false }));
     return;
   }
-  await prisma.$transaction(async (tx) => expandDomainEvent(tx, event));
 }
 
 type ImmediateOutboxType = 'booking.confirmed' | 'booking.rescheduled' | 'booking.extra_paid'
   | 'payment.refund' | 'payment.refund.created' | 'payment.after_expiry_refunded'
-  | 'notification.create' | 'push.send' | 'email.send';
+  | 'notification.create' | 'push.send' | 'email.send' | 'email.reply';
 
 interface OutboxDispatchScope {
   readonly rootEventId: string;
@@ -613,7 +648,7 @@ async function claimDueEvents(
   return prisma.$transaction(async (tx) => {
     return tx.$queryRaw<ClaimedOutboxEvent[]>`
       UPDATE "OutboxEvent"
-      SET "status" = 'PROCESSING', "attempts" = "attempts" + 1
+      SET "status" = 'PROCESSING', "attempts" = "attempts" + 1, "claimedAt" = now()
       WHERE "id" IN (
         SELECT "id"
         FROM "OutboxEvent"
@@ -630,33 +665,75 @@ async function claimDueEvents(
   });
 }
 
-async function markDone(id: string): Promise<void> {
-  await prisma.outboxEvent.update({ data: { lastError: null, processedAt: new Date(), status: 'DONE' }, where: { id } });
+async function markDone(id: string, db: Pick<DbTx, 'outboxEvent'> = prisma): Promise<void> {
+  await db.outboxEvent.update({ data: { claimedAt: null, lastError: null, processedAt: new Date(), status: 'DONE' }, where: { id } });
+}
+
+async function handleAndCompleteEvent(event: ClaimedOutboxEvent): Promise<void> {
+  if (['email.send', 'email.reply', 'notification.create', 'push.send', 'payment.refund'].includes(event.type)) {
+    await handleEvent(event);
+    await markDone(event.id);
+    return;
+  }
+  // Fan-out and completion are one commit. A crash cannot leave committed
+  // channel jobs attached to a root that will expand and collide on retry.
+  await prisma.$transaction(async (tx) => {
+    await expandDomainEvent(tx, event);
+    await markDone(event.id, tx);
+  });
 }
 
 async function markFailed(event: ClaimedOutboxEvent, error: unknown): Promise<void> {
-  const message = error instanceof Error ? error.message : 'Unknown outbox error';
   const attempts = event.attempts;
-  if (attempts >= 6) {
-    await prisma.outboxEvent.update({ data: { lastError: message, status: 'FAILED' }, where: { id: event.id } });
-    await prisma.outboxEvent.create({
-      data: {
+  const mailEvent = event.type === 'email.send' || event.type === 'email.reply';
+  const errorCode = error instanceof MailDeferredError || error instanceof MailPermanentError
+    || error instanceof MailReviewRequiredError || error instanceof MailTransientError ? error.code : 'MAIL_OUTBOX_UNAVAILABLE';
+  // Prisma/provider diagnostics can include serialized MIME or credentials.
+  // Only normalized mail codes may enter persisted errors or admin alerts.
+  const message = mailEvent ? errorCode : error instanceof Error ? error.message : 'Unknown outbox error';
+  const writeFailure = async (data: Prisma.OutboxEventUpdateInput, status: string, nextAttemptAt: Date | null): Promise<void> => {
+    const write = async (tx: DbTx): Promise<void> => {
+      if (mailEvent) {
+        const reply = event.type === 'email.reply' ? z.object({ deliveryId: z.string().min(1) }).strict().safeParse(event.payload) : null;
+        // Keep the admin ledger consistent with the worker's retry policy. This
+        // guarded SQL update cannot overwrite an accepted/uncertain result or a
+        // different worker's active SMTP attempt, even if its state just changed.
+        await tx.mailDelivery.updateMany({
+          where: {
+            OR: [{ outboxEventId: event.id }, ...(reply?.success ? [{ id: reply.data.deliveryId }] : [])],
+            status: { in: ['QUEUED', 'RETRY', 'DEFERRED'] },
+          },
+          data: { status, nextAttemptAt, lastErrorCode: errorCode },
+        });
+      }
+      await tx.outboxEvent.update({ data, where: { id: event.id } });
+    };
+    if (mailEvent) await prisma.$transaction(write);
+    else await write(prisma);
+  };
+  if (error instanceof MailDeferredError) {
+    await writeFailure({ attempts: { decrement: 1 }, claimedAt: null, lastError: message, nextAttemptAt: error.retryAt, status: 'PENDING' }, 'DEFERRED', error.retryAt);
+    return;
+  }
+  if (error instanceof MailReviewRequiredError || error instanceof MailPermanentError || attempts >= 6) {
+    await writeFailure({ claimedAt: null, lastError: message, status: 'FAILED' }, error instanceof MailReviewRequiredError ? 'UNCERTAIN' : 'FAILED', null);
+    // The original system alert already has an in-app channel. A broken mail
+    // account must not create an endless chain of alert emails about itself.
+    if (event.type === 'email.send' && z.object({ template: z.literal('admin-system-alert') }).safeParse(event.payload).success) return;
+    await prisma.outboxEvent.upsert({
+      where: { dedupeKey: `system.alert:outbox-failed:${event.id}` },
+      update: {},
+      create: {
         dedupeKey: `system.alert:outbox-failed:${event.id}`,
         payload: json({ issue: `Outbox event ${event.id} failed: ${message}` }),
         type: 'system.alert',
       },
-    }).catch(() => undefined);
+    });
     return;
   }
   const minutes = BACKOFF_MINUTES[Math.min(attempts - 1, BACKOFF_MINUTES.length - 1)] ?? 360;
-  await prisma.outboxEvent.update({
-    data: {
-      lastError: message,
-      nextAttemptAt: new Date(Date.now() + minutes * 60_000),
-      status: 'PENDING',
-    },
-    where: { id: event.id },
-  });
+  const nextAttemptAt = new Date(Date.now() + minutes * 60_000);
+  await writeFailure({ claimedAt: null, lastError: message, nextAttemptAt, status: 'PENDING' }, 'RETRY', nextAttemptAt);
 }
 
 export async function processOutboxBatch(
@@ -669,8 +746,7 @@ export async function processOutboxBatch(
   let failed = 0;
   for (const event of events) {
     try {
-      await handleEvent(event);
-      await markDone(event.id);
+      await handleAndCompleteEvent(event);
       done += 1;
     } catch (error) {
       await markFailed(event, error);
@@ -682,13 +758,12 @@ export async function processOutboxBatch(
 
 export async function processOutboxEventNow(id: string): Promise<{ done: number; failed: number }> {
   const event = await prisma.outboxEvent.update({
-    data: { attempts: { increment: 1 }, status: 'PROCESSING' },
+    data: { attempts: { increment: 1 }, claimedAt: new Date(), status: 'PROCESSING' },
     where: { id },
     select: { attempts: true, id: true, payload: true, type: true },
   });
   try {
-    await handleEvent(event);
-    await markDone(event.id);
+    await handleAndCompleteEvent(event);
     return { done: 1, failed: 0 };
   } catch (error) {
     await markFailed(event, error);

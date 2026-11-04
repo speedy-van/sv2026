@@ -9,6 +9,7 @@ export * from './consent';
 export * from './errors';
 export * from './driver-account';
 export * from './live-chat';
+export * from './mail';
 export * from './money';
 export * from './notifications';
 export * from './admin-notification-settings';

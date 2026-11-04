@@ -1,5 +1,7 @@
 import { handleAdminRoute, type AdminMethod } from '@/server/admin/routes';
 
+export const maxDuration = 180;
+
 interface RouteParams {
   params: Promise<{ path?: string[] }>;
 }

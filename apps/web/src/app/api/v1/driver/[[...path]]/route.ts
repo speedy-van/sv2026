@@ -1,5 +1,7 @@
 import { handleDriverRoute, type DriverMethod } from '@/server/driver/routes';
 
+export const maxDuration = 180;
+
 interface RouteParams {
   params: Promise<{ path?: string[] }>;
 }

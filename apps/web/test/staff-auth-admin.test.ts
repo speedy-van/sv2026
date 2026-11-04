@@ -2,7 +2,14 @@ import { AppError } from '@sv/contracts';
 import { prisma } from '@sv/db';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { ADMIN_ROUTE_DEFINITIONS, handleAdminRoute, type AdminMethod } from '../src/server/admin/routes';
-import { refreshStaffSession, requestStaffOtp, verifyStaffOtp, type StaffApp, type StaffRole } from '../src/server/auth/staff';
+import {
+  refreshStaffSession,
+  requestStaffOtp,
+  verifyStaffOtp,
+  type StaffApp,
+  type StaffRole,
+} from '../src/server/auth/staff';
+import { handleAdminMail, type MailAction } from '../src/server/mail/routes';
 
 const emailPrefix = 'phase12-';
 const ownerEmail = `${emailPrefix}owner@example.test`;
@@ -43,7 +50,8 @@ async function latestOtpCode(email: string, app: StaffApp): Promise<string> {
     where: { dedupeKey: { startsWith: `staff-login-code:${email}:${app}:` } },
   });
   const payload = event?.payload;
-  if (!payload || typeof payload !== 'object' || !('data' in payload)) throw new Error('Missing OTP email payload.');
+  if (!payload || typeof payload !== 'object' || !('data' in payload))
+    throw new Error('Missing OTP email payload.');
   const data = payload.data;
   if (!data || typeof data !== 'object' || !('signInCode' in data) || typeof data.signInCode !== 'string') {
     throw new Error('Missing OTP code in email payload.');
@@ -59,10 +67,7 @@ async function tokenFor(email: string, app: StaffApp, deviceId: string): Promise
 }
 
 function samplePath(pattern: string): string {
-  return pattern
-    .replaceAll(':id', 'id_phase12')
-    .replaceAll(':key', 'company')
-    .replaceAll(':slug', 'glasgow');
+  return pattern.replaceAll(':id', 'id_phase12').replaceAll(':key', 'company').replaceAll(':slug', 'glasgow');
 }
 
 function requestFor(method: AdminMethod, path: string, token?: string): Request {
@@ -105,8 +110,52 @@ describe('Phase 12 staff auth and admin API', () => {
       const anonymous = await handleAdminRoute(requestFor(definition.method, path), definition.method, path);
       expect(anonymous.status, `${definition.method} ${definition.pattern} anonymous`).toBe(401);
 
-      const driver = await handleAdminRoute(requestFor(definition.method, path, driverToken), definition.method, path);
+      const driver = await handleAdminRoute(
+        requestFor(definition.method, path, driverToken),
+        definition.method,
+        path,
+      );
       expect(driver.status, `${definition.method} ${definition.pattern} driver`).toBe(403);
+    }
+  }, 30_000);
+
+  it('rejects anonymous and real DRIVER sessions for every standalone Mail action', async () => {
+    const driverToken = await tokenFor(driverEmail, 'driver', 'driver-device-mail-reject');
+    const mailRoutes: Record<
+      MailAction,
+      { method: AdminMethod; path: string; id?: string; attachmentId?: string }
+    > = {
+      status: { method: 'GET', path: 'mail/status' },
+      messages: { method: 'GET', path: 'mail/messages' },
+      sync: { method: 'POST', path: 'mail/sync' },
+      thread: { method: 'GET', path: 'mail/threads/thread_auth', id: 'thread_auth' },
+      read: { method: 'POST', path: 'mail/messages/message_auth/read', id: 'message_auth' },
+      reply: { method: 'POST', path: 'mail/messages/message_auth/reply', id: 'message_auth' },
+      attachment: {
+        method: 'GET',
+        path: 'mail/messages/message_auth/attachments/file_auth',
+        id: 'message_auth',
+        attachmentId: 'file_auth',
+      },
+      deliveries: { method: 'GET', path: 'mail/deliveries' },
+      retry: { method: 'POST', path: 'mail/deliveries/delivery_auth/retry', id: 'delivery_auth' },
+    };
+    for (const action of Object.keys(mailRoutes) as MailAction[]) {
+      const route = mailRoutes[action];
+      const anonymous = await handleAdminMail(
+        requestFor(route.method, route.path),
+        action,
+        route.id,
+        route.attachmentId,
+      );
+      expect(anonymous.status, `${route.method} ${route.path} anonymous`).toBe(401);
+      const driver = await handleAdminMail(
+        requestFor(route.method, route.path, driverToken),
+        action,
+        route.id,
+        route.attachmentId,
+      );
+      expect(driver.status, `${route.method} ${route.path} driver`).toBe(403);
     }
   }, 30_000);
 
@@ -124,9 +173,16 @@ describe('Phase 12 staff auth and admin API', () => {
     const email = adminEmail;
     await requestStaffOtp({ app: 'admin', email });
     const code = await latestOtpCode(email, 'admin');
-    const initial = await verifyStaffOtp({ app: 'admin', code, device: device('admin-device-refresh'), email });
+    const initial = await verifyStaffOtp({
+      app: 'admin',
+      code,
+      device: device('admin-device-refresh'),
+      email,
+    });
     await refreshStaffSession({ deviceId: 'admin-device-refresh', refreshToken: initial.refreshToken });
-    await expect(refreshStaffSession({ deviceId: 'admin-device-refresh', refreshToken: initial.refreshToken })).rejects.toMatchObject({
+    await expect(
+      refreshStaffSession({ deviceId: 'admin-device-refresh', refreshToken: initial.refreshToken }),
+    ).rejects.toMatchObject({
       code: 'UNAUTHORIZED',
     });
     const session = await prisma.session.findFirst({
@@ -145,12 +201,21 @@ describe('Phase 12 staff auth and admin API', () => {
       for (let index = 0; index < 5; index += 1) {
         const attemptSetLabel = String(attemptSet);
         const indexLabel = String(index);
-        await expect(verifyStaffOtp({ app: 'admin', code: `${attemptSetLabel}${indexLabel.padStart(5, '0')}`, device: device(`lockout-${attemptSetLabel}-${indexLabel}`), email })).rejects.toBeInstanceOf(AppError);
+        await expect(
+          verifyStaffOtp({
+            app: 'admin',
+            code: `${attemptSetLabel}${indexLabel.padStart(5, '0')}`,
+            device: device(`lockout-${attemptSetLabel}-${indexLabel}`),
+            email,
+          }),
+        ).rejects.toBeInstanceOf(AppError);
       }
     }
     await requestStaffOtp({ app: 'admin', email });
     const validCode = await latestOtpCode(email, 'admin');
-    await expect(verifyStaffOtp({ app: 'admin', code: validCode, device: device('lockout-valid'), email })).rejects.toMatchObject({
+    await expect(
+      verifyStaffOtp({ app: 'admin', code: validCode, device: device('lockout-valid'), email }),
+    ).rejects.toMatchObject({
       code: 'RATE_LIMITED',
     });
   });

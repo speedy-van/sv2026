@@ -4,6 +4,7 @@ import {
   Button,
   Container,
   Heading,
+  Head,
   Hr,
   Html,
   Preview,
@@ -45,6 +46,10 @@ export type EmailTemplateKey = (typeof EMAIL_TEMPLATE_KEYS)[number];
 
 export interface EmailTemplateData {
   amountPence?: number;
+  paidPence?: number;
+  refundedPence?: number;
+  totalPence?: number;
+  balancePence?: number;
   canonicalOrigin?: string;
   contactEmail?: string | null;
   customerName?: string;
@@ -55,6 +60,8 @@ export interface EmailTemplateData {
   message?: string;
   moveDateLabel?: string;
   oldMoveDateLabel?: string;
+  pickupLabel?: string;
+  dropoffLabel?: string;
   payUrl?: string;
   preheader?: string;
   proofUrl?: string;
@@ -86,7 +93,7 @@ interface TemplateCopy {
 }
 
 const styles = {
-  body: { backgroundColor: '#EEF3F6', color: '#0B1F33', fontFamily: 'Arial, sans-serif', margin: '0' },
+  body: { backgroundColor: '#EEF3F6', color: '#0B1F33', fontFamily: 'Arial, sans-serif', margin: '0', padding: '12px' },
   button: {
     backgroundColor: '#FFC93C',
     borderRadius: '6px',
@@ -97,7 +104,7 @@ const styles = {
     padding: '14px 22px',
     textDecoration: 'none',
   },
-  card: { backgroundColor: '#FFFFFF', borderRadius: '8px', margin: '24px auto', padding: '28px', width: '560px' },
+  card: { backgroundColor: '#FFFFFF', borderRadius: '8px', boxSizing: 'border-box', margin: '24px auto', padding: '24px', width: '100%', maxWidth: '560px' },
   footer: { color: '#51606B', fontSize: '12px', lineHeight: '18px' },
   h1: { color: '#0B1F33', fontSize: '24px', lineHeight: '31px', margin: '0 0 16px' },
   logo: { color: '#0B1F33', fontSize: '18px', fontWeight: '800', margin: '0 0 20px' },
@@ -109,14 +116,21 @@ function clean(value: string): string {
 }
 
 function origin(data: EmailTemplateData): string {
-  return data.canonicalOrigin ?? 'https://www.speedyvan.uk';
+  try {
+    const value = new URL(data.canonicalOrigin ?? 'https://www.speedyvan.uk');
+    if (['https:', 'http:'].includes(value.protocol) && !value.username && !value.password) return value.origin;
+  } catch { /* Invalid configuration must not create an active-content link. */ }
+  return 'https://www.speedyvan.uk';
 }
 
 function absoluteUrl(data: EmailTemplateData, value: string | undefined): string {
   const fallback = origin(data);
   if (!value) return fallback;
-  if (/^https?:\/\//.test(value)) return value;
-  return new URL(value, fallback).toString();
+  try {
+    const url = new URL(value, fallback);
+    if (['https:', 'http:'].includes(url.protocol) && !url.username && !url.password) return url.toString();
+  } catch { /* Keep a safe support-site link when an optional URL is invalid. */ }
+  return fallback;
 }
 
 function amount(data: EmailTemplateData, key: 'amountPence' | 'refundPence' = 'amountPence'): string {
@@ -137,6 +151,20 @@ function slotLabel(data: EmailTemplateData): string {
 
 function routeLabel(data: EmailTemplateData): string {
   return data.routeLabel ?? 'your pickup and drop-off';
+}
+
+function bookingPaymentLines(data: EmailTemplateData): string[] {
+  const totalPence = data.totalPence ?? data.amountPence;
+  return [
+    ...(totalPence !== undefined ? [`Booking total: ${formatGBP(totalPence)}.`] : []),
+    ...(data.paidPence !== undefined ? [`Amount paid: ${formatGBP(data.paidPence)}.`] : []),
+    ...(data.refundedPence ? [`Amount refunded: ${formatGBP(data.refundedPence)}.`] : []),
+    ...(data.balancePence !== undefined
+      ? [data.balancePence < 0
+          ? `Credit due: ${formatGBP(-data.balancePence)}.`
+          : `Balance remaining: ${formatGBP(data.balancePence)}.`]
+      : []),
+  ];
 }
 
 function subjectFor(template: EmailTemplateKey, data: EmailTemplateData): string {
@@ -218,8 +246,12 @@ function copyFor(template: EmailTemplateKey, data: EmailTemplateData): TemplateC
       body: [
         common,
         `You're booked for ${dateLabel(data)}, ${slotLabel(data)}.`,
+        ...(data.customerName ? [`Customer: ${data.customerName}.`] : []),
+        ...(data.serviceLabel ? [`Service: ${data.serviceLabel}.`] : []),
         `Route: ${routeLabel(data)}.`,
-        `Amount paid: ${amount(data)}.`,
+        ...(data.pickupLabel ? [`Pickup: ${data.pickupLabel}.`] : []),
+        ...(data.dropoffLabel ? [`Drop-off: ${data.dropoffLabel}.`] : []),
+        ...bookingPaymentLines(data),
         'What happens next: we confirm dispatch, keep you updated by email, and send tracking when the driver is on the way.',
       ],
       buttonLabel: 'Manage booking',
@@ -367,6 +399,7 @@ function emailNode(copy: TemplateCopy, data: EmailTemplateData): ReactElement {
   return createElement(
     Html,
     null,
+    createElement(Head, null, createElement('meta', { name: 'viewport', content: 'width=device-width, initial-scale=1' })),
     createElement(Preview, null, copy.preheader),
     createElement(
       Body,

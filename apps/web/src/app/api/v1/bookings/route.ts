@@ -8,6 +8,7 @@ import * as Sentry from '@sentry/nextjs';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+export const maxDuration = 180;
 
 export async function POST(request: Request): Promise<Response> {
   return withApi(request, { auth: false, input: BookingCreateSchema, rateLimit: 'booking' }, async ({ input, requestId }) => {

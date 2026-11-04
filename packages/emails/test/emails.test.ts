@@ -3,6 +3,10 @@ import { EMAIL_TEMPLATE_KEYS, renderEmailTemplate } from '../src/index';
 
 const fixture = {
   amountPence: 15890,
+  paidPence: 15890,
+  totalPence: 15890,
+  refundedPence: 0,
+  balancePence: 0,
   canonicalOrigin: 'https://www.speedyvan.uk',
   contactEmail: 'bookings@speedyvan.uk',
   customerName: 'Sarah McDonald',
@@ -45,5 +49,50 @@ describe('@sv/emails', () => {
     expect(rendered.subject).toBe("You're booked: Saturday 14 November (SV-7K3Q2M)");
     expect(rendered.text).toContain('Amount paid: £158.90.');
     expect(rendered.text).toContain('Manage booking');
+  });
+
+  it('distinguishes the current booking total from money actually received and refunded', async () => {
+    const rendered = await renderEmailTemplate('booking-confirmed', {
+      ...fixture, totalPence: 20000, paidPence: 15890, refundedPence: 1000, balancePence: 5110,
+    });
+    expect(rendered.text).toContain('Booking total: £200.00.');
+    expect(rendered.text).toContain('Amount paid: £158.90.');
+    expect(rendered.text).toContain('Amount refunded: £10.00.');
+    expect(rendered.text).toContain('Balance remaining: £51.10.');
+    expect(rendered.text).not.toContain('Amount paid: £200.00.');
+  });
+
+  it('does not present a legacy booking total as proof of payment', async () => {
+    const rendered = await renderEmailTemplate('booking-confirmed', {
+      amountPence: 15890, reference: fixture.reference, manageUrl: fixture.manageUrl,
+    });
+    expect(rendered.text).toContain('Booking total: £158.90.');
+    expect(rendered.text).not.toContain('Amount paid:');
+  });
+
+  it('labels an overpayment as credit due', async () => {
+    const rendered = await renderEmailTemplate('booking-confirmed', {
+      ...fixture, totalPence: 15000, balancePence: -890,
+    });
+    expect(rendered.text).toContain('Credit due: £8.90.');
+    expect(rendered.text).not.toContain('Balance remaining:');
+  });
+
+  it('escapes untrusted booking details and renders a mobile-width confirmation with a plain-text alternative', async () => {
+    const rendered = await renderEmailTemplate('booking-confirmed', { ...fixture, customerName: '<script>alert(1)</script>', pickupLabel: '1 <img src=x onerror=alert(1)> Road' });
+    expect(rendered.html).not.toContain('<script>');
+    expect(rendered.html).not.toContain('<img src=x');
+    expect(rendered.html).toContain('&lt;script&gt;');
+    expect(rendered.html).toContain('width:100%');
+    expect(rendered.html).toContain('max-width:560px');
+    expect(rendered.html).toContain('width=device-width');
+    expect(rendered.text).toContain('Booking reference SV-7K3Q2M');
+    expect(rendered.text).toContain('Contact: bookings@speedyvan.uk');
+  });
+
+  it('does not render an active-content action URL', async () => {
+    const rendered = await renderEmailTemplate('booking-confirmed', { ...fixture, manageUrl: 'javascript:alert(1)' });
+    expect(rendered.html).not.toContain('href="javascript:');
+    expect(rendered.html).toContain('https://www.speedyvan.uk');
   });
 });

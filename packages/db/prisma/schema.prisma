@@ -910,6 +910,8 @@ model OutboxEvent {
   dedupeKey     String?      @unique
   createdAt     DateTime     @default(now())
   processedAt   DateTime?
+  claimedAt     DateTime?
+  mailDelivery  MailDelivery?
 
   @@index([status, nextAttemptAt])
 }
@@ -930,4 +932,107 @@ model AuditLog {
 
   @@index([entityType, entityId, createdAt])
   @@index([actorUserId, createdAt])
+}
+
+// Mail state is server-only. Provider credentials never enter this database.
+model MailFolder {
+  id           String   @id @default(cuid())
+  mailbox      String
+  folder       String
+  path         String
+  uidValidity  String
+  lastUid      BigInt   @default(0)
+  oldestUid    BigInt   @default(0)
+  uidNext      BigInt   @default(1)
+  unreadCount  Int      @default(0)
+  hasMore      Boolean  @default(false)
+  lastSyncAt   DateTime?
+  lastErrorCode String?
+  @@unique([mailbox, folder])
+}
+
+model MailMessage {
+  id              String   @id @default(cuid())
+  mailbox         String
+  folder          String
+  uidValidity     String
+  uid             BigInt
+  threadId        String
+  messageId       String?
+  inReplyTo       String?
+  references      Json
+  fromAddresses   Json
+  toAddresses     Json
+  ccAddresses     Json
+  subject         String
+  sentAt          DateTime
+  seen            Boolean
+  size            Int
+  attachmentCount Int      @default(0)
+  snippet         String   @default("")
+  createdAt       DateTime @default(now())
+  @@unique([mailbox, folder, uidValidity, uid])
+  @@index([mailbox, folder, sentAt, id])
+  @@index([mailbox, threadId, sentAt])
+  @@index([mailbox, messageId])
+}
+
+model MailDelivery {
+  id               String   @id @default(cuid())
+  key              String   @unique
+  outboxEventId    String?  @unique
+  outboxEvent      OutboxEvent? @relation(fields: [outboxEventId], references: [id], onDelete: SetNull)
+  mailbox          String
+  messageId        String   @unique
+  subject          String
+  envelope         Json
+  rawMime          Bytes
+  status           String   @default("QUEUED")
+  attempts         Int      @default(0)
+  lastErrorCode    String?
+  smtpResponseCode Int?
+  nextAttemptAt   DateTime?
+  sendingStartedAt DateTime?
+  sentAt           DateTime?
+  sentCopySaved    Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  attemptsLog      MailDeliveryAttempt[]
+  @@index([mailbox, status, createdAt])
+}
+
+model MailDeliveryAttempt {
+  id           String       @id @default(cuid())
+  deliveryId   String
+  delivery     MailDelivery @relation(fields: [deliveryId], references: [id], onDelete: Cascade)
+  startedAt    DateTime     @default(now())
+  finishedAt   DateTime?
+  outcome      String
+  providerCode Int?
+  @@index([deliveryId, startedAt])
+}
+
+model MailQuotaDay {
+  id       String @id // scope:UTC date, mailbox or organization
+  messages Int    @default(0)
+  updatedAt DateTime @updatedAt
+}
+
+model MailQuotaRecipient {
+  scope String
+  day   String
+  hash  String
+  @@id([scope, day, hash])
+}
+
+model MailLease {
+  key       String   @id
+  owner     String
+  expiresAt DateTime
+}
+
+model MailRateWindow {
+  key         String @id
+  windowStart DateTime
+  count       Int @default(1)
 }

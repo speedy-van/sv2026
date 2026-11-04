@@ -8,6 +8,8 @@ import { maintainPushReceipts } from '../notifications/receipt-maintenance';
 // Only this payment's durable events and their channel jobs are eligible. Other
 // bookings and historical pending work are never drained by a customer request.
 export async function dispatchPendingOutbox(paymentIntentId: string): Promise<void> {
+  // This is a claim-start budget, not an abort timer. The webhook allows 180s
+  // for one final mail job (SMTP, Sent append and refresh: up to 3x25s plus DB).
   const deadline = Date.now() + 40_000;
   let paymentFound = false;
   try {

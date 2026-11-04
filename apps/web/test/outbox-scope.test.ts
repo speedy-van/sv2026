@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   update: vi.fn(),
   payment: vi.fn(),
   email: vi.fn(),
+  ledgerUpdate: vi.fn(),
 }));
 vi.mock('@sv/db', async () => {
   const { Prisma: sql } = await import('../../../packages/db/src/generated/prisma/client');
@@ -19,7 +20,8 @@ vi.mock('@sv/db', async () => {
   };
 });
 afterEach(() => vi.unstubAllEnvs());
-vi.mock('../src/server/integrations/resend', () => ({ sendTransactionalEmail: mocks.email }));
+vi.mock('../src/server/integrations/mail', () => ({ sendTransactionalEmail: mocks.email }));
+vi.mock('../src/server/mail/delivery', () => ({ processMailDelivery: vi.fn() }));
 vi.mock('../src/server/integrations/expo-push', () => ({ sendPushOutbox: vi.fn() }));
 vi.mock('../src/server/settings', () => ({ getSetting: vi.fn() }));
 vi.mock('../src/server/auth/customer-links', () => ({ manageLinkForBooking: vi.fn(), bookingPurposeLink: vi.fn() }));
@@ -33,9 +35,9 @@ beforeEach(() => {
   vi.stubEnv('OUTBOX_PROCESS_FROM', '');
   mocks.query.mockResolvedValue([]);
   mocks.transaction.mockImplementation((operation: (tx: {
-    $queryRaw: typeof mocks.query; payment: { findUnique: typeof mocks.payment };
+    $queryRaw: typeof mocks.query; payment: { findUnique: typeof mocks.payment }; outboxEvent: { update: typeof mocks.update }; mailDelivery: { updateMany: typeof mocks.ledgerUpdate };
   }) => Promise<unknown>) =>
-    operation({ $queryRaw: mocks.query, payment: { findUnique: mocks.payment } }),
+    operation({ $queryRaw: mocks.query, payment: { findUnique: mocks.payment }, outboxEvent: { update: mocks.update }, mailDelivery: { updateMany: mocks.ledgerUpdate } }),
   );
 });
 
@@ -62,6 +64,7 @@ describe('atomic scoped outbox claims', () => {
     expect(query.sql).not.toContain('LIKE');
     expect(query.sql).toContain('FOR UPDATE SKIP LOCKED');
     expect(query.sql).toContain('SET "status" = \'PROCESSING\', "attempts" = "attempts" + 1');
+    expect(query.sql).toContain('"claimedAt" = now()');
     expect(mocks.email).not.toHaveBeenCalled();
   });
 
@@ -83,7 +86,7 @@ describe('atomic scoped outbox claims', () => {
     const processedAt: unknown = expect.any(Date);
     expect(mocks.update).toHaveBeenCalledWith({
       where: { id: 'email-unit' },
-      data: { lastError: null, processedAt, status: 'DONE' },
+      data: { claimedAt: null, lastError: null, processedAt, status: 'DONE' },
     });
   });
 
@@ -95,7 +98,7 @@ describe('atomic scoped outbox claims', () => {
     const nextAttemptAt: unknown = expect.any(Date);
     expect(mocks.update).toHaveBeenCalledWith({
       where: { id: 'email-unit' },
-      data: { lastError: 'Unit provider unavailable.', nextAttemptAt, status: 'PENDING' },
+      data: { claimedAt: null, lastError: 'MAIL_OUTBOX_UNAVAILABLE', nextAttemptAt, status: 'PENDING' },
     });
   });
 
@@ -133,7 +136,7 @@ describe('atomic scoped outbox claims', () => {
     const nextAttemptAt: unknown = expect.any(Date);
     expect(mocks.update).toHaveBeenCalledWith({
       where: { id: 'late-unit' },
-      data: { lastError: 'The late-payment refund has not succeeded yet.', nextAttemptAt, status: 'PENDING' },
+      data: { claimedAt: null, lastError: 'The late-payment refund has not succeeded yet.', nextAttemptAt, status: 'PENDING' },
     });
   });
 });

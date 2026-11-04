@@ -99,6 +99,9 @@ export default function AppTabs(): React.ReactElement {
             <Tabs.Screen name="booking-actions" options={{ href: null }} />
             <Tabs.Screen name="chat/index" options={{ href: null }} />
             <Tabs.Screen name="chat/[id]" options={{ href: null }} />
+            <Tabs.Screen name="mail/index" options={{ href: null }} />
+            <Tabs.Screen name="mail/[id]" options={{ href: null }} />
+            <Tabs.Screen name="mail/deliveries" options={{ href: null }} />
           </Tabs>
         </AdminHeaderHeightContext>
       </AdminHeaderInsetContext>

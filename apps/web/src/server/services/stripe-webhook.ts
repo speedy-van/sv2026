@@ -272,8 +272,8 @@ async function applyExtraChargePayment(paymentId: string): Promise<void> {
 async function handlePaymentIntentSucceeded(intent: Stripe.PaymentIntent, now: Date): Promise<void> {
   const payment = await findPayment(intent);
   if (!payment) throw new AppError('NOT_FOUND', 'Payment not found.');
-  const amountReceived = typeof intent.amount_received === 'number' ? intent.amount_received : intent.amount;
-  if (amountReceived !== payment.amountPence || intent.currency !== 'gbp') {
+  const amountReceived = intent.amount_received;
+  if (!Number.isSafeInteger(amountReceived) || amountReceived !== payment.amountPence || intent.currency !== 'gbp') {
     await prisma.$transaction(async (tx) => {
       await tx.payment.update({
         data: {

@@ -32,14 +32,17 @@
     "@upstash/redis": "1.39.0",
     "@vercel/speed-insights": "2.0.0",
     "expo-server-sdk": "7.2.0",
+    "imapflow": "2.10.0",
     "jose": "6.2.12",
     "lucide-react": "1.55.0",
+    "mailparser": "3.14.1",
     "motion": "14.1.0",
     "next": "16.4.4",
+    "nodemailer": "10.3.1",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-hook-form": "7.90.0",
-    "resend": "6.32.1",
+    "sanitize-html": "2.18.1",
     "sharp": "0.35.5",
     "stripe": "23.0.0",
     "undici": "7.30.0",
@@ -49,6 +52,9 @@
   "devDependencies": {
     "@axe-core/playwright": "4.13.0",
     "@playwright/test": "1.64.0",
+    "@types/mailparser": "3.9.0",
+    "@types/nodemailer": "8.0.2",
+    "@types/sanitize-html": "2.16.2",
     "lighthouse": "13.5.0"
   }
 }
