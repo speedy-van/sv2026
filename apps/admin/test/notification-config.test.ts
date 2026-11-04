@@ -22,8 +22,8 @@ it('links one valid admin EAS identity to its update URL and custom notification
   expect(config.owner).toBe('ahmadawadalwakai');
   expect(config.slug).toBe('speedyvan-admin');
   expect(config.ios?.bundleIdentifier).toBe('co.uk.speedy-van.admin');
-  expect(config.version).toBe('1.0.1');
-  expect(config.ios?.buildNumber).toBe('55');
+  expect(config.version).toBe('1.0.2');
+  expect(config.ios?.buildNumber).toBe('56');
   expect(config.runtimeVersion).toEqual({ policy: 'appVersion' });
   expect(config.ios?.config?.usesNonExemptEncryption).toBe(false);
   expect(config.updates?.url).toBe(`https://u.expo.dev/${metadata.eas.projectId}`);

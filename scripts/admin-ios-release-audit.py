@@ -1,4 +1,4 @@
-"""Build-55 guard; stdlib only; writes no credentials or profile contents.
+"""Build-56 guard; stdlib only; writes no credentials or profile contents.
 
 Adopt in scripts/ beside admin-ios-release-source.json. Run from repository root.
 source: immutable task source guard; native: prepare/validate generated native
@@ -12,6 +12,7 @@ import json
 import os
 from pathlib import Path
 import plistlib
+import re
 import subprocess
 import sys
 import tempfile
@@ -21,13 +22,15 @@ import wave
 ROOT = Path.cwd()
 APP = ROOT / "apps/admin"
 REPORTS = ROOT / "build/reports"
-VERSION = "1.0.1"
-BUILD = "55"
+VERSION = "1.0.2"
+BUILD = "56"
 BUNDLE = "co.uk.speedy-van.admin"
 TEAM = "BXK52CMHR2"
 PROJECT = "0dd0709d-309d-455c-8ad8-eeeb4550adca"
 UPDATES_URL = f"https://u.expo.dev/{PROJECT}"
 API_URL = "https://www.speedyvan.uk"
+# Native modules added by the Lark admin mail screens (D98); OTA to older binaries is unsafe.
+REQUIRED_PODS = ["ExpoFileSystem", "ExpoSharing", "react-native-webview"]
 OWNER_SOUND_SHA256 = "09c0374f169a701059ede07b2054de9628cc7cfbcfb60666fd86d40f77e67998"
 
 
@@ -158,7 +161,15 @@ def signing():
     print("PASS: existing App Store signing credentials installed")
 
 
+def native_modules():
+    lock = (REPORTS / "Podfile.lock").read_text()
+    missing = [name for name in REQUIRED_PODS if not re.search(rf"^  - {re.escape(name)} \(", lock, re.M)]
+    require(not missing, f"Required native modules missing from Podfile.lock: {missing}")
+    return REQUIRED_PODS
+
+
 def ipa():
+    modules = native_modules()
     paths = list((ROOT / "build/ios/ipa").glob("*.ipa"))
     require(len(paths) == 1, "Expected exactly one exported IPA")
     ipa_path = paths[0]
@@ -200,7 +211,7 @@ def ipa():
                "ipaSha256": digest(ipa_path.read_bytes()), "bundle": BUNDLE, "version": VERSION,
                "build": BUILD, "runtime": VERSION, "channel": "production", "team": TEAM,
                "productionPush": True, "timeSensitive": True, "signatureVerified": True,
-               "hermesBundleSha256": digest(js), "sounds": sound_results})
+               "hermesBundleSha256": digest(js), "nativeModules": modules, "sounds": sound_results})
 
 
 if __name__ == "__main__":
