@@ -670,7 +670,23 @@ The existing Vercel outbox cron remains daily at 03:45 UTC. Immediate post-respo
 
 All request routes that can dispatch mail allow 180 seconds, including the Stripe webhook, operations/outbox cron, contact/OTP/booking requests, admin/driver booking actions and mail replies/retries. Worker loops stop starting claims after 20–40 seconds and await one in-flight job. SMTP, Sent APPEND and Sent-cache refresh each have a 25-second provider deadline; the 150-second SMTP lease also leaves room for database work. The disabled operations workflow's client timeout is 190 seconds and job timeout four minutes, so future activation does not cancel a healthy 180-second function. Raising these ceilings does not activate a schedule or make an uncertain SMTP attempt safe to repeat.
 
-After the owner's instruction to complete account setup, public-mailbox IMAP/SMTP was enabled and a dedicated app password was generated through the authenticated Lark administration session. It is stored only in ignored, ACL-restricted `apps/web/.env.local`, with mailbox access enabled and sending disabled. Real Nodemailer `verify` and ImapFlow connect/list/read-only INBOX checks succeeded, and the Sent folder was discovered; zero messages were sent. The exact Vercel project lookup still returned 403 because the connection lacks the required team authorization, so no cloud secret was written and deployed connectivity remains unverified. Q12 now tracks that deployment authorization/configuration prerequisite and release/live-send acceptance. Local authentication does not prove delivered mail, deployed admin inbox synchronization, a migrated production database, or a released admin app.
+After the owner's instruction to complete account setup, public-mailbox IMAP/SMTP was enabled and a dedicated app password was generated through the authenticated Lark administration session. Its local copy is in ignored, ACL-restricted `apps/web/.env.local`, with mailbox access enabled and sending disabled. Real Nodemailer `verify` and ImapFlow connect/list/read-only INBOX checks succeeded, and the Sent folder was discovered; zero messages were sent. The owner's subsequent request to add Production configuration was completed through the authenticated Vercel browser dashboard for the existing `speedy-van/speedy-van-web` project. Connector and CLI authorization remained unavailable; no replacement project was created.
+
+The following nine variables were saved for **Production only**. Form values were verified before Save. A full page refresh confirmed all nine names, types and Production targets, including the password's Secret type. Saved values were not revealed afterward because that required a new identity check, which was canceled without sending a code; this is not a decrypted-value readback.
+
+| Variable | Submitted value | Vercel type |
+|---|---|---|
+| `LARK_MAIL_APP_PASSWORD` | Dedicated mailbox password; value omitted | Secret |
+| `LARK_MAIL_ENABLED` | `false` | Config |
+| `LARK_MAIL_SEND_ENABLED` | `false` | Config |
+| `LARK_MAIL_ADDRESS` | `support@speedyvan.uk` | Config |
+| `LARK_MAIL_DAILY_MESSAGES` | `300` | Config |
+| `LARK_MAIL_DAILY_EXTERNAL_RECIPIENTS` | `150` | Config |
+| `LARK_MAIL_ORG_DAILY_MESSAGES` | `400` | Config |
+| `LARK_MAIL_ORG_DAILY_EXTERNAL_RECIPIENTS` | `400` | Config |
+| `LARK_MAIL_MIN_SEND_INTERVAL_SECONDS` | `3` | Config |
+
+Both Production flags stay false until the matching backend and additive migration are released. Saving variables did not deploy code, apply a production migration, alter DNS, activate a scheduler or send mail. Deployed SMTP/IMAP connectivity, admin inbox behavior, physical iPhone acceptance and an authorized actual-send check remain pending in Q12. Local authentication and saved configuration do not prove those release outcomes.
 
 **Admin API and mobile architecture.** The existing Expo Router / React Native Admin app uses React Query and `SpeedyVanApiClient`; it does not receive a mail password. `packages/contracts/src/mail.ts` defines the strict request/response schemas and shared reply-recipient preview logic. The existing bearer/session authentication authorizes OWNER and ADMIN only. The handlers in `apps/web/src/server/mail/routes.ts` expose the following paths under `/api/v1/admin/mail`: GET `/status`, GET `/messages`, POST `/sync`, GET `/threads/:id`, POST `/messages/:id/read`, POST `/messages/:id/reply`, GET `/messages/:id/attachments/:attachmentId`, GET `/deliveries`, and POST `/deliveries/:id/retry`. Native navigation adds More → Mail, Inbox/Sent, conversation detail and a delivery queue. Replies use stable client UUIDs, server-selected Reply-To/To/Cc and RFC Message-ID/In-Reply-To/References headers. Unknown mail errors are normalized before storage, API responses and failure alerts.
 
